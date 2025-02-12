@@ -1,4 +1,4 @@
-import { defineUnlistedScript } from "wxt/sandbox";
+﻿import { defineUnlistedScript } from "wxt/sandbox";
 
 export default defineUnlistedScript(main);
 
@@ -8,7 +8,6 @@ function main() {
 
   const observer = new MutationObserver(addPlayAllButton);
 
-  // window.addEventListener("yt-navigate-start", removeButton);
   window.addEventListener("yt-navigate-finish", () => {
     if (
       window.location.pathname.endsWith("/videos") ||
