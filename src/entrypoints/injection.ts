@@ -1,4 +1,4 @@
-﻿import { defineUnlistedScript } from "wxt/sandbox";
+import { defineUnlistedScript } from "wxt/sandbox";
 
 export default defineUnlistedScript(main);
 
@@ -14,11 +14,11 @@ function main() {
       ensurePlayAllButton();
 
       // Callback will be triggered when changing the sort to newest/popular
-      const element = document.querySelector("ytd-rich-grid-renderer")!;
-      observer.observe(element, {
-        attributes: true,
+      const buttonHolder = document.querySelector("#primary #header #chips")!;
+      observer.observe(buttonHolder, {
+        subtree: true,
         childList: false,
-        subtree: false,
+        attributes: true,
       });
     }
   });
