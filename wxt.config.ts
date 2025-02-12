@@ -14,10 +14,5 @@ export default defineConfig({
         matches: ["https://www.youtube.com/*"],
       },
     ],
-    ...(browser === "chrome"
-      ? {
-          host_permissions: ["https://www.youtube.com/*"],
-        }
-      : {}),
   }),
 });
