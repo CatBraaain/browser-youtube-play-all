@@ -1,4 +1,4 @@
-﻿import { defineUnlistedScript } from "wxt/sandbox";
+import { defineUnlistedScript } from "wxt/sandbox";
 
 export default defineUnlistedScript(main);
 
@@ -34,10 +34,12 @@ function addPlayAllButton() {
   const buttonLabel = "Play All";
 
   const buttonHolder = document.querySelector("#primary #header #chips")!;
-  buttonHolder.insertAdjacentHTML(
-    "beforeend",
-    `<a class="play-all-btn" href="/playlist?list=${playListId}&playnext=1">${buttonLabel}</a>`,
-  );
+  const playAllButton = document.createElement("a");
+  playAllButton.className = "play-all-btn";
+  playAllButton.href = `/playlist?list=${playListId}&playnext=1`;
+  playAllButton.textContent = buttonLabel;
+
+  buttonHolder.appendChild(playAllButton);
 }
 
 function getChannelId() {
