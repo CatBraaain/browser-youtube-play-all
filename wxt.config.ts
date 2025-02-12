@@ -10,10 +10,7 @@ export default defineConfig({
     name: "Youtube Play All",
     ...(browser === "chrome"
       ? {
-          host_permissions: [
-            "https://youtube.com/*",
-            // https://*.youtube.com/*
-          ],
+          host_permissions: ["https://www.youtube.com/*"],
         }
       : {}),
   }),

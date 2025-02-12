@@ -2,10 +2,7 @@
 import { defineContentScript } from "wxt/sandbox";
 
 export default defineContentScript({
-  matches: [
-    "https://youtube.com/*",
-    // https://*.youtube.com/*
-  ],
+  matches: ["https://www.youtube.com/*"],
   runAt: "document_start",
   async main() {
     await injectScript("/injection.js", {
