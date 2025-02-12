@@ -1,11 +1,8 @@
-import { defineUnlistedScript } from "wxt/sandbox";
+﻿import { defineUnlistedScript } from "wxt/sandbox";
 
 export default defineUnlistedScript(main);
 
 function main() {
-  alert("Content script is running");
-  console.log("Content script is running");
-
   const observer = new MutationObserver(ensurePlayAllButton);
 
   // Triggered when navigating to the videos, shorts, or streams page
