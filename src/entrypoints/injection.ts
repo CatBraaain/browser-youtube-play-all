@@ -101,17 +101,17 @@ function getPlayListPrefix(
 ): string {
   switch (true) {
     case kind === "videos" && isSortedByPopular:
-      return "UULF";
-    case kind === "videos" && !isSortedByPopular:
       return "UULP";
+    case kind === "videos" && !isSortedByPopular:
+      return "UULF";
     case kind === "shorts" && isSortedByPopular:
-      return "UUSH";
-    case kind === "shorts" && !isSortedByPopular:
       return "UUPS";
+    case kind === "shorts" && !isSortedByPopular:
+      return "UUSH";
     case kind === "streams" && isSortedByPopular:
-      return "UULV";
-    case kind === "streams" && !isSortedByPopular:
       return "UUPV";
+    case kind === "streams" && !isSortedByPopular:
+      return "UULV";
     default:
       return "UU";
   }
