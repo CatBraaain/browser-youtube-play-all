@@ -1,4 +1,4 @@
-﻿import { defineUnlistedScript } from "wxt/sandbox";
+import { defineUnlistedScript } from "wxt/sandbox";
 
 export default defineUnlistedScript(main);
 
@@ -8,6 +8,7 @@ function main() {
 
   const observer = new MutationObserver(addPlayAllButton);
 
+  // Triggered when navigating to the videos, shorts, or streams page
   window.addEventListener("yt-navigate-finish", () => {
     if (
       window.location.pathname.endsWith("/videos") ||
@@ -18,6 +19,7 @@ function main() {
 
       addPlayAllButton();
 
+      // Callback will be triggered when changing the sort to newest/popular
       const element = document.querySelector("ytd-rich-grid-renderer")!;
       observer.observe(element, {
         attributes: true,
