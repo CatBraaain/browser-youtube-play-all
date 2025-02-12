@@ -1,0 +1,43 @@
+{
+  "name": "browser-youtube-play-all",
+  "version": "0.0.0",
+  "private": true,
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "compile": "tsc --noEmit",
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "postinstall": "wxt prepare",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox"
+  },
+  "prettier": {
+    "arrowParens": "always",
+    "plugins": [
+      "prettier-plugin-packagejson"
+    ],
+    "printWidth": 100,
+    "trailingComma": "all"
+  },
+  "devDependencies": {
+    "@eslint/compat": "^1.2.6",
+    "@eslint/js": "^9.20.0",
+    "@types/chrome": "^0.0.304",
+    "@types/eslint__js": "^8.42.3",
+    "@typescript-eslint/parser": "^8.24.0",
+    "eslint": "^9.20.1",
+    "eslint-config-alloy": "^5.1.2",
+    "eslint-import-resolver-typescript": "^3.7.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-no-autofix": "^2.1.0",
+    "eslint-plugin-unused-imports": "^4.1.4",
+    "prettier": "^3.5.0",
+    "prettier-plugin-packagejson": "^2.5.8",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.24.0",
+    "wxt": "^0.19.27"
+  }
+}
