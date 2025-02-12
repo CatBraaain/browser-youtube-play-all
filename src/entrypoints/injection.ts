@@ -10,11 +10,11 @@ function main() {
 
   // Triggered when navigating to the videos, shorts, or streams page
   window.addEventListener("yt-navigate-finish", () => {
-    if (
+    const isTargetPage =
       window.location.pathname.endsWith("/videos") ||
       window.location.pathname.endsWith("/shorts") ||
-      window.location.pathname.endsWith("/streams")
-    ) {
+      window.location.pathname.endsWith("/streams");
+    if (isTargetPage) {
       observer.disconnect();
 
       addPlayAllButton();
