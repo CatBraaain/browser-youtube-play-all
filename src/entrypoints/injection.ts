@@ -6,7 +6,7 @@ function main() {
   alert("Content script is running");
   console.log("Content script is running");
 
-  const observer = new MutationObserver(addPlayAllButton);
+  const observer = new MutationObserver(ensurePlayAllButton);
 
   // Triggered when navigating to the videos, shorts, or streams page
   window.addEventListener("yt-navigate-finish", () => {
@@ -17,7 +17,7 @@ function main() {
     if (isTargetPage) {
       observer.disconnect();
 
-      addPlayAllButton();
+      ensurePlayAllButton();
 
       // Callback will be triggered when changing the sort to newest/popular
       const element = document.querySelector("ytd-rich-grid-renderer")!;
@@ -28,6 +28,12 @@ function main() {
       });
     }
   });
+}
+
+function ensurePlayAllButton() {
+  if (!document.querySelector(".play-all-btn")) {
+    addPlayAllButton();
+  }
 }
 
 function addPlayAllButton() {
