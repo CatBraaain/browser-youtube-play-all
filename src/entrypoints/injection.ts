@@ -1,4 +1,4 @@
-import { defineUnlistedScript } from "wxt/sandbox";
+﻿import { defineUnlistedScript } from "wxt/sandbox";
 
 export default defineUnlistedScript(main);
 
@@ -87,11 +87,17 @@ function getChannelId() {
 function getPlayListPath(): string {
   const sortKind = getSortKind();
   const videoKind = getVideoKind();
-  const playlistPrefix = getPlayListPrefix(videoKind, sortKind);
 
-  const channelId = getChannelId();
-
-  return `/playlist?list=${playlistPrefix}${channelId}&playnext=1`;
+  if (sortKind === "oldest") {
+    const oldestVideoHref = document.querySelector<HTMLLinkElement>(
+      "#thumbnail[href^='/watch?v=']",
+    )!.href;
+    return oldestVideoHref + "&list=ULcxqQ59vzyTk";
+  } else {
+    const playlistPrefix = getPlayListPrefix(videoKind, sortKind);
+    const channelId = getChannelId();
+    return `/playlist?list=${playlistPrefix}${channelId}&playnext=1`;
+  }
 }
 
 function getSortKind(): SortKind {
