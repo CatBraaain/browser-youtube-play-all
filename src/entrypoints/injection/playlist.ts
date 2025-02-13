@@ -1,4 +1,4 @@
-﻿export default class Playlistor {
+﻿export default class Playlist {
   public channelId: string;
   public videoKind: VideoKind;
   public sortKind: SortKind;

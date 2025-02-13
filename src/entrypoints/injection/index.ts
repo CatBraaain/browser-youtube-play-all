@@ -1,6 +1,6 @@
 ﻿import { defineUnlistedScript } from "wxt/sandbox";
 
-import Playlistor from "./playlistor";
+import Playlist from "./playlist";
 
 export default defineUnlistedScript(main);
 
@@ -66,12 +66,12 @@ function ensurePlayAllButton() {
 }
 
 function addPlayAllButton() {
-  const playlistor = new Playlistor();
+  const playlist = new Playlist();
 
   const playAllButton = document.createElement("a");
   playAllButton.classList.add("play-all-btn");
-  playAllButton.href = playlistor.path;
-  playAllButton.textContent = `Play All (${playlistor.sortKind})`;
+  playAllButton.href = playlist.path;
+  playAllButton.textContent = `Play All (${playlist.sortKind})`;
 
   const buttonHolder = document.querySelector("#primary #header #chips")!;
   buttonHolder.appendChild(playAllButton);
