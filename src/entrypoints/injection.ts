@@ -87,7 +87,7 @@ function getPlayListPath(): string {
   const sortKind = getSortKind();
   const videoKind = getVideoKind();
 
-  if (sortKind === "oldest") {
+  if (sortKind === "Oldest") {
     const oldestVideoHref = document.querySelector<HTMLLinkElement>(
       "#thumbnail[href^='/watch?v=']",
     )!.href;
@@ -106,43 +106,48 @@ function getSortKind(): SortKind {
     : 0;
   switch (index) {
     case 0:
-      return "newest";
+      return "Newest";
     case 1:
-      return "popular";
+      return "Popular";
     case 2:
-      return "oldest";
+      return "Oldest";
     default:
-      return "newest";
+      return "Newest";
   }
 }
 
 function getVideoKind(): VideoKind {
   const videoKind = window.location.pathname.split("/").at(-1);
-  if (videoKind === "videos" || videoKind === "shorts" || videoKind === "streams") {
-    return videoKind;
-  } else {
-    return "videos";
+  switch (videoKind) {
+    case "videos":
+      return "Videos";
+    case "shorts":
+      return "Shorts";
+    case "streams":
+      return "Streams";
+    default:
+      return "Videos";
   }
 }
 
 function getPlayListPrefix(videoKind: VideoKind, sortKind: SortKind): string {
   switch (true) {
-    case videoKind === "videos" && sortKind === "newest":
+    case videoKind === "Videos" && sortKind === "Newest":
       return "UULF";
-    case videoKind === "videos" && sortKind === "popular":
+    case videoKind === "Videos" && sortKind === "Popular":
       return "UULP";
-    case videoKind === "shorts" && sortKind === "newest":
+    case videoKind === "Shorts" && sortKind === "Newest":
       return "UUSH";
-    case videoKind === "shorts" && sortKind === "popular":
+    case videoKind === "Shorts" && sortKind === "Popular":
       return "UUPS";
-    case videoKind === "streams" && sortKind === "newest":
+    case videoKind === "Streams" && sortKind === "Newest":
       return "UULV";
-    case videoKind === "streams" && sortKind === "popular":
+    case videoKind === "Streams" && sortKind === "Popular":
       return "UUPV";
     default:
       return "UU";
   }
 }
 
-type VideoKind = "videos" | "shorts" | "streams";
-type SortKind = "newest" | "popular" | "oldest";
+type VideoKind = "Videos" | "Shorts" | "Streams";
+type SortKind = "Newest" | "Popular" | "Oldest";
