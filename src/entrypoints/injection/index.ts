@@ -1,4 +1,4 @@
-import { defineUnlistedScript } from "wxt/sandbox";
+﻿import { defineUnlistedScript } from "wxt/sandbox";
 
 import Playlist from "./playlist";
 
@@ -42,8 +42,8 @@ function main() {
 
   // Triggered when navigating to the videos, shorts, or streams page
   window.addEventListener("yt-navigate-finish", () => {
-    const videoKind = window.location.pathname.split("/").at(-1) ?? "";
-    if (videoKind === "videos" || videoKind === "shorts" || videoKind === "streams") {
+    const pageKind = window.location.pathname.split("/").at(-1) ?? "";
+    if (pageKind === "videos" || pageKind === "shorts" || pageKind === "streams") {
       observer.disconnect();
 
       ensurePlayAllButton();
