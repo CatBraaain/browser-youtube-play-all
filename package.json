@@ -2,7 +2,7 @@
   "name": "browser-youtube-play-all",
   "version": "0.0.0",
   "private": true,
-  "description": "",
+  "description": "Adds a 'Play All' button to YouTube, allowing video playback in Latest, Popular, or Oldest order.",
   "type": "module",
   "scripts": {
     "build": "conc npm:typecheck npm:build:*",
