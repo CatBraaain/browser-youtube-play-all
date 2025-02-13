@@ -1,4 +1,4 @@
-﻿import { defineUnlistedScript } from "wxt/sandbox";
+import { defineUnlistedScript } from "wxt/sandbox";
 
 export default defineUnlistedScript(main);
 
@@ -64,12 +64,12 @@ function ensurePlayAllButton() {
 }
 
 function addPlayAllButton() {
-  const playListId = getPlayListId();
+  const playAllUrl = getPlayListPath();
   const buttonLabel = "Play All";
 
   const playAllButton = document.createElement("a");
   playAllButton.classList.add("play-all-btn");
-  playAllButton.href = `/playlist?list=${playListId}&playnext=1`;
+  playAllButton.href = playAllUrl;
   playAllButton.textContent = buttonLabel;
 
   const buttonHolder = document.querySelector("#primary #header #chips")!;
@@ -84,7 +84,7 @@ function getChannelId() {
     .substring(2);
 }
 
-function getPlayListId(): string {
+function getPlayListPath(): string {
   const videoKind = window.location.pathname.split("/").at(-1) ?? "";
   const sortByPopularButton = document.querySelector("#primary #header #chips>:nth-child(2)");
   const isSortedByPopular = sortByPopularButton?.hasAttribute("selected") ?? false;
@@ -92,7 +92,7 @@ function getPlayListId(): string {
 
   const channelId = getChannelId();
 
-  return `${playlistPrefix}${channelId}`;
+  return `/playlist?list=${playlistPrefix}${channelId}&playnext=1`;
 }
 
 function getPlayListPrefix(
