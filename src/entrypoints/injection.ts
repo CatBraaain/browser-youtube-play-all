@@ -122,18 +122,18 @@ function getVideoKind(): VideoKind {
 
 function getPlayListPrefix(videoKind: VideoKind, sortKind: SortKind): string {
   switch (true) {
-    case videoKind === "videos" && sortKind === "popular":
-      return "UULP";
     case videoKind === "videos" && sortKind === "newest":
       return "UULF";
-    case videoKind === "shorts" && sortKind === "popular":
-      return "UUPS";
+    case videoKind === "videos" && sortKind === "popular":
+      return "UULP";
     case videoKind === "shorts" && sortKind === "newest":
       return "UUSH";
-    case videoKind === "streams" && sortKind === "popular":
-      return "UUPV";
+    case videoKind === "shorts" && sortKind === "popular":
+      return "UUPS";
     case videoKind === "streams" && sortKind === "newest":
       return "UULV";
+    case videoKind === "streams" && sortKind === "popular":
+      return "UUPV";
     default:
       return "UU";
   }
