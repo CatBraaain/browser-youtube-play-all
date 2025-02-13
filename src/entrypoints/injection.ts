@@ -65,12 +65,11 @@ function ensurePlayAllButton() {
 
 function addPlayAllButton() {
   const playAllUrl = getPlayListPath();
-  const buttonLabel = "Play All";
 
   const playAllButton = document.createElement("a");
   playAllButton.classList.add("play-all-btn");
   playAllButton.href = playAllUrl;
-  playAllButton.textContent = buttonLabel;
+  playAllButton.textContent = `Play All (${getSortKind()})`;
 
   const buttonHolder = document.querySelector("#primary #header #chips")!;
   buttonHolder.appendChild(playAllButton);
