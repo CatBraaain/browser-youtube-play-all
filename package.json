@@ -5,13 +5,16 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "build": "wxt build",
+    "build": "conc npm:typecheck npm:build:*",
+    "build:chrome": "wxt build -b chrome",
     "build:firefox": "wxt build -b firefox",
-    "compile": "tsc --noEmit",
-    "dev": "wxt",
+    "dev": "conc npm:typecheck npm:dev:* --restart-tries 1",
+    "dev:chrome": "wxt -b chrome",
     "dev:firefox": "wxt -b firefox",
     "postinstall": "wxt prepare",
-    "zip": "wxt zip",
+    "typecheck": "tsc --noEmit",
+    "zip": "conc npm:typecheck npm:zip:*",
+    "zip:chrome": "wxt zip -b chrome",
     "zip:firefox": "wxt zip -b firefox"
   },
   "prettier": {
@@ -28,6 +31,7 @@
     "@types/chrome": "^0.0.304",
     "@types/eslint__js": "^8.42.3",
     "@typescript-eslint/parser": "^8.24.0",
+    "concurrently": "^9.1.2",
     "eslint": "^9.20.1",
     "eslint-config-alloy": "^5.1.2",
     "eslint-import-resolver-typescript": "^3.7.0",
