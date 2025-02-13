@@ -39,13 +39,13 @@
       : 0;
     switch (index) {
       case 0:
-        return "Newest";
+        return "Latest";
       case 1:
         return "Popular";
       case 2:
         return "Oldest";
       default:
-        return "Newest";
+        return "Latest";
     }
   }
 
@@ -63,15 +63,15 @@
 
   private _getPlayListPrefix(videoKind: VideoKind, sortKind: SortKind): string {
     switch (true) {
-      case videoKind === "Videos" && sortKind === "Newest":
+      case videoKind === "Videos" && sortKind === "Latest":
         return "UULF";
       case videoKind === "Videos" && sortKind === "Popular":
         return "UULP";
-      case videoKind === "Shorts" && sortKind === "Newest":
+      case videoKind === "Shorts" && sortKind === "Latest":
         return "UUSH";
       case videoKind === "Shorts" && sortKind === "Popular":
         return "UUPS";
-      case videoKind === "Streams" && sortKind === "Newest":
+      case videoKind === "Streams" && sortKind === "Latest":
         return "UULV";
       case videoKind === "Streams" && sortKind === "Popular":
         return "UUPV";
@@ -82,4 +82,4 @@
 }
 
 type VideoKind = "Videos" | "Shorts" | "Streams";
-type SortKind = "Newest" | "Popular" | "Oldest";
+type SortKind = "Latest" | "Popular" | "Oldest";
