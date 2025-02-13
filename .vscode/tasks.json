@@ -3,7 +3,7 @@
   "tasks": [
     {
       "type": "npm",
-      "script": "dev",
+      "script": "dev:chrome",
       "presentation": {
         "reveal": "silent"
       },
