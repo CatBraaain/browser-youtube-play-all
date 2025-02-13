@@ -85,34 +85,59 @@ function getChannelId() {
 }
 
 function getPlayListPath(): string {
-  const videoKind = window.location.pathname.split("/").at(-1) ?? "";
-  const sortByPopularButton = document.querySelector("#primary #header #chips>:nth-child(2)");
-  const isSortedByPopular = sortByPopularButton?.hasAttribute("selected") ?? false;
-  const playlistPrefix = getPlayListPrefix(videoKind, isSortedByPopular);
+  const sortKind = getSortKind();
+  const videoKind = getVideoKind();
+  const playlistPrefix = getPlayListPrefix(videoKind, sortKind);
 
   const channelId = getChannelId();
 
   return `/playlist?list=${playlistPrefix}${channelId}&playnext=1`;
 }
 
-function getPlayListPrefix(
-  kind: "videos" | "shorts" | "streams" | string,
-  isSortedByPopular: boolean,
-): string {
+function getSortKind(): SortKind {
+  const selectedButton = document.querySelector("#primary #header #chips>[selected]")!;
+  const index = selectedButton
+    ? Array.from(selectedButton.parentNode?.children ?? []).indexOf(selectedButton)
+    : 0;
+  switch (index) {
+    case 0:
+      return "newest";
+    case 1:
+      return "popular";
+    case 2:
+      return "oldest";
+    default:
+      return "newest";
+  }
+}
+
+function getVideoKind(): VideoKind {
+  const videoKind = window.location.pathname.split("/").at(-1);
+  if (videoKind === "videos" || videoKind === "shorts" || videoKind === "streams") {
+    return videoKind;
+  } else {
+    return "videos";
+  }
+}
+
+function getPlayListPrefix(videoKind: VideoKind, sortKind: SortKind): string {
   switch (true) {
-    case kind === "videos" && isSortedByPopular:
+    case videoKind === "videos" && sortKind === "popular":
       return "UULP";
-    case kind === "videos" && !isSortedByPopular:
+    case videoKind === "videos" && sortKind === "newest":
       return "UULF";
-    case kind === "shorts" && isSortedByPopular:
+    case videoKind === "shorts" && sortKind === "popular":
       return "UUPS";
-    case kind === "shorts" && !isSortedByPopular:
+    case videoKind === "shorts" && sortKind === "newest":
       return "UUSH";
-    case kind === "streams" && isSortedByPopular:
+    case videoKind === "streams" && sortKind === "popular":
       return "UUPV";
-    case kind === "streams" && !isSortedByPopular:
+    case videoKind === "streams" && sortKind === "newest":
       return "UULV";
     default:
       return "UU";
   }
 }
+
+type VideoKind = "videos" | "shorts" | "streams";
+type SortKind = "newest" | "popular" | "oldest";
