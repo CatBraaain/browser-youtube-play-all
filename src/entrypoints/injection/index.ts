@@ -1,4 +1,6 @@
-﻿import { defineUnlistedScript } from "wxt/sandbox";
+import { defineUnlistedScript } from "wxt/sandbox";
+
+import Playlist from "./playlist";
 
 export default defineUnlistedScript(main);
 
@@ -64,90 +66,13 @@ function ensurePlayAllButton() {
 }
 
 function addPlayAllButton() {
-  const playAllUrl = getPlayListPath();
+  const playlist = new Playlist();
 
   const playAllButton = document.createElement("a");
   playAllButton.classList.add("play-all-btn");
-  playAllButton.href = playAllUrl;
-  playAllButton.textContent = `Play All (${getSortKind()})`;
+  playAllButton.href = playlist.path;
+  playAllButton.textContent = `Play All (${playlist.sortKind})`;
 
   const buttonHolder = document.querySelector("#primary #header #chips")!;
   buttonHolder.appendChild(playAllButton);
 }
-
-function getChannelId() {
-  return document
-    .querySelector<HTMLLinkElement>("link[rel='canonical']")!
-    .href.split("/")
-    .at(-1)!
-    .substring(2);
-}
-
-function getPlayListPath(): string {
-  const sortKind = getSortKind();
-  const videoKind = getVideoKind();
-
-  if (sortKind === "Oldest") {
-    const oldestVideoHref = document.querySelector<HTMLLinkElement>(
-      "#thumbnail[href^='/watch?v=']",
-    )!.href;
-    return oldestVideoHref + "&list=ULcxqQ59vzyTk";
-  } else {
-    const playlistPrefix = getPlayListPrefix(videoKind, sortKind);
-    const channelId = getChannelId();
-    return `/playlist?list=${playlistPrefix}${channelId}&playnext=1`;
-  }
-}
-
-function getSortKind(): SortKind {
-  const selectedButton = document.querySelector("#primary #header #chips>[selected]")!;
-  const index = selectedButton
-    ? Array.from(selectedButton.parentNode?.children ?? []).indexOf(selectedButton)
-    : 0;
-  switch (index) {
-    case 0:
-      return "Newest";
-    case 1:
-      return "Popular";
-    case 2:
-      return "Oldest";
-    default:
-      return "Newest";
-  }
-}
-
-function getVideoKind(): VideoKind {
-  const videoKind = window.location.pathname.split("/").at(-1);
-  switch (videoKind) {
-    case "videos":
-      return "Videos";
-    case "shorts":
-      return "Shorts";
-    case "streams":
-      return "Streams";
-    default:
-      return "Videos";
-  }
-}
-
-function getPlayListPrefix(videoKind: VideoKind, sortKind: SortKind): string {
-  switch (true) {
-    case videoKind === "Videos" && sortKind === "Newest":
-      return "UULF";
-    case videoKind === "Videos" && sortKind === "Popular":
-      return "UULP";
-    case videoKind === "Shorts" && sortKind === "Newest":
-      return "UUSH";
-    case videoKind === "Shorts" && sortKind === "Popular":
-      return "UUPS";
-    case videoKind === "Streams" && sortKind === "Newest":
-      return "UULV";
-    case videoKind === "Streams" && sortKind === "Popular":
-      return "UUPV";
-    default:
-      return "UU";
-  }
-}
-
-type VideoKind = "Videos" | "Shorts" | "Streams";
-type SortKind = "Newest" | "Popular" | "Oldest";
