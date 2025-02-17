@@ -100,9 +100,10 @@ export default class Page {
   public static getPlayListPath(): string {
     if (this.sortKind === "Oldest") {
       const oldestVideoHref = document.querySelector<HTMLLinkElement>(
-        "#thumbnail[href^='/watch?v=']",
+        "[href^='/watch?v='],[href^='/shorts/']",
       )!.href;
-      return `${oldestVideoHref}&list=UL01234567890`;
+      const videoId = oldestVideoHref.match(/(?:watch\?v=|shorts\/)([^&]*)/)?.at(1);
+      return `/watch?v=${videoId}&list=UL01234567890`;
     } else {
       const playlistPrefix = this._getPlayListPrefix(this.videoKind, this.sortKind);
       return `/playlist?list=${playlistPrefix}${this.channelId}&playnext=1`;
