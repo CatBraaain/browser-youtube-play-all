@@ -1,16 +1,5 @@
-﻿export default class Playlist {
-  public channelId: string;
-  public videoKind: VideoKind;
-  public sortKind: SortKind;
-  public path: string;
-  public constructor() {
-    this.channelId = this._getChannelId();
-    this.videoKind = this._getVideoKind();
-    this.sortKind = this._getSortKind();
-    this.path = this._getPlayListPath();
-  }
-
-  private _getChannelId(): string {
+export default class Page {
+  private static get channelId(): string {
     const link =
       document.querySelector<HTMLLinkElement>("[href^='https://www.youtube.com/channel/']") ??
       document.querySelector<HTMLLinkElement>("ytd-search [href^='/channel/']");
@@ -19,7 +8,7 @@
     return channelId;
   }
 
-  private _getVideoKind(): VideoKind {
+  public static get videoKind(): VideoKind {
     const videoKind = window.location.pathname.split("/").at(-1);
     switch (videoKind) {
       case "videos":
@@ -29,11 +18,11 @@
       case "streams":
         return "Streams";
       default:
-        return "Videos";
+        return null;
     }
   }
 
-  private _getSortKind(): SortKind {
+  public static get sortKind(): SortKind {
     const selectedButton = document.querySelector("#primary #header #chips>[selected]")!;
     const index = selectedButton
       ? Array.from(selectedButton.parentNode?.children ?? []).indexOf(selectedButton)
@@ -50,7 +39,62 @@
     }
   }
 
-  private _getPlayListPath(): string {
+  public static get hasPlayAllButton() {
+    return !!document.querySelector(".play-all-btn");
+  }
+
+  public static applyStyleForPlayAllButton() {
+    const style = document.createElement("style");
+    style.textContent = `
+    .play-all-btn {
+      background-color: #8000FF;
+      color: #F1F1F1;
+
+      height: 32px;
+      min-width: 12px;
+
+      display: inline-flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      margin-left: 12px;
+
+      border-radius: 8px;
+      padding: 0 12px;
+
+      font-family: 'Roboto', 'Arial', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 500;
+      text-decoration: none;
+
+      cursor: pointer;
+    }
+
+    .play-all-btn:hover,
+    .play-all-btn:focus {
+      background-color:#9B33FF;
+    }
+  `;
+    document.head.appendChild(style);
+  }
+
+  public static ensurePlayAllButton() {
+    if (!this.hasPlayAllButton) {
+      this.addPlayAllButton();
+    }
+  }
+
+  public static addPlayAllButton() {
+    const playAllButton = document.createElement("a");
+    playAllButton.classList.add("play-all-btn");
+    playAllButton.href = this.getPlayListPath();
+    playAllButton.textContent = `Play All (${this.sortKind})`;
+
+    const buttonHolder = document.querySelector("#primary #header #chips")!;
+    buttonHolder.appendChild(playAllButton);
+  }
+
+  public static getPlayListPath(): string {
     if (this.sortKind === "Oldest") {
       const oldestVideoHref = document.querySelector<HTMLLinkElement>(
         "#thumbnail[href^='/watch?v=']",
@@ -62,7 +106,7 @@
     }
   }
 
-  private _getPlayListPrefix(videoKind: VideoKind, sortKind: SortKind): string {
+  private static _getPlayListPrefix(videoKind: VideoKind, sortKind: SortKind): string {
     switch (true) {
       case videoKind === "Videos" && sortKind === "Latest":
         return "UULF";
@@ -82,5 +126,5 @@
   }
 }
 
-type VideoKind = "Videos" | "Shorts" | "Streams";
+type VideoKind = "Videos" | "Shorts" | "Streams" | null;
 type SortKind = "Latest" | "Popular" | "Oldest";
