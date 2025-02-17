@@ -13,7 +13,7 @@
     "dev:firefox": "wxt -b firefox",
     "postinstall": "wxt prepare",
     "typecheck": "tsc --noEmit",
-    "zip": "conc npm:typecheck npm:zip:*",
+    "zip": "conc npm:zip:*",
     "zip:chrome": "wxt zip -b chrome",
     "zip:firefox": "wxt zip -b firefox"
   },
