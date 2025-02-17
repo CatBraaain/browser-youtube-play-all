@@ -19,10 +19,10 @@ Youtube Play All is a browser extension that adds a "Play All" button to YouTube
 
 ## Usage
 1. Download the extension from the [Chrome Web Store] or [Firefox Add-ons].
-2. Open any YouTube channel and go to the **Videos** tab. (e.g., [MrBeast videos]).
+2. Open any YouTube channel and go to the **Videos** tab. (e.g., [MrBeast Videos]).
 3. Choose a sorting option (**Latest**, **Popular**, **Oldest**).
 4. Click the **Play All** button to play videos in the chosen order.
 
 [Chrome Web Store]: https://chromewebstore.google.com/detail/youtube-play-all/lcgfhpllcjejniehjnhbfhnkdpmkeoce
 [Firefox Add-ons]: https://addons.mozilla.org/firefox/addon/youtube-play-all/
-[MrBeast videos]: https://www.youtube.com/@MrBeast/videos
+[MrBeast Videos]: https://www.youtube.com/@MrBeast/videos
