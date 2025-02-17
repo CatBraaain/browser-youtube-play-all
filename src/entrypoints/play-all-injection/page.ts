@@ -3,13 +3,17 @@ export default class Page {
     return this.videoKind !== null;
   }
 
-  private static get channelId(): string {
+  private static get channelId(): string | null {
     const link =
       document.querySelector<HTMLLinkElement>("[href^='https://www.youtube.com/channel/']") ??
       document.querySelector<HTMLLinkElement>("ytd-search [href^='/channel/']");
-    const pathSegments = link!.href.split(/[/?]/);
-    const channelId = pathSegments[pathSegments.indexOf("channel") + 1].slice(2);
-    return channelId;
+    if (link) {
+      const pathSegments = link.href.split(/[/?]/);
+      const channelId = pathSegments[pathSegments.indexOf("channel") + 1].slice(2);
+      return channelId;
+    } else {
+      return null;
+    }
   }
 
   public static get videoKind(): VideoKind {
@@ -27,7 +31,7 @@ export default class Page {
   }
 
   public static get sortKind(): SortKind {
-    const selectedButton = document.querySelector("#primary #header #chips>[selected]")!;
+    const selectedButton = document.querySelector("#primary #header #chips>[selected]");
     const index = selectedButton
       ? Array.from(selectedButton.parentNode?.children ?? []).indexOf(selectedButton)
       : 0;
@@ -39,7 +43,7 @@ export default class Page {
       case 2:
         return "Oldest";
       default:
-        return "Latest";
+        return null;
     }
   }
 
@@ -90,24 +94,33 @@ export default class Page {
 
   public static addPlayAllButton() {
     const playAllButton = document.createElement("a");
+    const playListPath = this._getPlayListPath();
     playAllButton.classList.add("play-all-btn");
-    playAllButton.href = this.getPlayListPath();
-    playAllButton.textContent = `Play All (${this.sortKind})`;
+    if (playListPath) {
+      playAllButton.href = playListPath;
+      playAllButton.textContent = `Play All (${this.sortKind})`;
+    } else {
+      playAllButton.textContent = `Play All (Not Available)`;
+    }
 
-    const buttonHolder = document.querySelector("#primary #header #chips")!;
-    buttonHolder.appendChild(playAllButton);
+    const buttonHolder = document.querySelector("#primary #header #chips");
+    buttonHolder?.appendChild(playAllButton);
   }
 
-  public static getPlayListPath(): string {
+  private static _getPlayListPath(): string {
     if (this.sortKind === "Oldest") {
       const oldestVideoHref = document.querySelector<HTMLLinkElement>(
         "[href^='/watch?v='],[href^='/shorts/']",
-      )!.href;
-      const videoId = oldestVideoHref.match(/(?:watch\?v=|shorts\/)([^&]*)/)?.at(1);
-      return `/watch?v=${videoId}&list=UL01234567890`;
+      )?.href;
+      const videoId = oldestVideoHref?.match(/(?:watch\?v=|shorts\/)([^&]*)/)?.at(1);
+      return videoId ? `/watch?v=${videoId}&list=UL01234567890` : "";
     } else {
-      const playlistPrefix = this._getPlayListPrefix(this.videoKind, this.sortKind);
-      return `/playlist?list=${playlistPrefix}${this.channelId}&playnext=1`;
+      if (this.channelId && this.videoKind && this.sortKind) {
+        const playlistPrefix = this._getPlayListPrefix(this.videoKind, this.sortKind);
+        return `/playlist?list=${playlistPrefix}${this.channelId}&playnext=1`;
+      } else {
+        return "";
+      }
     }
   }
 
@@ -132,4 +145,4 @@ export default class Page {
 }
 
 type VideoKind = "Videos" | "Shorts" | "Streams" | null;
-type SortKind = "Latest" | "Popular" | "Oldest";
+type SortKind = "Latest" | "Popular" | "Oldest" | null;
