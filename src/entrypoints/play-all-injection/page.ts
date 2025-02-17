@@ -1,4 +1,8 @@
 export default class Page {
+  public static get isOnSupportedPage() {
+    return this.videoKind !== null;
+  }
+
   private static get channelId(): string {
     return document
       .querySelector<HTMLLinkElement>("link[rel='canonical']")!
