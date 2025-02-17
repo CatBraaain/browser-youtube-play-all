@@ -10,7 +10,7 @@ export default defineConfig({
     name: "Youtube Play All",
     web_accessible_resources: [
       {
-        resources: ["injection.js"],
+        resources: ["play-all-injection.js"],
         matches: ["https://www.youtube.com/*"],
       },
     ],
