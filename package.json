@@ -12,6 +12,7 @@
     "dev:chrome": "wxt -b chrome",
     "dev:firefox": "wxt -b firefox",
     "postinstall": "wxt prepare",
+    "publish": "npm run zip && wxt submit",
     "typecheck": "tsc --noEmit",
     "zip": "conc npm:zip:*",
     "zip:chrome": "wxt zip -b chrome",
