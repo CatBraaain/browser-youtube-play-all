@@ -8,12 +8,14 @@ function main() {
   Page.applyStyleForPlayAllButton();
 
   const observer = new MutationObserver(() => {
-    Page.ensurePlayAllButton();
+    if (Page.isOnSupportedPage) {
+      Page.ensurePlayAllButton();
+    }
   });
 
   // Triggered when navigating to the videos, shorts, or streams page
   window.addEventListener("yt-navigate-finish", () => {
-    if (Page.videoKind !== null) {
+    if (Page.isOnSupportedPage) {
       observer.disconnect();
 
       Page.ensurePlayAllButton();
