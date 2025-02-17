@@ -12,7 +12,7 @@ export default class Page {
   }
 
   public static get videoKind(): VideoKind {
-    const videoKind = window.location.pathname.split("/").at(-1);
+    const videoKind = window.location.pathname.split("/").at(-1)!.split("?")[0];
     switch (videoKind) {
       case "videos":
         return "Videos";
