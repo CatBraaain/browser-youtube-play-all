@@ -5,8 +5,6 @@ import Playlist from "./playlist";
 export default defineUnlistedScript(main);
 
 function main() {
-  const observer = new MutationObserver(ensurePlayAllButton);
-
   const style = document.createElement("style");
   style.textContent = `
     .play-all-btn {
@@ -39,6 +37,8 @@ function main() {
     }
   `;
   document.head.appendChild(style);
+
+  const observer = new MutationObserver(ensurePlayAllButton);
 
   // Triggered when navigating to the videos, shorts, or streams page
   window.addEventListener("yt-navigate-finish", () => {
