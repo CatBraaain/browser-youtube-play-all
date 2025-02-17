@@ -1,4 +1,4 @@
-﻿import { defineUnlistedScript } from "wxt/sandbox";
+import { defineUnlistedScript } from "wxt/sandbox";
 
 import Playlist from "./playlist";
 
@@ -48,7 +48,7 @@ function main() {
 
       ensurePlayAllButton();
 
-      // Callback will be triggered when changing the sort to newest/popular
+      // Callback will be triggered when changing the sort to latest/popular/oldest
       const buttonHolder = document.querySelector("#primary #header #chips")!;
       observer.observe(buttonHolder, {
         subtree: true,
