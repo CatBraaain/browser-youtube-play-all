@@ -3,14 +3,6 @@ export default class Page {
     return this.videoKind !== null;
   }
 
-  private static get channelId(): string | null {
-    return document
-      .querySelector<HTMLLinkElement>("link[rel='canonical']")!
-      .href.split("/")
-      .at(-1)!
-      .slice(2);
-  }
-
   public static get videoKind(): VideoKind {
     const videoKind = window.location.pathname.split("/").at(-1)!.split("?")[0];
     switch (videoKind) {
@@ -81,15 +73,15 @@ export default class Page {
     document.head.appendChild(style);
   }
 
-  public static ensurePlayAllButton() {
+  public static ensurePlayAllButton(channelId: string) {
     if (!this.hasPlayAllButton) {
-      this.addPlayAllButton();
+      this.addPlayAllButton(channelId);
     }
   }
 
-  public static addPlayAllButton() {
+  public static addPlayAllButton(channelId: string) {
     const playAllButton = document.createElement("a");
-    const playListPath = this._getPlayListPath();
+    const playListPath = this._getPlayListPath(channelId);
     playAllButton.classList.add("play-all-btn");
     if (playListPath) {
       playAllButton.href = playListPath;
@@ -102,7 +94,7 @@ export default class Page {
     buttonHolder?.appendChild(playAllButton);
   }
 
-  private static _getPlayListPath(): string {
+  private static _getPlayListPath(channelId: string): string {
     if (this.sortKind === "Oldest") {
       const oldestVideoHref = document.querySelector<HTMLLinkElement>(
         "ytd-browse [href^='/watch?v='],ytd-browse [href^='/shorts/']",
@@ -110,9 +102,9 @@ export default class Page {
       const videoId = oldestVideoHref?.match(/(?:watch\?v=|shorts\/)([^&]*)/)?.at(1);
       return videoId ? `/watch?v=${videoId}&list=UL01234567890` : "";
     } else {
-      if (this.channelId && this.videoKind && this.sortKind) {
+      if (channelId && this.videoKind && this.sortKind) {
         const playlistPrefix = this._getPlayListPrefix(this.videoKind, this.sortKind);
-        return `/playlist?list=${playlistPrefix}${this.channelId}&playnext=1`;
+        return `/playlist?list=${playlistPrefix}${channelId}&playnext=1`;
       } else {
         return "";
       }
