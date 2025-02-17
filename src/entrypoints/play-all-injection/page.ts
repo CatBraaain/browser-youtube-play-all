@@ -105,7 +105,7 @@ export default class Page {
   private static _getPlayListPath(): string {
     if (this.sortKind === "Oldest") {
       const oldestVideoHref = document.querySelector<HTMLLinkElement>(
-        "[href^='/watch?v='],[href^='/shorts/']",
+        "ytd-browse [href^='/watch?v='],ytd-browse [href^='/shorts/']",
       )?.href;
       const videoId = oldestVideoHref?.match(/(?:watch\?v=|shorts\/)([^&]*)/)?.at(1);
       return videoId ? `/watch?v=${videoId}&list=UL01234567890` : "";
