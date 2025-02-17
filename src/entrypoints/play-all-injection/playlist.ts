@@ -11,11 +11,12 @@
   }
 
   private _getChannelId(): string {
-    return document
-      .querySelector<HTMLLinkElement>("link[rel='canonical']")!
-      .href.split("/")
-      .at(-1)!
-      .slice(2);
+    const link =
+      document.querySelector<HTMLLinkElement>("[href^='https://www.youtube.com/channel/']") ??
+      document.querySelector<HTMLLinkElement>("ytd-search [href^='/channel/']");
+    const pathSegments = link!.href.split(/[/?]/);
+    const channelId = pathSegments[pathSegments.indexOf("channel") + 1].slice(2);
+    return channelId;
   }
 
   private _getVideoKind(): VideoKind {
