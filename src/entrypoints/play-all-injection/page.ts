@@ -102,7 +102,7 @@ export default class Page {
       const oldestVideoHref = document.querySelector<HTMLLinkElement>(
         "#thumbnail[href^='/watch?v=']",
       )!.href;
-      return `${oldestVideoHref}&list=ULcxqQ59vzyTk`;
+      return `${oldestVideoHref}&list=UL01234567890`;
     } else {
       const playlistPrefix = this._getPlayListPrefix(this.videoKind, this.sortKind);
       return `/playlist?list=${playlistPrefix}${this.channelId}&playnext=1`;
