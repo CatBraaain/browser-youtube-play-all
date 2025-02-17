@@ -1,3 +1,4 @@
+.env*
 .wxt
 dist
 node_modules
