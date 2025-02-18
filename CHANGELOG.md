@@ -1,3 +1,11 @@
+
+## [0.0.3] - 2025-02-18
+
+### 🐛 Bug Fixes
+
+- Playlist links to previous channel
+- Fix minor memory issue of page observer
+
 ## [0.0.2] - 2025-02-18
 
 ### 🐛 Bug Fixes
