@@ -1,6 +1,7 @@
-import { defineContentScript } from "wxt/sandbox";
+﻿import { defineContentScript } from "wxt/sandbox";
 
-import Page from "./page";
+import ChannelPage from "./channel-page";
+import YoutubePage from "./youtube-page";
 
 export default defineContentScript({
   matches: ["https://www.youtube.com/*"],
@@ -9,32 +10,23 @@ export default defineContentScript({
 });
 
 function main() {
-  Page.applyStyleForPlayAllButton();
-
-  let page = new Page("");
-  let observer: MutationObserver | null = null;
+  YoutubePage.applyStyleForPlayAllButton();
 
   // Triggered when navigating to the videos, shorts, or streams page
   window.addEventListener("yt-navigate-finish", (e: any) => {
-    if (!page.isOnSupportedPage) {
+    if (!ChannelPage.isOnSupportedPage) {
       return;
     }
 
     const channelId = e.detail.endpoint.browseEndpoint.browseId.slice(2);
-    if (page.channelId !== channelId) {
-      page = new Page(channelId);
-      observer?.disconnect();
-    }
+    const channelPage = new ChannelPage(channelId);
+    channelPage.ensurePlayAllButton();
 
-    observer = new MutationObserver(() => {
-      if (page.isOnSupportedPage) {
-        page.ensurePlayAllButton(channelId);
+    const observer = new MutationObserver(() => {
+      if (ChannelPage.isOnSupportedPage) {
+        channelPage.ensurePlayAllButton();
       }
     });
-
-    observer.disconnect();
-
-    page.ensurePlayAllButton(channelId);
 
     // Callback will be triggered when changing the sort to latest/popular/oldest
     const buttonHolder = document.querySelector("#primary #header #chips")!;
