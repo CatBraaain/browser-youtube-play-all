@@ -1,9 +1,9 @@
 export default class Page {
-  public static get isOnSupportedPage() {
+  public get isOnSupportedPage() {
     return this.videoKind !== null;
   }
 
-  public static get videoKind(): VideoKind {
+  public get videoKind(): VideoKind {
     const videoKind = window.location.pathname.split("/").at(-1)!.split("?")[0];
     switch (videoKind) {
       case "videos":
@@ -17,7 +17,7 @@ export default class Page {
     }
   }
 
-  public static get sortKind(): SortKind {
+  public get sortKind(): SortKind {
     const selectedButton = document.querySelector("#primary #header #chips>[selected]");
     const index = selectedButton
       ? Array.from(selectedButton.parentNode?.children ?? []).indexOf(selectedButton)
@@ -34,8 +34,13 @@ export default class Page {
     }
   }
 
-  public static get hasPlayAllButton() {
+  public get hasPlayAllButton() {
     return !!document.querySelector(".play-all-btn");
+  }
+
+  public channelId: string;
+  public constructor(channelId: string) {
+    this.channelId = channelId;
   }
 
   public static applyStyleForPlayAllButton() {
@@ -73,13 +78,13 @@ export default class Page {
     document.head.appendChild(style);
   }
 
-  public static ensurePlayAllButton(channelId: string) {
+  public ensurePlayAllButton(channelId: string) {
     if (!this.hasPlayAllButton) {
       this.addPlayAllButton(channelId);
     }
   }
 
-  public static addPlayAllButton(channelId: string) {
+  public addPlayAllButton(channelId: string) {
     const playAllButton = document.createElement("a");
     const playListPath = this._getPlayListPath(channelId);
     playAllButton.classList.add("play-all-btn");
@@ -94,7 +99,7 @@ export default class Page {
     buttonHolder?.appendChild(playAllButton);
   }
 
-  private static _getPlayListPath(channelId: string): string {
+  private _getPlayListPath(channelId: string): string {
     if (this.sortKind === "Oldest") {
       const oldestVideoHref = document.querySelector<HTMLLinkElement>(
         "ytd-browse [href^='/watch?v='],ytd-browse [href^='/shorts/']",
@@ -111,7 +116,7 @@ export default class Page {
     }
   }
 
-  private static _getPlayListPrefix(videoKind: VideoKind, sortKind: SortKind): string {
+  private _getPlayListPrefix(videoKind: VideoKind, sortKind: SortKind): string {
     switch (true) {
       case videoKind === "Videos" && sortKind === "Latest":
         return "UULF";

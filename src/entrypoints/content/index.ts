@@ -11,24 +11,30 @@ export default defineContentScript({
 function main() {
   Page.applyStyleForPlayAllButton();
 
+  let page = new Page("");
   let observer: MutationObserver | null = null;
 
   // Triggered when navigating to the videos, shorts, or streams page
   window.addEventListener("yt-navigate-finish", (e: any) => {
-    if (!Page.isOnSupportedPage) {
+    if (!page.isOnSupportedPage) {
       return;
     }
 
     const channelId = e.detail.endpoint.browseEndpoint.browseId.slice(2);
-    observer ??= new MutationObserver(() => {
-      if (Page.isOnSupportedPage) {
-        Page.ensurePlayAllButton(channelId);
+    if (page.channelId !== channelId) {
+      page = new Page(channelId);
+      observer?.disconnect();
+    }
+
+    observer = new MutationObserver(() => {
+      if (page.isOnSupportedPage) {
+        page.ensurePlayAllButton(channelId);
       }
     });
 
     observer.disconnect();
 
-    Page.ensurePlayAllButton(channelId);
+    page.ensurePlayAllButton(channelId);
 
     // Callback will be triggered when changing the sort to latest/popular/oldest
     const buttonHolder = document.querySelector("#primary #header #chips")!;
