@@ -8,12 +8,6 @@ export default defineConfig({
   extensionApi: "chrome",
   manifest: ({ browser }) => ({
     name: "Youtube Play All",
-    web_accessible_resources: [
-      {
-        resources: ["play-all-injection.js"],
-        matches: ["https://www.youtube.com/*"],
-      },
-    ],
   }),
   zip: {
     artifactTemplate: "{{browser}}.zip",
