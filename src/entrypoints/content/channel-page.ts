@@ -1,9 +1,9 @@
-export default class Page {
-  public get isOnSupportedPage() {
-    return this.videoKind !== null;
+export default class ChannelPage {
+  public static get isOnSupportedPage() {
+    return !!this.videoKind;
   }
 
-  public get videoKind(): VideoKind {
+  public static get videoKind(): VideoKindNullable {
     const videoKind = window.location.pathname.split("/").at(-1)!.split("?")[0];
     switch (videoKind) {
       case "videos":
@@ -17,7 +17,7 @@ export default class Page {
     }
   }
 
-  public get sortKind(): SortKind {
+  public static get sortKind(): SortKindNullable {
     const selectedButton = document.querySelector("#primary #header #chips>[selected]");
     const index = selectedButton
       ? Array.from(selectedButton.parentNode?.children ?? []).indexOf(selectedButton)
@@ -34,63 +34,29 @@ export default class Page {
     }
   }
 
-  public get hasPlayAllButton() {
+  public static get hasPlayAllButton() {
     return !!document.querySelector(".play-all-btn");
   }
 
   public channelId: string;
+
   public constructor(channelId: string) {
     this.channelId = channelId;
   }
 
-  public static applyStyleForPlayAllButton() {
-    const style = document.createElement("style");
-    style.textContent = `
-      .play-all-btn {
-        background-color: #8000FF;
-        color: #F1F1F1;
-
-        height: 32px;
-        min-width: 12px;
-
-        display: inline-flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-        margin-left: 12px;
-
-        border-radius: 8px;
-        padding: 0 12px;
-
-        font-family: 'Roboto', 'Arial', sans-serif;
-        font-size: 1.4rem;
-        font-weight: 500;
-        text-decoration: none;
-
-        cursor: pointer;
-      }
-
-      .play-all-btn:hover,
-      .play-all-btn:focus {
-        background-color:#9B33FF;
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  public ensurePlayAllButton(channelId: string) {
-    if (!this.hasPlayAllButton) {
-      this.addPlayAllButton(channelId);
+  public ensurePlayAllButton() {
+    if (!ChannelPage.hasPlayAllButton) {
+      this.addPlayAllButton(ChannelPage.videoKind, ChannelPage.sortKind);
     }
   }
 
-  public addPlayAllButton(channelId: string) {
+  public addPlayAllButton(videoKind: VideoKindNullable, sortKind: SortKindNullable) {
     const playAllButton = document.createElement("a");
-    const playListPath = this._getPlayListPath(channelId);
     playAllButton.classList.add("play-all-btn");
-    if (playListPath) {
+    if (videoKind && sortKind) {
+      const playListPath = this._getPlayListPath(videoKind, sortKind);
       playAllButton.href = playListPath;
-      playAllButton.textContent = `Play All (${this.sortKind})`;
+      playAllButton.textContent = `Play All (${sortKind})`;
     } else {
       playAllButton.textContent = `Play All (Not Available)`;
     }
@@ -99,17 +65,17 @@ export default class Page {
     buttonHolder?.appendChild(playAllButton);
   }
 
-  private _getPlayListPath(channelId: string): string {
-    if (this.sortKind === "Oldest") {
+  private _getPlayListPath(videoKind: VideoKind, sortKind: SortKind): string {
+    if (sortKind === "Oldest") {
       const oldestVideoHref = document.querySelector<HTMLLinkElement>(
         "ytd-browse [href^='/watch?v='],ytd-browse [href^='/shorts/']",
       )?.href;
       const videoId = oldestVideoHref?.match(/(?:watch\?v=|shorts\/)([^&]*)/)?.at(1);
       return videoId ? `/watch?v=${videoId}&list=UL01234567890` : "";
     } else {
-      if (channelId && this.videoKind && this.sortKind) {
-        const playlistPrefix = this._getPlayListPrefix(this.videoKind, this.sortKind);
-        return `/playlist?list=${playlistPrefix}${channelId}&playnext=1`;
+      if (videoKind && sortKind) {
+        const playlistPrefix = this._getPlayListPrefix(videoKind, sortKind);
+        return `/playlist?list=${playlistPrefix}${this.channelId}&playnext=1`;
       } else {
         return "";
       }
@@ -136,5 +102,8 @@ export default class Page {
   }
 }
 
-type VideoKind = "Videos" | "Shorts" | "Streams" | null;
-type SortKind = "Latest" | "Popular" | "Oldest" | null;
+type VideoKind = "Videos" | "Shorts" | "Streams";
+type SortKind = "Latest" | "Popular" | "Oldest";
+
+type VideoKindNullable = VideoKind | null;
+type SortKindNullable = SortKind | null;
