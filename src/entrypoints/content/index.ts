@@ -15,6 +15,10 @@ function main() {
 
   // Triggered when navigating to the videos, shorts, or streams page
   window.addEventListener("yt-navigate-finish", (e: any) => {
+    if (!Page.isOnSupportedPage) {
+      return;
+    }
+
     const channelId = e.detail.endpoint.browseEndpoint.browseId.slice(2);
     observer ??= new MutationObserver(() => {
       if (Page.isOnSupportedPage) {
@@ -22,18 +26,16 @@ function main() {
       }
     });
 
-    if (Page.isOnSupportedPage) {
-      observer.disconnect();
+    observer.disconnect();
 
-      Page.ensurePlayAllButton(channelId);
+    Page.ensurePlayAllButton(channelId);
 
-      // Callback will be triggered when changing the sort to latest/popular/oldest
-      const buttonHolder = document.querySelector("#primary #header #chips")!;
-      observer.observe(buttonHolder, {
-        subtree: true,
-        childList: false,
-        attributes: true,
-      });
-    }
+    // Callback will be triggered when changing the sort to latest/popular/oldest
+    const buttonHolder = document.querySelector("#primary #header #chips")!;
+    observer.observe(buttonHolder, {
+      subtree: true,
+      childList: false,
+      attributes: true,
+    });
   });
 }
