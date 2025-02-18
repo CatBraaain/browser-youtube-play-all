@@ -1,8 +1,12 @@
-﻿import { defineUnlistedScript } from "wxt/sandbox";
+﻿import { defineContentScript } from "wxt/sandbox";
 
 import Page from "./page";
 
-export default defineUnlistedScript(main);
+export default defineContentScript({
+  matches: ["https://www.youtube.com/*"],
+  runAt: "document_end",
+  main,
+});
 
 function main() {
   Page.applyStyleForPlayAllButton();
