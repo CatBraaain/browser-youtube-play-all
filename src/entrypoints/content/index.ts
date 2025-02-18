@@ -1,4 +1,4 @@
-﻿import { defineContentScript } from "wxt/sandbox";
+import { defineContentScript } from "wxt/sandbox";
 
 import Page from "./page";
 
@@ -43,5 +43,14 @@ function main() {
       childList: false,
       attributes: true,
     });
+
+    // Triggered when navigating to the videos, shorts, or streams page
+    window.addEventListener(
+      "yt-navigate-start",
+      () => {
+        observer.disconnect();
+      },
+      { once: true },
+    );
   });
 }
