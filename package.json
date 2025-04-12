@@ -42,6 +42,6 @@
     "prettier-plugin-packagejson": "^2.5.10",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.29.1",
-    "wxt": "^0.19.27"
+    "wxt": "^0.20.0"
   }
 }

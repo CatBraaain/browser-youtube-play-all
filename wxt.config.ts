@@ -5,7 +5,6 @@ export default defineConfig({
   srcDir: "src",
   outDir: "dist",
   imports: false,
-  extensionApi: "chrome",
   manifest: ({ browser }) => ({
     name: "Youtube Play All",
   }),
