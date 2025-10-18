@@ -1,7 +1,6 @@
-﻿import ChannelPage from "./channel-page";
+﻿import { defineContentScript } from "#imports";
+import ChannelPage from "./channel-page";
 import YoutubePage from "./youtube-page";
-
-import { defineContentScript } from "#imports";
 
 export default defineContentScript({
   matches: ["https://www.youtube.com/*"],

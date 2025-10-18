@@ -1,6 +1,6 @@
 export default class ChannelPage {
   public static get isOnSupportedPage() {
-    return !!this.videoKind;
+    return !!ChannelPage.videoKind;
   }
 
   public static get videoKind(): VideoKindNullable {
@@ -18,9 +18,13 @@ export default class ChannelPage {
   }
 
   public static get sortKind(): SortKindNullable {
-    const selectedButton = document.querySelector("#primary #header #chips>[selected]");
+    const selectedButton = document.querySelector(
+      "#primary #header #chips>[selected]",
+    );
     const index = selectedButton
-      ? Array.from(selectedButton.parentNode?.children ?? []).indexOf(selectedButton)
+      ? Array.from(selectedButton.parentNode?.children ?? []).indexOf(
+          selectedButton,
+        )
       : 0;
     switch (index) {
       case 0:
@@ -50,7 +54,10 @@ export default class ChannelPage {
     }
   }
 
-  public addPlayAllButton(videoKind: VideoKindNullable, sortKind: SortKindNullable) {
+  public addPlayAllButton(
+    videoKind: VideoKindNullable,
+    sortKind: SortKindNullable,
+  ) {
     const playAllButton = document.createElement("a");
     playAllButton.classList.add("play-all-btn");
     if (videoKind && sortKind) {
@@ -70,7 +77,9 @@ export default class ChannelPage {
       const oldestVideoHref = document.querySelector<HTMLLinkElement>(
         "ytd-browse [href^='/watch?v='],ytd-browse [href^='/shorts/']",
       )?.href;
-      const videoId = oldestVideoHref?.match(/(?:watch\?v=|shorts\/)([^&]*)/)?.at(1);
+      const videoId = oldestVideoHref
+        ?.match(/(?:watch\?v=|shorts\/)([^&]*)/)
+        ?.at(1);
       return videoId ? `/watch?v=${videoId}&list=UL01234567890` : "";
     } else {
       if (videoKind && sortKind) {
