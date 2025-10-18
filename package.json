@@ -36,7 +36,6 @@
     "eslint-config-alloy": "^5.1.2",
     "eslint-import-resolver-typescript": "^4.3.2",
     "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-no-autofix": "^2.1.0",
     "eslint-plugin-unused-imports": "^4.1.4",
     "prettier": "^3.5.3",
     "prettier-plugin-packagejson": "^2.5.10",

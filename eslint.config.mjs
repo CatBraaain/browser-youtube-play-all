@@ -5,37 +5,14 @@ import eslint from "@eslint/js";
 import alloy from "eslint-config-alloy/base.js";
 import alloyts from "eslint-config-alloy/typescript.js";
 import importPlugin from "eslint-plugin-import";
-import noAutoFix from "eslint-plugin-no-autofix";
 import unusedImports from "eslint-plugin-unused-imports";
 import tseslint from "typescript-eslint";
 
 function main() {
   const setting = Object.values(SettingConfig).flat();
   const main = Object.values(MainConfig).flat();
-  const linting = Object.values(LintingConfig)
-    .flat()
-    .map((config) => unfixable(config));
+  const linting = Object.values(LintingConfig).flat();
   return tseslint.config(...setting, ...main, ...linting);
-}
-
-function unfixable(config) {
-  if (!config.rules) {
-    return config;
-  }
-  const newRules = Object.fromEntries(
-    Object.entries(config.rules).flatMap(([key, value]) => [
-      [key, "off"],
-      [`noAutoFix/` + key, value],
-    ]),
-  );
-  return {
-    ...config,
-    plugins: {
-      ...config.plugins,
-      noAutoFix: noAutoFix,
-    },
-    rules: newRules,
-  };
 }
 
 class SettingConfig {
