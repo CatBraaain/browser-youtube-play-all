@@ -12,7 +12,7 @@
     "dev:chrome": "wxt -b chrome",
     "dev:firefox": "wxt -b firefox",
     "publish": "bun run zip && wxt submit",
-    "setup": "wxt prepare",
+    "setup": "bun install && wxt prepare && lefthook install",
     "typecheck": "tsc --noEmit",
     "zip": "conc bun:zip:*",
     "zip:chrome": "wxt zip -b chrome",
@@ -22,6 +22,8 @@
     "@biomejs/biome": "^2.2.6",
     "@types/chrome": "^0.0.315",
     "concurrently": "^9.1.2",
+    "lefthook": "^1.13.6",
+    "sort-package-json": "^3.4.0",
     "typescript": "^5.8.3",
     "wxt": "^0.20.0"
   }

@@ -1,0 +1,15 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: biome
+      glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
+      run: bunx biome check --no-errors-on-unmatched --files-ignore-unknown=true --colors=off {staged_files}
+    - name: bun
+      glob: "{package.json,bun.lock}"
+      run: bun ci
+    - name: sort-package-json
+      glob: "package.json"
+      run: bunx sort-package-json --check {staged_files}
+    - name: typecheck
+      glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx}"
+      run: bunx tsc --noEmit
