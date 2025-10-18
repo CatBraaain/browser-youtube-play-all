@@ -5,42 +5,24 @@
   "description": "Adds a 'Play All' button to YouTube, allowing video playback in Latest, Popular, or Oldest order.",
   "type": "module",
   "scripts": {
-    "build": "conc npm:typecheck npm:build:*",
+    "build": "conc bun:typecheck \"bun:build:*\"",
     "build:chrome": "wxt build -b chrome",
     "build:firefox": "wxt build -b firefox",
-    "dev": "conc npm:typecheck npm:dev:* --restart-tries 1",
+    "dev": "conc bun:typecheck \"bun:dev:*\" --restart-tries 1",
     "dev:chrome": "wxt -b chrome",
     "dev:firefox": "wxt -b firefox",
-    "publish": "npm run zip && wxt submit",
+    "publish": "bun run zip && wxt submit",
     "setup": "wxt prepare",
     "typecheck": "tsc --noEmit",
-    "zip": "conc npm:zip:*",
+    "zip": "conc bun:zip:*",
     "zip:chrome": "wxt zip -b chrome",
     "zip:firefox": "wxt zip -b firefox"
   },
-  "prettier": {
-    "arrowParens": "always",
-    "plugins": [
-      "prettier-plugin-packagejson"
-    ],
-    "printWidth": 100,
-    "trailingComma": "all"
-  },
   "devDependencies": {
-    "@eslint/compat": "^1.2.8",
-    "@eslint/js": "^9.24.0",
+    "@biomejs/biome": "^2.2.6",
     "@types/chrome": "^0.0.315",
-    "@typescript-eslint/parser": "^8.29.1",
     "concurrently": "^9.1.2",
-    "eslint": "^9.24.0",
-    "eslint-config-alloy": "^5.1.2",
-    "eslint-import-resolver-typescript": "^4.3.2",
-    "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-unused-imports": "^4.1.4",
-    "prettier": "^3.5.3",
-    "prettier-plugin-packagejson": "^2.5.10",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.29.1",
     "wxt": "^0.20.0"
   }
 }
