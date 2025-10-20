@@ -22,6 +22,8 @@
     "fix:sort-package-json": "sort-package-json package.json",
     "publish": "bun run zip && wxt submit",
     "setup": "bun install && wxt prepare && lefthook install",
+    "test": "bunx playwright test",
+    "test-ui": "bunx playwright test --ui",
     "typecheck": "tsc --noEmit",
     "zip": "conc bun:zip:*",
     "zip:chrome": "wxt zip -b chrome",
@@ -32,6 +34,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.6",
+    "@playwright/test": "^1.56.1",
     "@types/chrome": "^0.1.24",
     "concurrently": "^9.2.1",
     "lefthook": "^1.13.6",
