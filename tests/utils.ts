@@ -59,12 +59,80 @@ export class EventWatcher {
   }
 }
 
-export const ytTest = test.extend<{ eventWatcher: EventWatcher }>({
+class ChannelIdFinder {
+  constructor(private page: Page) {}
+
+  public async setInitScript() {
+    await this.page.addInitScript(
+      ({ eventName, globalVar }: { eventName: string; globalVar: string }) => {
+        (window as any)[globalVar] = false;
+        window.addEventListener(eventName, (e) => {
+          (window as any)[globalVar] = (e as CustomEvent).detail;
+        });
+      },
+      {
+        eventName: "yt-navigate-finish",
+        globalVar: "__yt-navigate-finish",
+      },
+    );
+  }
+
+  async exceptFromNavigationEvent(exists: boolean) {
+    const lastEvent = await this.page.evaluate(
+      () => (window as any)["__yt-navigate-finish"],
+    );
+    const channelId = lastEvent?.endpoint.browseEndpoint.browseId;
+    exists
+      ? expect(channelId).toEqual(expect.stringMatching(/UC.*/))
+      : expect(channelId).toBeUndefined();
+  }
+
+  async exceptFromCanonicalLink(exists: boolean) {
+    const locator = this.page.locator('[rel="canonical"]');
+    const channelId =
+      (await locator.count()) > 0
+        ? (await locator.first().getAttribute("href"))!
+        : undefined;
+    exists
+      ? expect(channelId).toEqual(expect.stringMatching(/UC.*/))
+      : expect(channelId).toBeUndefined();
+  }
+
+  async exceptFromYtInitialData(exists: boolean) {
+    const channelId = await this.page.evaluate(
+      () =>
+        (window as any).ytInitialData.responseContext.serviceTrackingParams
+          .find((e: any) => e.service === "GOOGLE_HELP")
+          ?.params.find((e: any) => e.key === "browse_id").value,
+    );
+    exists
+      ? expect(channelId).toEqual(expect.stringMatching(/UC.*/))
+      : await expect(channelId).toBeUndefined();
+  }
+
+  async exceptFromYtCommand(exists: boolean) {
+    const channelId = await this.page.evaluate(
+      () => (window as any).ytCommand.browseEndpoint?.browseId,
+    );
+    exists
+      ? expect(channelId).toEqual(expect.stringMatching(/UC.*/))
+      : await expect(channelId).toBeUndefined();
+  }
+}
+
+export const ytTest = test.extend<{
+  eventWatcher: EventWatcher;
+  channelIdFinder: ChannelIdFinder;
+}>({
   eventWatcher: async ({ page }, use) => {
     const eventWatcher = new EventWatcher(page);
     await eventWatcher.setInitScript("yt-navigate-start");
     await eventWatcher.setInitScript("yt-navigate-finish");
-
     await use(eventWatcher);
+  },
+  channelIdFinder: async ({ page }, use) => {
+    const channelIdFinder = new ChannelIdFinder(page);
+    await channelIdFinder.setInitScript();
+    await use(channelIdFinder);
   },
 });
