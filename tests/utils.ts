@@ -49,7 +49,7 @@ export class EventWatcher {
   }
 
   private getFlagName(eventName: string) {
-    return `__${eventName}Fired`;
+    return `__${eventName}_fired`;
   }
 
   private async resetFlag(flagName: string) {
