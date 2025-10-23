@@ -17,7 +17,7 @@ function main() {
       return;
     }
 
-    const channelId = e.detail.endpoint.browseEndpoint.browseId.slice(2);
+    const channelId = e.detail.endpoint.browseEndpoint.browseId;
     const channelPage = new ChannelPage(channelId);
     channelPage.ensurePlayAllButton();
 
