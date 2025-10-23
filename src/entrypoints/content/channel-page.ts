@@ -84,7 +84,7 @@ export default class ChannelPage {
     } else {
       if (videoKind && sortKind) {
         const playlistPrefix = this._getPlayListPrefix(videoKind, sortKind);
-        return `/playlist?list=${playlistPrefix}${this.channelId}&playnext=1`;
+        return `/playlist?list=${playlistPrefix}${this.channelId.slice(2)}&playnext=1`;
       } else {
         return "";
       }
