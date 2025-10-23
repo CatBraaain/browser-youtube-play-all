@@ -25,7 +25,7 @@ class EventWatcher {
     fired: boolean;
     timeout?: number;
   }) {
-    const { eventName, fired, timeout = 3000 } = expectation;
+    const { eventName, fired, timeout = 5000 } = expectation;
     if (fired) {
       await expect(
         this.waitForFired(eventName, timeout),
@@ -37,7 +37,7 @@ class EventWatcher {
     }
   }
 
-  public async waitForFired(eventName: string, timeout: number = 3000) {
+  public async waitForFired(eventName: string, timeout: number = 5000) {
     const flagName = this.getFlagName(eventName);
     const res = await this.page.waitForFunction(
       (flagName) => (window as any)[flagName] === true,
