@@ -1,32 +1,34 @@
-import { test as baseTest } from "@playwright/test";
-import { EventWatcher } from "./utils";
-
-const test = baseTest.extend<{ eventWatcher: EventWatcher }>({
-  eventWatcher: async ({ page }, use) => {
-    const eventWatcher = new EventWatcher(page);
-    await eventWatcher.setInitScript("yt-navigate-start");
-    await eventWatcher.setInitScript("yt-navigate-finish");
-
-    await use(eventWatcher);
-  },
-});
+import { ytTest } from "./utils";
 
 const youtubeChannels = ["@TaylorSwift", "@MrBeast", "@BBCNews"];
 youtubeChannels.forEach((channelName, i) => {
-  test(`soft navigation ${i}: event fired`, async ({ page, eventWatcher }) => {
+  ytTest(`event: soft navigation ${i}`, async ({ page, eventWatcher }) => {
     await page.goto(`https://www.youtube.com/${channelName}`);
 
     const videoTabButton = page.locator('[role="tablist"] [role="tab"]').nth(1);
     await videoTabButton.click();
-    await eventWatcher.expectFired("yt-navigate-start");
+    await eventWatcher.expect({
+      eventName: "yt-navigate-start",
+      fired: true,
+    });
 
     await page.waitForURL(`https://www.youtube.com/${channelName}/videos`);
-    await eventWatcher.expectFired("yt-navigate-finish");
+    await eventWatcher.expect({
+      eventName: "yt-navigate-finish",
+      fired: true,
+    });
   });
 
-  test(`hard navigation ${i}: event fired`, async ({ page, eventWatcher }) => {
+  ytTest(`event: hard navigation ${i}`, async ({ page, eventWatcher }) => {
     await page.goto(`https://www.youtube.com/${channelName}/videos`);
-    await eventWatcher.expectFired("yt-navigate-finish");
-    await eventWatcher.expectNotFired("yt-navigate-start", 0);
+    await eventWatcher.expect({
+      eventName: "yt-navigate-finish",
+      fired: true,
+    });
+    await eventWatcher.expect({
+      eventName: "yt-navigate-start",
+      fired: false,
+      timeout: 0,
+    });
   });
 });
