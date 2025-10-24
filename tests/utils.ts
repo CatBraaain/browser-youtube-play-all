@@ -1,5 +1,6 @@
+import path from "node:path";
 import type { Page } from "@playwright/test";
-import { expect, test } from "@playwright/test";
+import { chromium, expect, test } from "@playwright/test";
 
 class EventWatcher {
   private page: Page;
@@ -134,5 +135,32 @@ export const ytTest = test.extend<{
     const channelIdFinder = new ChannelIdFinder(page);
     await channelIdFinder.setInitScript();
     await use(channelIdFinder);
+  },
+});
+
+export const ytxTest = ytTest.extend({
+  context: async ({ browserName }, use) => {
+    switch (browserName) {
+      case "chromium": {
+        const chromeExtensionPath = path.join(
+          import.meta.dirname,
+          "../dist/chrome-mv3",
+        );
+        const context = await chromium.launchPersistentContext("", {
+          channel: "chromium",
+          args: [
+            `--disable-extensions-except=${chromeExtensionPath}`,
+            `--load-extension=${chromeExtensionPath}`,
+            "--mute-audio",
+          ],
+        });
+        await use(context);
+        await context.close();
+        break;
+      }
+      default: {
+        throw new Error("Unsupported browser");
+      }
+    }
   },
 });
