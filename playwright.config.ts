@@ -22,5 +22,13 @@ export default defineConfig({
       },
       testDir: path.join(import.meta.dirname, "tests/specs"),
     },
+    {
+      name: "chromium-e2e-tests",
+      use: {
+        ...devices["Desktop Chrome"],
+        channel: "chromium",
+      },
+      testDir: path.join(import.meta.dirname, "tests/e2e"),
+    },
   ],
 });
