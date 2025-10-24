@@ -21,7 +21,12 @@
         "noUnusedFunctionParameters": "off"
       },
       "style": {
-        "noNonNullAssertion": "off"
+        "noNonNullAssertion": "off",
+        "useNodejsImportProtocol": {
+          "level": "warn",
+          "fix": "safe",
+          "options": {}
+        }
       },
       "suspicious": {
         "noExplicitAny": "off"
