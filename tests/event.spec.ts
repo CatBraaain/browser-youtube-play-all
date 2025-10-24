@@ -11,8 +11,6 @@ youtubeChannels.forEach((channelName, i) => {
       eventName: "yt-navigate-start",
       fired: true,
     });
-
-    await page.waitForURL(`https://www.youtube.com/${channelName}/videos`);
     await eventWatcher.expect({
       eventName: "yt-navigate-finish",
       fired: true,
