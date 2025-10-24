@@ -1,4 +1,4 @@
-import { ytTest } from "./utils";
+import { ytTest } from "../utils";
 
 const youtubeChannels = ["@TaylorSwift", "@MrBeast", "@BBCNews"];
 youtubeChannels.forEach((channelName, i) => {

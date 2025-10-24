@@ -1,4 +1,4 @@
-import { ytTest } from "./utils";
+import { ytTest } from "../utils";
 
 type ChannelIdTestCase = {
   channelButtonSelector: string;
