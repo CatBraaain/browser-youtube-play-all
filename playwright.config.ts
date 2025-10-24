@@ -1,3 +1,4 @@
+import path from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
@@ -5,12 +6,21 @@ export default defineConfig({
   fullyParallel: true,
   projects: [
     {
-      name: "chromium",
+      name: "chromium-specs",
       use: devices["Desktop Chrome"],
+      testDir: path.join(import.meta.dirname, "tests/specs"),
     },
     {
-      name: "firefox",
-      use: devices["Desktop Firefox"],
+      name: "firefox-specs",
+      use: {
+        ...devices["Desktop Firefox"],
+        launchOptions: {
+          firefoxUserPrefs: {
+            "media.autoplay.blocking_policy": 2, // altearnative to --mute-audio
+          },
+        },
+      },
+      testDir: path.join(import.meta.dirname, "tests/specs"),
     },
   ],
 });
