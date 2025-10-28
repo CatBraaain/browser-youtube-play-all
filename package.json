@@ -25,7 +25,7 @@
     "test": "bunx playwright test",
     "test-ui": "bunx playwright test --ui",
     "typecheck": "tsc --noEmit",
-    "zip": "conc bun:zip:*",
+    "zip": "conc \"bun:zip:*\"",
     "zip:chrome": "wxt zip -b chrome",
     "zip:firefox": "wxt zip -b firefox"
   },
