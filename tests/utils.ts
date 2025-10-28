@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { chromium, expect, test } from "@playwright/test";
 
 class EventWatcher {
@@ -38,7 +38,7 @@ class EventWatcher {
     }
   }
 
-  public async waitForFired(eventName: string, timeout: number = 5000) {
+  public async waitForFired(eventName: string, timeout: number = 10000) {
     const flagName = this.getFlagName(eventName);
     const res = await this.page.waitForFunction(
       (flagName) => (window as any)[flagName] === true,
@@ -164,3 +164,121 @@ export const ytxTest = ytTest.extend({
     }
   },
 });
+
+export class YtSearchPage {
+  constructor(
+    private page: Page,
+    private eventWatcher: EventWatcher,
+  ) {}
+
+  public get topChannelThumbnailButton(): Locator {
+    return this.page.locator("#channel-thumbnail").first(); // [href^="/channel/"] or [href^="link:///"]
+  }
+  public get topChannelNameButton(): Locator {
+    return this.page.locator("#channel-info #channel-name").first();
+  }
+
+  public async search(searchWord: string): Promise<void> {
+    await this.page.goto(
+      `https://www.youtube.com/results?search_query=${searchWord}`,
+    );
+    await this.eventWatcher.waitForFired("yt-navigate-finish");
+  }
+
+  public async navigateToTopChannel(navigation: "soft1" | "soft2" | "hard") {
+    switch (navigation) {
+      case "soft1":
+        this.topChannelThumbnailButton.click();
+        await this.eventWatcher.waitForFired("yt-navigate-finish");
+        break;
+      case "soft2":
+        this.topChannelNameButton.click();
+        await this.eventWatcher.waitForFired("yt-navigate-finish");
+        break;
+      case "hard": {
+        const relUrl =
+          await this.topChannelThumbnailButton.getAttribute("href");
+        await this.page.goto(`https://www.youtube.com${relUrl}`);
+        await this.eventWatcher.waitForFired("yt-navigate-finish");
+        break;
+      }
+    }
+  }
+}
+
+export class YtVideoPage {
+  constructor(
+    private page: Page,
+    private eventWatcher: EventWatcher,
+  ) {}
+
+  public get channelThumbnailButton(): Locator {
+    return this.page.locator("#owner [href]").first();
+  }
+  public get channelNameButton(): Locator {
+    return this.page.locator("#upload-info [href]").first();
+  }
+
+  public async fromChannel(channelName: string) {
+    await this.page.goto(`https://www.youtube.com/${channelName}/videos`);
+    await this.eventWatcher.waitForFired("yt-navigate-finish");
+    const videoRelUrl = await this.page
+      .locator('[href^="/watch?"]')
+      .first()
+      .getAttribute("href");
+    await this.page.goto(`https://www.youtube.com${videoRelUrl}`);
+    await this.eventWatcher.waitForFired("yt-navigate-finish");
+  }
+
+  public async navigateToChannel(
+    navigation: "soft1" | "soft2" | "hard",
+  ): Promise<void> {
+    switch (navigation) {
+      case "soft1":
+        this.channelThumbnailButton.click();
+        break;
+      case "soft2":
+        this.channelNameButton.click();
+        break;
+      case "hard": {
+        const relUrl = await this.channelThumbnailButton.getAttribute("href");
+        await this.page.goto(`https://www.youtube.com${relUrl}`);
+      }
+    }
+    await this.eventWatcher.waitForFired("yt-navigate-finish");
+  }
+}
+
+export class YtChannelPage {
+  constructor(
+    private page: Page,
+    private eventWatcher: EventWatcher,
+  ) {}
+
+  public get videoTab(): Locator {
+    return this.page.locator('[role="tablist"] [role="tab"]').nth(1);
+  }
+
+  public async visit(channelName: string) {
+    await this.page.goto(`https://www.youtube.com/${channelName}`);
+    await this.eventWatcher.waitForFired("yt-navigate-finish");
+  }
+
+  public async navigateToVideoTab(
+    navigation: "soft" | "hard",
+    wait: boolean = true,
+  ) {
+    switch (navigation) {
+      case "soft":
+        await this.videoTab.click();
+        break;
+      case "hard": {
+        await this.page.goto(`${this.page.url()}/videos`);
+        break;
+      }
+    }
+    if (wait) {
+      await this.eventWatcher.waitForFired("yt-navigate-finish");
+    }
+  }
+}

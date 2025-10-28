@@ -1,32 +1,46 @@
-import { ytTest } from "../utils";
+import { YtChannelPage, ytTest } from "../utils";
+
+type EventTestCase = {
+  navigation: "soft" | "hard";
+  ytNavigateStartFired: boolean;
+  ytNavigateFinishFired: boolean;
+};
 
 const youtubeChannels = ["@TaylorSwift", "@MrBeast", "@BBCNews"];
-youtubeChannels.forEach((channelName, i) => {
-  ytTest(`event: soft navigation ${i}`, async ({ page, eventWatcher }) => {
-    await page.goto(`https://www.youtube.com/${channelName}`);
+const eventTestCases: EventTestCase[] = [
+  {
+    navigation: "soft",
+    ytNavigateStartFired: true,
+    ytNavigateFinishFired: true,
+  },
+  {
+    navigation: "hard",
+    ytNavigateStartFired: false,
+    ytNavigateFinishFired: true,
+  },
+];
 
-    const videoTabButton = page.locator('[role="tablist"] [role="tab"]').nth(1);
-    await videoTabButton.click();
-    await eventWatcher.expect({
-      eventName: "yt-navigate-start",
-      fired: true,
-    });
-    await eventWatcher.expect({
-      eventName: "yt-navigate-finish",
-      fired: true,
-    });
-  });
+youtubeChannels.forEach((channelName) => {
+  eventTestCases.forEach(
+    ({ navigation, ytNavigateStartFired, ytNavigateFinishFired }) => {
+      ytTest(
+        `event: ${navigation} from ${channelName}`,
+        async ({ page, eventWatcher }) => {
+          const ytChannelPage = new YtChannelPage(page, eventWatcher);
+          await ytChannelPage.visit(channelName);
+          await ytChannelPage.navigateToVideoTab(navigation, false);
 
-  ytTest(`event: hard navigation ${i}`, async ({ page, eventWatcher }) => {
-    await page.goto(`https://www.youtube.com/${channelName}/videos`);
-    await eventWatcher.expect({
-      eventName: "yt-navigate-finish",
-      fired: true,
-    });
-    await eventWatcher.expect({
-      eventName: "yt-navigate-start",
-      fired: false,
-      timeout: 0,
-    });
-  });
+          await eventWatcher.expect({
+            eventName: "yt-navigate-finish",
+            fired: ytNavigateFinishFired,
+          });
+          await eventWatcher.expect({
+            eventName: "yt-navigate-start",
+            fired: ytNavigateStartFired,
+            timeout: 500,
+          });
+        },
+      );
+    },
+  );
 });

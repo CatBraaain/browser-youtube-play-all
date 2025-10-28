@@ -1,79 +1,38 @@
-import { ytTest } from "../utils";
+import { YtSearchPage, ytTest } from "../utils";
 
 type ChannelIdTestCase = {
-  channelButtonSelector: string;
+  navigation: "soft1" | "soft2" | "hard";
   existsOnHtml: boolean;
   existsOnEvent: boolean;
 };
 
 const searchWords = ["music", "game"];
+const channelIdTestCases: ChannelIdTestCase[] = [
+  {
+    navigation: "soft1",
+    existsOnHtml: true,
+    existsOnEvent: true,
+  },
+  {
+    navigation: "soft2",
+    existsOnHtml: false,
+    existsOnEvent: true,
+  },
+  {
+    navigation: "hard",
+    existsOnHtml: true,
+    existsOnEvent: true,
+  },
+];
 
-searchWords.forEach((searchWord, i) => {
-  const channelIdTestCases: ChannelIdTestCase[] = [
-    {
-      channelButtonSelector: "#channel-info #channel-name",
-      existsOnHtml: false,
-      existsOnEvent: true,
-    },
-    {
-      channelButtonSelector: "#channel-thumbnail", // [href^="/channel/"] or [href^="link:///"]
-      existsOnHtml: true,
-      existsOnEvent: true,
-    },
-  ];
-  channelIdTestCases.forEach((channelIdTestCase, j) => {
-    const { channelButtonSelector, existsOnHtml, existsOnEvent } =
-      channelIdTestCase;
+searchWords.forEach((searchWord) => {
+  channelIdTestCases.forEach(({ navigation, existsOnHtml, existsOnEvent }) => {
     ytTest(
-      `channelId: soft navigation ${i}-${j}`,
+      `channelId: ${navigation} from ${searchWord}`,
       async ({ page, eventWatcher, channelIdFinder }) => {
-        await page.goto(
-          `https://www.youtube.com/results?search_query=${searchWord}`,
-        );
-        await eventWatcher.waitForFired("yt-navigate-finish");
-
-        await page.locator(channelButtonSelector).first().click();
-        await eventWatcher.waitForFired("yt-navigate-finish");
-
-        await channelIdFinder.exceptFromNavigationEvent(existsOnEvent);
-        await channelIdFinder.exceptFromCanonicalLink(existsOnHtml);
-        await channelIdFinder.exceptFromYtInitialData(existsOnHtml);
-        await channelIdFinder.exceptFromYtCommand(existsOnHtml);
-      },
-    );
-  });
-});
-
-searchWords.forEach((searchWord, i) => {
-  const channelIdTestCases: ChannelIdTestCase[] = [
-    {
-      channelButtonSelector: "#channel-info #channel-name [href]",
-      existsOnHtml: true,
-      existsOnEvent: true,
-    },
-    {
-      channelButtonSelector: "#channel-thumbnail", // [href^="/channel/"] or [href^="link:///"]
-      existsOnHtml: true,
-      existsOnEvent: true,
-    },
-  ];
-  channelIdTestCases.forEach((channelIdTestCase, j) => {
-    const { channelButtonSelector, existsOnHtml, existsOnEvent } =
-      channelIdTestCase;
-    ytTest(
-      `channelId: hard navigation ${i}-${j}`,
-      async ({ page, eventWatcher, channelIdFinder }) => {
-        await page.goto(
-          `https://www.youtube.com/results?search_query=${searchWord}`,
-        );
-        await eventWatcher.waitForFired("yt-navigate-finish");
-
-        const url = await page
-          .locator(channelButtonSelector)
-          .first()
-          .getAttribute("href");
-        await page.goto(`https://www.youtube.com${url}`);
-        await eventWatcher.waitForFired("yt-navigate-finish");
+        const ytSearchPage = new YtSearchPage(page, eventWatcher);
+        await ytSearchPage.search(searchWord);
+        await ytSearchPage.navigateToTopChannel(navigation);
 
         await channelIdFinder.exceptFromNavigationEvent(existsOnEvent);
         await channelIdFinder.exceptFromCanonicalLink(existsOnHtml);
