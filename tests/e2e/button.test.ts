@@ -1,34 +1,28 @@
 import { expect } from "@playwright/test";
-import { ytxTest } from "../utils";
+import { YtChannelPage, YtVideoPage, ytxTest } from "../utils";
 
-const videoUrl = "https://www.youtube.com/watch?v=gu_PQBmk-6c";
-const channelUrl = "https://www.youtube.com/@TED";
+const channel = "@TED";
+const channelNavigations: ("soft1" | "soft2" | "hard")[] = [
+  "soft1",
+  "soft2",
+  "hard",
+];
+const tabNavigations: ("soft" | "hard")[] = ["soft", "hard"];
 
-const channelButtonSelectors = ["#owner [href]", "#upload-info [href]"];
-channelButtonSelectors.forEach((channelButtonSelector, j) => {
-  ytxTest(`soft navigation ${j}`, async ({ page, eventWatcher }) => {
-    await page.goto(videoUrl);
-    await eventWatcher.waitForFired("yt-navigate-finish");
+channelNavigations.forEach((channelnavigation) => {
+  tabNavigations.forEach((tabnavigation) => {
+    ytxTest(
+      `button attached: ${channelnavigation} and ${tabnavigation}`,
+      async ({ page, eventWatcher }) => {
+        const ytVideoPage = new YtVideoPage(page, eventWatcher);
+        await ytVideoPage.fromChannel(channel);
+        await ytVideoPage.navigateToChannel(channelnavigation);
 
-    const channelButton = page.locator(channelButtonSelector).first();
-    channelButton.click();
-    await eventWatcher.waitForFired("yt-navigate-finish");
+        const ytChannelPage = new YtChannelPage(page, eventWatcher);
+        await ytChannelPage.navigateToVideoTab(tabnavigation);
 
-    const videoTabButton = page.locator('[role="tablist"] [role="tab"]').nth(1);
-    await videoTabButton.click();
-    await eventWatcher.waitForFired("yt-navigate-finish");
-
-    await expect(page.locator(".play-all-btn")).toBeAttached();
+        await expect(page.locator(".play-all-btn")).toBeAttached();
+      },
+    );
   });
-});
-
-ytxTest(`hard navigation`, async ({ page, eventWatcher }) => {
-  await page.goto(channelUrl);
-  await eventWatcher.waitForFired("yt-navigate-finish");
-
-  const videoTabButton = page.locator('[role="tablist"] [role="tab"]').nth(1);
-  await videoTabButton.click();
-  await eventWatcher.waitForFired("yt-navigate-finish");
-
-  await expect(page.locator(".play-all-btn")).toBeAttached();
 });
