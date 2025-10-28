@@ -6,12 +6,12 @@ export default defineConfig({
   fullyParallel: true,
   projects: [
     {
-      name: "chromium-specs",
+      name: "chromium-spec",
       use: devices["Desktop Chrome"],
       testDir: path.join(import.meta.dirname, "tests/specs"),
     },
     {
-      name: "firefox-specs",
+      name: "firefox-spec",
       use: {
         ...devices["Desktop Firefox"],
         launchOptions: {
@@ -23,7 +23,7 @@ export default defineConfig({
       testDir: path.join(import.meta.dirname, "tests/specs"),
     },
     {
-      name: "chromium-e2e-tests",
+      name: "chromium-e2e",
       use: {
         ...devices["Desktop Chrome"],
         channel: "chromium",
