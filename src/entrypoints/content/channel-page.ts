@@ -75,7 +75,7 @@ export default class ChannelPage {
   private _getPlayListPath(videoKind: VideoKind, sortKind: SortKind): string {
     if (sortKind === "Oldest") {
       const oldestVideoHref = document.querySelector<HTMLLinkElement>(
-        "ytd-browse [href^='/watch?v='],ytd-browse [href^='/shorts/']",
+        "ytd-browse [href*='/watch?v='],ytd-browse [href*='/shorts/']",
       )?.href;
       const videoId = oldestVideoHref
         ?.match(/(?:watch\?v=|shorts\/)([^&]*)/)
