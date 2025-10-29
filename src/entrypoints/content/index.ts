@@ -8,8 +8,19 @@ export default defineContentScript({
   main,
 });
 
-function main() {
+async function main() {
   YoutubePage.applyStyleForPlayAllButton();
+
+  if (ChannelPage.isOnSupportedPage) {
+    const res = await fetch(window.location.href);
+    const html = await res.text();
+    const match = html.match(/<link rel="canonical" href="(.*?)"/i);
+    const canonical = match![1];
+    const channelId = canonical.split("/").at(-1)!;
+
+    const channelPage = new ChannelPage(channelId);
+    channelPage.ensurePlayAllButton();
+  }
 
   // Triggered when navigating to the videos, shorts, or streams page
   window.addEventListener("yt-navigate-finish", (e: any) => {
