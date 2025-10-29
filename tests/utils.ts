@@ -223,7 +223,7 @@ export class YtVideoPage {
     await this.page.goto(`https://www.youtube.com/${channelName}/videos`);
     await this.eventWatcher.waitForFired("yt-navigate-finish");
     const videoRelUrl = await this.page
-      .locator('[href^="/watch?"]')
+      .locator('[href*="/watch?"]')
       .first()
       .getAttribute("href");
     await this.page.goto(`https://www.youtube.com${videoRelUrl}`);
