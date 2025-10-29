@@ -10,7 +10,7 @@ Youtube Play All is a browser extension that adds a "Play All" button to YouTube
   - **Oldest**: Play videos in chronological order from oldest to newest.
 
 ## Screenshots
-![Exaple](screenshots/example-1280x800.png)
+![Example](screenshots/example-1280x800.png)
 
 ### All patterns
 ![Latest](screenshots/latest-button.png)
