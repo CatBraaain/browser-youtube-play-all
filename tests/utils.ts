@@ -247,6 +247,23 @@ export class YtVideoPage {
     }
     await this.eventWatcher.waitForFired("yt-navigate-finish");
   }
+
+  public async getPlaylistVideoIds(n: number = 3): Promise<string[]> {
+    return await this.page
+      .locator('#playlist #thumbnail[href*="/watch?"]')
+      .evaluateAll(
+        (links, n) =>
+          links
+            .slice(0, n)
+            .map(
+              (link) =>
+                new URL(
+                  `https://www.youtube.com${link.getAttribute("href")!}`,
+                ).searchParams.get("v")!,
+            ),
+        n,
+      );
+  }
 }
 
 export class YtChannelPage {
@@ -280,5 +297,67 @@ export class YtChannelPage {
     if (wait) {
       await this.eventWatcher.waitForFired("yt-navigate-finish");
     }
+  }
+
+  public async visitTab(
+    channelName: string,
+    tab: "videos" | "shorts" | "streams",
+    sort: "Latest" | "Popular" | "Oldest",
+  ) {
+    await this.page.goto(`https://www.youtube.com/${channelName}/${tab}`);
+    await this.eventWatcher.waitForFired("yt-navigate-finish");
+
+    switch (sort) {
+      case "Latest":
+        break;
+      case "Popular":
+        await this.page.evaluate(() =>
+          document.querySelector(".play-all-btn")?.remove(),
+        );
+        await this.page.locator("#primary #header #chips > *").nth(1).click();
+        await this.page.locator(".play-all-btn").waitFor({ timeout: 10000 });
+        break;
+      case "Oldest":
+        await this.page.evaluate(() =>
+          document.querySelector(".play-all-btn")?.remove(),
+        );
+        await this.page.locator("#primary #header #chips > *").nth(2).click();
+        await this.page.locator(".play-all-btn").waitFor({ timeout: 10000 });
+        break;
+    }
+  }
+
+  public async getVideoIds(n: number = 3): Promise<string[]> {
+    if (this.page.url().includes("shorts")) {
+      return await this.page
+        .locator('#contents [href*="/shorts"][title]')
+        .evaluateAll(
+          (links, n) =>
+            links
+              .slice(0, n)
+              .map((link) => link.getAttribute("href")!.split("/").at(-1)!),
+          n,
+        );
+    } else {
+      return await this.page
+        .locator('#contents [href*="/watch"][title]')
+        .evaluateAll(
+          (links, n) =>
+            links
+              .slice(0, n)
+              .map(
+                (link) =>
+                  new URL(
+                    `https://www.youtube.com${link.getAttribute("href")!}`,
+                  ).searchParams.get("v")!,
+              ),
+          n,
+        );
+    }
+  }
+
+  public async navigateToPlayAll() {
+    await this.page.locator(".play-all-btn").click();
+    await this.eventWatcher.waitForFired("yt-navigate-finish");
   }
 }
