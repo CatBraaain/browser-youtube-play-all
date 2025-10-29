@@ -1,6 +1,14 @@
 export default class ChannelPage {
   public static get isOnSupportedPage() {
-    return !!ChannelPage.videoKind;
+    const isUnknownPage = ChannelPage.videoKind === null;
+    const notSupportedByYoutube =
+      (
+        [
+          "Shorts",
+          "Streams",
+        ] satisfies VideoKindNullable[] as VideoKindNullable[]
+      ).includes(ChannelPage.videoKind) && ChannelPage.sortKind === "Oldest";
+    return !(isUnknownPage || notSupportedByYoutube);
   }
 
   public static get videoKind(): VideoKindNullable {
