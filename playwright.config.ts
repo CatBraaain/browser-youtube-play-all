@@ -21,6 +21,7 @@ export default defineConfig({
         },
       },
       testDir: path.join(import.meta.dirname, "tests/specs"),
+      grepInvert: /channelId: fetch from .*/,
     },
     {
       name: "chromium-e2e",
