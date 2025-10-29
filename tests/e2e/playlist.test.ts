@@ -16,6 +16,15 @@ const sorts: ("Latest" | "Popular" | "Oldest")[] = [
 tabs.forEach((tab) => {
   sorts.forEach((sort) => {
     ytxTest(`playlist: ${tab} - ${sort}`, async ({ page, eventWatcher }) => {
+      ytxTest.skip(
+        tab === "shorts" && sort === "Popular",
+        "Populared Shorts page has not been updated by YouTube",
+      );
+      ytxTest.skip(
+        ["shorts", "streams"].includes(tab) && sort === "Oldest",
+        "Not supported by YouTube",
+      );
+
       const ytChannelPage = new YtChannelPage(page, eventWatcher);
       await ytChannelPage.visitTab(channel, tab, sort);
       await expect(page.locator(".play-all-btn")).toBeAttached();
