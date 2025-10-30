@@ -11,5 +11,6 @@ export default defineConfig({
   zip: {
     artifactTemplate: "{{browser}}.zip",
     sourcesTemplate: "sources.zip",
+    excludeSources: ["screenshots/**", "test-results/**", "tests/**"],
   },
 });
