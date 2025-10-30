@@ -35,10 +35,10 @@ searchWords.forEach((searchWord) => {
         await ytSearchPage.search(searchWord);
         await ytSearchPage.navigateToTopChannel(navigation);
 
-        await channelIdFinder.exceptFromNavigationEvent(existsOnEvent);
-        await channelIdFinder.exceptFromCanonicalLink(existsOnHtml);
-        await channelIdFinder.exceptFromYtInitialData(existsOnHtml);
-        await channelIdFinder.exceptFromYtCommand(existsOnHtml);
+        await channelIdFinder.expectFromNavigationEvent(existsOnEvent);
+        await channelIdFinder.expectFromCanonicalLink(existsOnHtml);
+        await channelIdFinder.expectFromYtInitialData(existsOnHtml);
+        await channelIdFinder.expectFromYtCommand(existsOnHtml);
       },
     );
   });

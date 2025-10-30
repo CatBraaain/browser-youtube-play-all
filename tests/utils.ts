@@ -79,7 +79,7 @@ class ChannelIdFinder {
     );
   }
 
-  async exceptFromNavigationEvent(exists: boolean) {
+  async expectFromNavigationEvent(exists: boolean) {
     const lastEvent = await this.page.evaluate(
       () => (window as any)["__yt-navigate-finish"],
     );
@@ -89,7 +89,7 @@ class ChannelIdFinder {
       : expect(channelId).toBeUndefined();
   }
 
-  async exceptFromCanonicalLink(exists: boolean) {
+  async expectFromCanonicalLink(exists: boolean) {
     const locator = this.page.locator('[rel="canonical"]');
     const channelId =
       (await locator.count()) > 0
@@ -100,7 +100,7 @@ class ChannelIdFinder {
       : expect(channelId).toBeUndefined();
   }
 
-  async exceptFromYtInitialData(exists: boolean) {
+  async expectFromYtInitialData(exists: boolean) {
     const channelId = await this.page.evaluate(
       () =>
         (window as any).ytInitialData.responseContext.serviceTrackingParams
@@ -112,7 +112,7 @@ class ChannelIdFinder {
       : await expect(channelId).toBeUndefined();
   }
 
-  async exceptFromYtCommand(exists: boolean) {
+  async expectFromYtCommand(exists: boolean) {
     const channelId = await this.page.evaluate(
       () => (window as any).ytCommand.browseEndpoint?.browseId,
     );
