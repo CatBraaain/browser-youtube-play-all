@@ -23,9 +23,13 @@ export class CategoryPage {
     );
   }
 
+  public static get sortButtonHolderSelector() {
+    return 'ytd-browse[page-subtype="channels"] #chips';
+  }
+
   public get sortKind(): SortKind {
     const selectedButton = document.querySelector(
-      "#primary #header #chips>[selected]",
+      `${CategoryPage.sortButtonHolderSelector}>[selected]`,
     );
     const index = selectedButton
       ? Array.from(selectedButton.parentNode?.children ?? []).indexOf(
@@ -50,7 +54,9 @@ export class CategoryPage {
   ) {}
 
   public watchSortSelect() {
-    const buttonHolder = document.querySelector("#primary #header #chips")!;
+    const buttonHolder = document.querySelector(
+      CategoryPage.sortButtonHolderSelector,
+    )!;
     const observer = new MutationObserver(() => {
       if (this.shouldAddButton) {
         this.addPlayAllButton();
@@ -93,7 +99,7 @@ export class CategoryPage {
     playAllButton.textContent = `Play All (${sortKind})`;
 
     const buttonHolder = document.querySelector(
-      'ytd-browse[page-subtype="channels"] #chips',
+      CategoryPage.sortButtonHolderSelector,
     );
     buttonHolder?.appendChild(playAllButton);
   }
