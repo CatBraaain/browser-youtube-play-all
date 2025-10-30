@@ -30,13 +30,13 @@ tabs.forEach((tab) => {
       await expect(page.locator(".play-all-btn")).toBeVisible();
 
       const n = 3;
-      const channelVideoIds = await ytChannelPage.getVideoIds(n);
+      const channelTopVideoIds = await ytChannelPage.getTopVideoIds(n);
       await ytChannelPage.navigateToPlayAll();
 
       const ytVideoPage = new YtVideoPage(page, eventWatcher);
       const playlistVideoIds = await ytVideoPage.getPlaylistVideoIds(n);
 
-      expect(channelVideoIds).toEqual(playlistVideoIds);
+      expect(channelTopVideoIds).toEqual(playlistVideoIds);
     });
   });
 });
