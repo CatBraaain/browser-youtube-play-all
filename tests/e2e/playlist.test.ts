@@ -27,7 +27,7 @@ tabs.forEach((tab) => {
 
       const ytChannelPage = new YtChannelPage(page, eventWatcher);
       await ytChannelPage.visitTab(channel, tab, sort);
-      await expect(page.locator(".play-all-btn")).toBeAttached();
+      await expect(page.locator(".play-all-btn")).toBeVisible();
 
       const n = 3;
       const channelVideoIds = await ytChannelPage.getVideoIds(n);
