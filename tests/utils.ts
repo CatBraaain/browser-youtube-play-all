@@ -308,30 +308,25 @@ export class YtChannelPage {
     await this.page.goto(`https://www.youtube.com/${channelName}/${tab}`);
     await this.eventWatcher.waitForFired("yt-navigate-finish");
 
-    switch (sort) {
-      case "Latest":
-        break;
-      case "Popular":
-        await this.page.evaluate(() =>
-          document.querySelector(".play-all-btn")?.remove(),
-        );
-        await this.page
-          .locator(`${CategoryPage.sortButtonHolderSelector}>*`)
-          .nth(1)
-          .click();
-        await this.page.locator(".play-all-btn").waitFor({ timeout: 10000 });
-        break;
-      case "Oldest":
-        await this.page.evaluate(() =>
-          document.querySelector(".play-all-btn")?.remove(),
-        );
-        await this.page
-          .locator(`${CategoryPage.sortButtonHolderSelector}>*`)
-          .nth(2)
-          .click();
-        await this.page.locator(".play-all-btn").waitFor({ timeout: 10000 });
-        break;
-    }
+    const n = (() => {
+      switch (sort) {
+        case "Latest":
+          return 0;
+        case "Popular":
+          return 1;
+        case "Oldest":
+          return 2;
+      }
+    })();
+    await this.page
+      .locator(`${CategoryPage.sortButtonHolderSelector}>*`)
+      .nth(n)
+      .click();
+    await this.page
+      .locator(
+        `.play-all-btn.${tab.toLocaleLowerCase()}.${sort.toLocaleLowerCase()}`,
+      )
+      .waitFor({ timeout: 10000 });
   }
 
   public async getTopVideoIds(n: number = 3): Promise<string[]> {
