@@ -327,7 +327,7 @@ export class YtChannelPage {
     }
   }
 
-  public async getVideoIds(n: number = 3): Promise<string[]> {
+  public async getTopVideoIds(n: number = 3): Promise<string[]> {
     if (this.page.url().includes("shorts")) {
       return await this.page
         .locator('#contents [href*="/shorts"][title]')
