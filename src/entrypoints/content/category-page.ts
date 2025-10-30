@@ -62,11 +62,14 @@ export class CategoryPage {
         this.addPlayAllButton();
       }
     });
-    observer.observe(buttonHolder, {
-      subtree: true,
-      childList: false,
-      attributes: true,
-    });
+    if (buttonHolder) {
+      // buttonHolder may not exist when there are not enough items
+      observer.observe(buttonHolder, {
+        subtree: true,
+        childList: false,
+        attributes: true,
+      });
+    }
     return observer;
   }
 
