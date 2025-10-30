@@ -29,9 +29,6 @@
     "zip:chrome": "wxt zip -b chrome",
     "zip:firefox": "wxt zip -b firefox"
   },
-  "overrides": {
-    "@wxt-dev/storage": "1.2.0"
-  },
   "devDependencies": {
     "@biomejs/biome": "^2.2.6",
     "@playwright/test": "^1.56.1",
