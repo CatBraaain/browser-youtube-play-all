@@ -1,6 +1,7 @@
 import path from "node:path";
 import type { Locator, Page } from "@playwright/test";
 import { chromium, expect, test } from "@playwright/test";
+import { CategoryPage } from "@/entrypoints/content/category-page";
 
 class EventWatcher {
   private page: Page;
@@ -314,14 +315,20 @@ export class YtChannelPage {
         await this.page.evaluate(() =>
           document.querySelector(".play-all-btn")?.remove(),
         );
-        await this.page.locator("#primary #header #chips > *").nth(1).click();
+        await this.page
+          .locator(`${CategoryPage.sortButtonHolderSelector}>*`)
+          .nth(1)
+          .click();
         await this.page.locator(".play-all-btn").waitFor({ timeout: 10000 });
         break;
       case "Oldest":
         await this.page.evaluate(() =>
           document.querySelector(".play-all-btn")?.remove(),
         );
-        await this.page.locator("#primary #header #chips > *").nth(2).click();
+        await this.page
+          .locator(`${CategoryPage.sortButtonHolderSelector}>*`)
+          .nth(2)
+          .click();
         await this.page.locator(".play-all-btn").waitFor({ timeout: 10000 });
         break;
     }
