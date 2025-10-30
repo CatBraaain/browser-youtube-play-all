@@ -94,6 +94,8 @@ export class CategoryPage {
 
     const playAllButton = document.createElement("a");
     playAllButton.classList.add("play-all-btn");
+    playAllButton.classList.add(categoryKind.toLowerCase());
+    playAllButton.classList.add(sortKind.toLowerCase());
     playAllButton.href = this.resolvePlaylistPath(
       categoryKind,
       sortKind,
