@@ -1,5 +1,5 @@
 export default class YoutubePage {
-  public static applyStyleForPlayAllButton() {
+  public static addStyleForPlayAllButton() {
     const style = document.createElement("style");
     style.textContent = `
       .play-all-btn {
