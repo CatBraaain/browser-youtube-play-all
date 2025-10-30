@@ -21,7 +21,7 @@ channelNavigations.forEach((channelnavigation) => {
         const ytChannelPage = new YtChannelPage(page, eventWatcher);
         await ytChannelPage.navigateToVideoTab(tabnavigation);
 
-        await expect(page.locator(".play-all-btn")).toBeAttached();
+        await expect(page.locator(".play-all-btn")).toBeVisible();
       },
     );
   });

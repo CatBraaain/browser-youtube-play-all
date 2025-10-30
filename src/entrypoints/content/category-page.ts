@@ -93,7 +93,7 @@ export class CategoryPage {
     playAllButton.textContent = `Play All (${sortKind})`;
 
     const buttonHolder = document.querySelector(
-      "#primary #header #chips>[selected]",
+      'ytd-browse[page-subtype="channels"] #chips',
     );
     buttonHolder?.appendChild(playAllButton);
   }
