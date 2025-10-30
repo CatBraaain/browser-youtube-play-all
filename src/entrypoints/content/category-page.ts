@@ -5,11 +5,6 @@ export class CategoryPage {
     return ChannelPage.isChannelPage && ChannelPage.categoryKind !== null;
   }
 
-  public constructor(
-    public channelId: string,
-    public categoryKind: CategoryKind,
-  ) {}
-
   public static async mount() {
     const categoryPage = new CategoryPage(
       await ChannelPage.fetchChannelId(),
@@ -48,6 +43,11 @@ export class CategoryPage {
         return "Latest";
     }
   }
+
+  public constructor(
+    public channelId: string,
+    public categoryKind: CategoryKind,
+  ) {}
 
   public watchSortSelect() {
     const buttonHolder = document.querySelector("#primary #header #chips")!;
