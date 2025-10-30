@@ -1,3 +1,16 @@
+## [0.1.0] - 2025-10-30
+
+### 🚀 Features
+
+- [**breaking**] Show oldest playall button only on video page
+
+### 🐛 Bug Fixes
+
+- Correct button placement
+
+### ⚡ Performance
+
+- Make button addition faster
 
 ## [0.0.3] - 2025-02-18
 
