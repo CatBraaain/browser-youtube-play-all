@@ -3,7 +3,7 @@ import { CategoryPage } from "@/entrypoints/content/category-page";
 import { ytxTest } from "../fixture";
 import { YtChannelPage, YtVideoPage } from "../utils";
 
-const channel = "@TED";
+const channel = "@Microsoft";
 
 CategoryPage.categories.forEach((tab) => {
   CategoryPage.sorts.forEach((sort) => {
