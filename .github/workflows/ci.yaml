@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 0 * * 6"
+  workflow_dispatch:
+
+jobs:
+  ci:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun run setup
+      - run: bun ci
+      - run: bunx sort-package-json --check
+      - run: bunx biome check --no-errors-on-unmatched --files-ignore-unknown=true
+      - run: bunx tsc --noEmit
+      - run: bun run test
