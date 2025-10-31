@@ -54,7 +54,8 @@ export class EventWatcher {
   public async getLastEventContent(eventName: string) {
     const [_, containerName] = this.getVarNames(eventName);
     const lastEventContent = await this.page.evaluate(
-      () => (window as any)[containerName],
+      (containerName) => (window as any)[containerName],
+      containerName,
     );
     return lastEventContent;
   }
@@ -73,9 +74,8 @@ export class ChannelIdFinder {
   ) {}
 
   async expectNavigationEvent(exists: boolean) {
-    const lastEventContent = await this.eventWatcher.getLastEventContent(
-      "__yt-navigate-finish",
-    );
+    const lastEventContent =
+      await this.eventWatcher.getLastEventContent("yt-navigate-finish");
     const channelId = lastEventContent?.endpoint.browseEndpoint.browseId;
     this.expectChannelIdCorrect(channelId, exists);
   }
