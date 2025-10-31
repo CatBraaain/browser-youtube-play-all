@@ -2,7 +2,7 @@ import { expect } from "@playwright/test";
 import { ytxTest } from "../fixture";
 import { YtChannelPage, YtVideoPage } from "../utils";
 
-const channel = "@TED";
+const channel = "@Microsoft";
 const channelNavigations: ("soft1" | "soft2" | "hard")[] = [
   "soft1",
   "soft2",

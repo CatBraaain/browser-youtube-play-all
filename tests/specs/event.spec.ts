@@ -7,7 +7,7 @@ type EventTestCase = {
   ytNavigateFinishFired: boolean;
 };
 
-const youtubeChannels = ["@TaylorSwift", "@MrBeast", "@BBCNews"];
+const youtubeChannels = ["@Google", "@Apple"];
 const eventTestCases: EventTestCase[] = [
   {
     navigation: "soft",
