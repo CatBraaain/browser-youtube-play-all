@@ -1,6 +1,7 @@
 import { expect } from "@playwright/test";
 import { CategoryPage } from "@/entrypoints/content/category-page";
-import { YtChannelPage, YtVideoPage, ytxTest } from "../utils";
+import { ytxTest } from "../fixture";
+import { YtChannelPage, YtVideoPage } from "../utils";
 
 const channel = "@TED";
 
