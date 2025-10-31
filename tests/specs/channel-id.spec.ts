@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { YtSearchPage, ytTest } from "../utils";
+import { ytTest } from "../fixture";
+import { YtSearchPage } from "../utils";
 
 type ChannelIdTestCase = {
   navigation: "soft1" | "soft2" | "hard";

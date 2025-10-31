@@ -1,5 +1,6 @@
 import { expect } from "@playwright/test";
-import { YtChannelPage, YtVideoPage, ytxTest } from "../utils";
+import { ytxTest } from "../fixture";
+import { YtChannelPage, YtVideoPage } from "../utils";
 
 const channel = "@TED";
 const channelNavigations: ("soft1" | "soft2" | "hard")[] = [
