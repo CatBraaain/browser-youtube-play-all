@@ -1,13 +1,13 @@
 ﻿# Youtube Play All
 
-Youtube Play All is a browser extension that adds a "Play All" button to YouTube's **Videos**, **Shorts**, and **Streams** pages. This button allows you to play all videos in the selected sorting order: **Latest**, **Popular**, or **Oldest**.
+Youtube Play All is a browser extension that adds a **"Play All"** button to YouTube's Videos, Shorts, and Streams pages. This button allows you to play all videos in the selected sorting order: Latest, Popular, or Oldest.
 
 ## Features
 - Adds a **Play All** button to YouTube's video list pages.
 - Supports three sorting options:
   - **Latest**: Play videos in chronological order from newest to oldest.
   - **Popular**: Play videos sorted by popularity.
-  - **Oldest**: Play videos in chronological order from oldest to newest. (*Only works on the 'Videos')
+  - **Oldest**: Play videos in chronological order from oldest to newest. (*Only works on the "Videos")
 
 ## Screenshots
 ![Example](screenshots/example-1280x800.png)
@@ -26,3 +26,7 @@ Youtube Play All is a browser extension that adds a "Play All" button to YouTube
 [Chrome Web Store]: https://chromewebstore.google.com/detail/youtube-play-all/lcgfhpllcjejniehjnhbfhnkdpmkeoce
 [Firefox Add-ons]: https://addons.mozilla.org/firefox/addon/youtube-play-all/
 [MrBeast Videos]: https://www.youtube.com/@MrBeast/videos
+
+## Issues
+Report any issues or bugs here:
+https://github.com/CatBraaain/browser-youtube-play-all/issues
