@@ -1,27 +1,18 @@
 import { expect } from "@playwright/test";
+import { CategoryPage } from "@/entrypoints/content/category-page";
 import { YtChannelPage, YtVideoPage, ytxTest } from "../utils";
 
 const channel = "@TED";
-const tabs: ("videos" | "shorts" | "streams")[] = [
-  "videos",
-  "shorts",
-  "streams",
-];
-const sorts: ("Latest" | "Popular" | "Oldest")[] = [
-  "Latest",
-  "Popular",
-  "Oldest",
-];
 
-tabs.forEach((tab) => {
-  sorts.forEach((sort) => {
+CategoryPage.categories.forEach((tab) => {
+  CategoryPage.sorts.forEach((sort) => {
     ytxTest(`playlist: ${tab} - ${sort}`, async ({ page, eventWatcher }) => {
       ytxTest.skip(
-        tab === "shorts" && sort === "Popular",
+        tab === "Shorts" && sort === "Popular",
         "Populared Shorts page has not been updated by YouTube",
       );
       ytxTest.skip(
-        ["shorts", "streams"].includes(tab) && sort === "Oldest",
+        ["Shorts", "Streams"].includes(tab) && sort === "Oldest",
         "Not supported by YouTube",
       );
 
