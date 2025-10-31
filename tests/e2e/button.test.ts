@@ -12,7 +12,7 @@ const tabNavigations: ("soft" | "hard")[] = ["soft", "hard"];
 channelNavigations.forEach((channelnavigation) => {
   tabNavigations.forEach((tabnavigation) => {
     ytxTest(
-      `button attached: ${channelnavigation} and ${tabnavigation}`,
+      `button: ${channelnavigation} to channel => ${tabnavigation} to tab`,
       async ({ page, eventWatcher }) => {
         const ytVideoPage = new YtVideoPage(page, eventWatcher);
         await ytVideoPage.fromChannel(channel);

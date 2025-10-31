@@ -1,6 +1,13 @@
 import { ChannelPage } from "./channel-page";
 
 export class CategoryPage {
+  public static readonly sorts: SortKind[] = ["Latest", "Popular", "Oldest"];
+  public static readonly categories: CategoryKind[] = [
+    "Videos",
+    "Shorts",
+    "Streams",
+  ];
+
   public static get isCategoryPage() {
     return ChannelPage.isChannelPage && ChannelPage.categoryKind !== null;
   }
@@ -36,16 +43,7 @@ export class CategoryPage {
           selectedButton,
         )
       : 0;
-    switch (index) {
-      case 0:
-        return "Latest";
-      case 1:
-        return "Popular";
-      case 2:
-        return "Oldest";
-      default:
-        return "Latest";
-    }
+    return CategoryPage.sorts[index];
   }
 
   public constructor(
