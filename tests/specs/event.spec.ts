@@ -1,4 +1,5 @@
-import { YtChannelPage, ytTest } from "../utils";
+import { ytTest } from "../fixture";
+import { YtChannelPage } from "../utils";
 
 type EventTestCase = {
   navigation: "soft" | "hard";
