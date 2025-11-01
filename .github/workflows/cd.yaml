@@ -1,0 +1,42 @@
+name: CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "--dry-run"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun run setup
+      - run: bun run zip
+      - run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "false" ]; then
+            bunx wxt submit
+          else
+            bunx wxt submit --dry-run
+          fi
+        env:
+          CHROME_ZIP: "dist/chrome.zip"
+          CHROME_EXTENSION_ID: "lcgfhpllcjejniehjnhbfhnkdpmkeoce"
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          CHROME_PUBLISH_TARGET: "default"
+          CHROME_SKIP_SUBMIT_REVIEW: false
+          FIREFOX_ZIP: "dist/firefox.zip"
+          FIREFOX_SOURCES_ZIP: "dist/sources.zip"
+          FIREFOX_EXTENSION_ID: "f082384d-0ec3-4a0a-a2d1-3261bb1b8d8e"
+          FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
+          FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
+          FIREFOX_CHANNEL: "listed"
