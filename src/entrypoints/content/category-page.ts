@@ -76,12 +76,7 @@ export class CategoryPage {
   }
 
   public get shouldAddButton() {
-    const categoryKind = this.categoryKind;
-    const sortKind = this.sortKind;
-
-    const isSupportedPage =
-      sortKind !== null &&
-      !(categoryKind !== "Videos" && sortKind === "Oldest");
+    const isSupportedPage = this.sortKind !== null;
     const hasPlayAllButton = !!document.querySelector(".play-all-btn");
     return isSupportedPage && !hasPlayAllButton;
   }
