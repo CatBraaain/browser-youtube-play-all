@@ -45,7 +45,7 @@ searchWords.forEach((searchWord) => {
   });
 });
 
-const youtubeChannels = ["@TaylorSwift", "@MrBeast", "@BBCNews"];
+const youtubeChannels = ["@Google", "@Apple", "@Microsoft"];
 youtubeChannels.forEach((channelName) => {
   test(`channelId: fetch from ${channelName}`, async ({ browserName }) => {
     if (browserName !== "chromium") return;
