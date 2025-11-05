@@ -105,6 +105,18 @@ export class YtVideoPage {
         n,
       );
   }
+
+  public async getPlaylistSelectedVideoId(n: number = 3): Promise<string> {
+    return await this.page
+      .locator('#playlist-items[selected] #thumbnail[href*="/watch?"]')
+      .first()
+      .evaluate(
+        (link) =>
+          new URL(
+            `https://www.youtube.com${link.getAttribute("href")!}`,
+          ).searchParams.get("v")!,
+      );
+  }
 }
 
 export class YtChannelPage {
