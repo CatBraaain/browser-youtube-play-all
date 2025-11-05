@@ -12,22 +12,20 @@ CategoryPage.categories.forEach((tab) => {
         tab === "Shorts" && sort === "Popular",
         "Populared Shorts page has not been updated by YouTube",
       );
-      ytxTest.skip(
-        ["Shorts", "Streams"].includes(tab) && sort === "Oldest",
-        "Not supported by YouTube",
-      );
 
       const ytChannelPage = new YtChannelPage(page, eventWatcher);
       await ytChannelPage.visitTab(channel, tab, sort);
       await expect(page.locator(".play-all-btn")).toBeVisible();
 
-      const n = 3;
+      const n = sort !== "Oldest" ? 3 : 1;
       const channelTopVideoIds = await ytChannelPage.getTopVideoIds(n);
       await ytChannelPage.navigateToPlayAll();
 
       const ytVideoPage = new YtVideoPage(page, eventWatcher);
-      const playlistVideoIds = await ytVideoPage.getPlaylistVideoIds(n);
-
+      const playlistVideoIds =
+        sort !== "Oldest"
+          ? await ytVideoPage.getPlaylistVideoIds(n)
+          : [await ytVideoPage.getPlaylistSelectedVideoId()];
       expect(channelTopVideoIds).toEqual(playlistVideoIds);
     });
   });
