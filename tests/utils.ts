@@ -12,31 +12,61 @@ export class YtSearchPage {
     private eventWatcher: EventWatcher,
   ) {}
 
-  public get topChannelThumbnailButton(): Locator {
-    return this.page.locator("#channel-thumbnail").first(); // [href^="/channel/"] or [href^="link:///"]
+  public topVideoChannelThumbnailButton(
+    channelName: string | null = null,
+  ): Locator {
+    return this.page
+      .locator(
+        "#channel-thumbnail" +
+          (channelName !== null ? `[href*="/${channelName}"]` : ""),
+      )
+      .first(); // [href^="/channel/"] or [href^="link:///"]
   }
-  public get topChannelNameButton(): Locator {
-    return this.page.locator("#channel-info #channel-name").first();
+  public topVideoChannelNameButton(channelName: string | null = null): Locator {
+    return this.page
+      .locator(
+        "#channel-info #channel-name" +
+          (channelName !== null ? `:has([href*="/${channelName}"])` : ""),
+      )
+      .first();
   }
 
-  public async search(searchWord: string): Promise<void> {
-    await this.page.goto(
-      `https://www.youtube.com/results?search_query=${searchWord}`,
-    );
+  public async search(
+    searchWord: string,
+    navigation: "soft" | "hard",
+  ): Promise<void> {
+    switch (navigation) {
+      case "soft":
+        await this.page.goto("https://www.youtube.com");
+        await this.eventWatcher.waitForFired("yt-navigate-finish");
+        await this.page.locator("input.yt-searchbox-input").fill(searchWord);
+        await this.page.locator("input.yt-searchbox-input").press("Enter");
+        break;
+      case "hard":
+        await this.page.goto(
+          `https://www.youtube.com/results?search_query=${searchWord}`,
+        );
+        break;
+    }
     await this.eventWatcher.waitForFired("yt-navigate-finish");
   }
 
-  public async navigateToTopChannel(navigation: "soft1" | "soft2" | "hard") {
+  public async navigateToChannel(
+    navigation: "soft1" | "soft2" | "hard",
+    channelName: string | null = null,
+  ) {
     switch (navigation) {
       case "soft1":
-        this.topChannelThumbnailButton.click();
+        this.topVideoChannelThumbnailButton(channelName).click();
         break;
       case "soft2":
-        this.topChannelNameButton.click();
+        this.topVideoChannelNameButton(channelName).click();
         break;
       case "hard": {
         const relUrl =
-          await this.topChannelThumbnailButton.getAttribute("href");
+          await this.topVideoChannelThumbnailButton(channelName).getAttribute(
+            "href",
+          );
         await this.page.goto(`https://www.youtube.com${relUrl}`);
         break;
       }
@@ -46,45 +76,13 @@ export class YtSearchPage {
 }
 
 export class YtVideoPage {
-  constructor(
-    private page: Page,
-    private eventWatcher: EventWatcher,
-  ) {}
+  constructor(private page: Page) {}
 
   public get channelThumbnailButton(): Locator {
     return this.page.locator("#owner [href]").first();
   }
   public get channelNameButton(): Locator {
     return this.page.locator("#upload-info [href]").first();
-  }
-
-  public async fromChannel(channelName: string) {
-    await this.page.goto(`https://www.youtube.com/${channelName}/videos`);
-    await this.eventWatcher.waitForFired("yt-navigate-finish");
-    const videoRelUrl = await this.page
-      .locator('[href*="/watch?"]')
-      .first()
-      .getAttribute("href");
-    await this.page.goto(`https://www.youtube.com${videoRelUrl}`);
-    await this.eventWatcher.waitForFired("yt-navigate-finish");
-  }
-
-  public async navigateToChannel(
-    navigation: "soft1" | "soft2" | "hard",
-  ): Promise<void> {
-    switch (navigation) {
-      case "soft1":
-        this.channelThumbnailButton.click();
-        break;
-      case "soft2":
-        this.channelNameButton.click();
-        break;
-      case "hard": {
-        const relUrl = await this.channelThumbnailButton.getAttribute("href");
-        await this.page.goto(`https://www.youtube.com${relUrl}`);
-      }
-    }
-    await this.eventWatcher.waitForFired("yt-navigate-finish");
   }
 
   public async getPlaylistVideoIds(n: number = 3): Promise<string[]> {
@@ -124,7 +122,7 @@ export class YtChannelPage {
   ) {}
 
   public get videoTab(): Locator {
-    return this.page.locator('[role="tablist"] [role="tab"]').nth(1);
+    return this.page.locator('ytd-browse [role="tablist"] [role="tab"]').nth(1);
   }
 
   public async visit(channelName: string) {

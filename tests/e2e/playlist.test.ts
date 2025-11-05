@@ -21,7 +21,7 @@ CategoryPage.categories.forEach((tab) => {
       const channelTopVideoIds = await ytChannelPage.getTopVideoIds(n);
       await ytChannelPage.navigateToPlayAll();
 
-      const ytVideoPage = new YtVideoPage(page, eventWatcher);
+      const ytVideoPage = new YtVideoPage(page);
       const playlistVideoIds =
         sort !== "Oldest"
           ? await ytVideoPage.getPlaylistVideoIds(n)
