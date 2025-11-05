@@ -2,13 +2,26 @@ import { expect, test } from "@playwright/test";
 import { ytTest } from "../fixture";
 import { YtSearchPage } from "../utils";
 
+type SearchTestCase = {
+  navigation: "soft" | "hard";
+  searchWord: string;
+};
 type ChannelIdTestCase = {
   navigation: "soft1" | "soft2" | "hard";
   existsOnHtml: boolean;
   existsOnEvent: boolean;
 };
 
-const searchWords = ["music", "game"];
+const searchTestCases: SearchTestCase[] = [
+  {
+    navigation: "soft",
+    searchWord: "music",
+  },
+  {
+    navigation: "hard",
+    searchWord: "game",
+  },
+];
 const channelIdTestCases: ChannelIdTestCase[] = [
   {
     navigation: "soft1",
@@ -27,22 +40,24 @@ const channelIdTestCases: ChannelIdTestCase[] = [
   },
 ];
 
-searchWords.forEach((searchWord) => {
-  channelIdTestCases.forEach(({ navigation, existsOnHtml, existsOnEvent }) => {
-    ytTest(
-      `channelId: ${navigation} from ${searchWord}`,
-      async ({ page, eventWatcher, channelIdFinder }) => {
-        const ytSearchPage = new YtSearchPage(page, eventWatcher);
-        await ytSearchPage.search(searchWord);
-        await ytSearchPage.navigateToTopChannel(navigation);
+searchTestCases.forEach(({ navigation: searchNavigation, searchWord }) => {
+  channelIdTestCases.forEach(
+    ({ navigation: channelNavigation, existsOnHtml, existsOnEvent }) => {
+      ytTest(
+        `channelId: ${channelNavigation} from ${searchWord}`,
+        async ({ page, eventWatcher, channelIdFinder }) => {
+          const ytSearchPage = new YtSearchPage(page, eventWatcher);
+          await ytSearchPage.search(searchWord, searchNavigation);
+          await ytSearchPage.navigateToChannel(channelNavigation);
 
-        await channelIdFinder.expectNavigationEvent(existsOnEvent);
-        await channelIdFinder.expectCanonicalLink(existsOnHtml);
-        await channelIdFinder.expectYtInitialData(existsOnHtml);
-        await channelIdFinder.expectYtCommand(existsOnHtml);
-      },
-    );
-  });
+          await channelIdFinder.expectNavigationEvent(existsOnEvent);
+          await channelIdFinder.expectCanonicalLink(existsOnHtml);
+          await channelIdFinder.expectYtInitialData(existsOnHtml);
+          await channelIdFinder.expectYtCommand(existsOnHtml);
+        },
+      );
+    },
+  );
 });
 
 const youtubeChannels = ["@Google", "@Apple", "@Microsoft"];

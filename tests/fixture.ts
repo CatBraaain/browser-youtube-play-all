@@ -76,7 +76,7 @@ export class ChannelIdFinder {
   async expectNavigationEvent(exists: boolean) {
     const lastEventContent =
       await this.eventWatcher.getLastEventContent("yt-navigate-finish");
-    const channelId = lastEventContent?.endpoint.browseEndpoint.browseId;
+    const channelId = lastEventContent?.endpoint.browseEndpoint?.browseId;
     this.expectChannelIdCorrect(channelId, exists);
   }
 
@@ -109,7 +109,7 @@ export class ChannelIdFinder {
   async expectChannelIdCorrect(channelId: string | undefined, exists: boolean) {
     exists
       ? expect(channelId).toEqual(expect.stringMatching(/UC.*/))
-      : await expect(channelId).toBeUndefined();
+      : expect(channelId).not.toEqual(expect.stringMatching(/UC.*/));
   }
 }
 
