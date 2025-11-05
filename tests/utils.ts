@@ -30,20 +30,18 @@ export class YtSearchPage {
     switch (navigation) {
       case "soft1":
         this.topChannelThumbnailButton.click();
-        await this.eventWatcher.waitForFired("yt-navigate-finish");
         break;
       case "soft2":
         this.topChannelNameButton.click();
-        await this.eventWatcher.waitForFired("yt-navigate-finish");
         break;
       case "hard": {
         const relUrl =
           await this.topChannelThumbnailButton.getAttribute("href");
         await this.page.goto(`https://www.youtube.com${relUrl}`);
-        await this.eventWatcher.waitForFired("yt-navigate-finish");
         break;
       }
     }
+    await this.eventWatcher.waitForFired("yt-navigate-finish");
   }
 }
 
