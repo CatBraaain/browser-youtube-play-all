@@ -1,6 +1,9 @@
 name: CD
 
 on:
+  push:
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -13,15 +16,18 @@ on:
           - "true"
 
 jobs:
-  submit:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
       - uses: oven-sh/setup-bun@v2
-      - run: bun run setup
+      - run: bun install
       - run: bun run zip
-      - run: |
-          if [ "${{ github.event.inputs.dry_run }}" = "false" ]; then
+      - name: Publish
+        run: |
+          if [ "${{ github.event.inputs.dry_run || 'false' }}" = "false" ]; then
             bunx wxt submit
           else
             bunx wxt submit --dry-run
