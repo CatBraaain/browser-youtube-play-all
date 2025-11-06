@@ -21,7 +21,7 @@
     "fix:bun": "bun install",
     "fix:sort-package-json": "sort-package-json package.json",
     "publish": "bun run zip && wxt submit",
-    "setup": "bun install && wxt prepare && lefthook install && bunx playwright install chromium firefox",
+    "setup": "bun install && wxt prepare && bunx lefthook install && bunx playwright install chromium firefox",
     "test": "bun run build && bunx playwright test tests/e2e",
     "test-ui": "bun run build && bunx playwright test --ui",
     "typecheck": "tsc --noEmit",
