@@ -2,6 +2,7 @@ import path from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
+  retries: 1,
   workers: 2,
   fullyParallel: true,
   projects: [
