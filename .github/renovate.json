@@ -1,0 +1,9 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "group:all"],
+  "automerge": true,
+  "dependencyDashboard": false,
+  "prHourlyLimit": 0,
+  "timezone": "Asia/Tokyo",
+  "schedule": ["* 3-6 * * 6#1,6#3"]
+}
