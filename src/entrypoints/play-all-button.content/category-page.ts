@@ -109,7 +109,7 @@ export class CategoryPage {
   ): string {
     if (sortKind === "Oldest") {
       const oldestVideoHref = document.querySelector<HTMLLinkElement>(
-        "ytd-browse [href*='/watch?v='],ytd-browse [href*='/shorts/']",
+        "ytd-browse[role='main'] [href*='/watch?v='],ytd-browse[role='main'] [href*='/shorts/']",
       )?.href;
       const videoId = oldestVideoHref
         ?.match(/(?:watch\?v=|shorts\/)([^&]*)/)

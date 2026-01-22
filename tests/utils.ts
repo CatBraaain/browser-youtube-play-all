@@ -172,7 +172,7 @@ export class YtChannelPage {
   public async getTopVideoIds(n: number = 3): Promise<string[]> {
     if (this.page.url().includes("shorts")) {
       return await this.page
-        .locator('#contents [href*="/shorts"][title]')
+        .locator("ytd-browse[role='main'] [href*='/shorts'][title]")
         .evaluateAll(
           (links, n) =>
             links
@@ -182,7 +182,7 @@ export class YtChannelPage {
         );
     } else {
       return await this.page
-        .locator('#contents [href*="/watch"][title]')
+        .locator("ytd-browse[role='main'] [href*='/watch'][title]")
         .evaluateAll(
           (links, n) =>
             links

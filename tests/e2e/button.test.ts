@@ -1,6 +1,7 @@
 import { expect } from "@playwright/test";
+import { CategoryPage } from "@/entrypoints/play-all-button.content/category-page";
 import { ytxTest } from "../fixture";
-import { YtChannelPage, YtSearchPage } from "../utils";
+import { YtChannelPage, YtSearchPage, YtVideoPage } from "../utils";
 
 const channel = "@Microsoft";
 const searchNavigations: ("soft" | "hard")[] = ["soft", "hard"];
@@ -25,21 +26,43 @@ searchNavigations.forEach((searchNavigation) => {
       const allHard = navigationCombinations.every((navigation) =>
         navigation.includes("hard"),
       );
-      if (!allSoft && !allHard) return;
+      const isSoftHardMixed = !allSoft && !allHard;
+      if (isSoftHardMixed) return;
 
-      ytxTest(
-        `button: ${channelnavigation} to channel => ${tabnavigation} to tab`,
-        async ({ page, eventWatcher }) => {
-          const ytSearchPage = new YtSearchPage(page, eventWatcher);
-          await ytSearchPage.search(channel, searchNavigation);
-          await ytSearchPage.navigateToChannel(channelnavigation, channel);
+      CategoryPage.categories.forEach((tab) => {
+        CategoryPage.sorts.forEach((sort) => {
+          ytxTest(
+            `${channelnavigation} to channel => ${tabnavigation} to tab => playlist: ${tab} - ${sort}`,
+            async ({ page, eventWatcher }) => {
+              ytxTest.skip(
+                tab === "Shorts" && sort === "Popular",
+                "Populared Shorts page has not been updated by YouTube",
+              );
+              ytxTest.skip(channelnavigation === "hard", "temporary skip");
 
-          const ytChannelPage = new YtChannelPage(page, eventWatcher);
-          await ytChannelPage.navigateToVideoTab(tabnavigation);
+              const ytSearchPage = new YtSearchPage(page, eventWatcher);
+              await ytSearchPage.search(channel, searchNavigation);
+              await ytSearchPage.navigateToChannel(channelnavigation, channel);
 
-          await expect(page.locator(".play-all-btn")).toBeVisible();
-        },
-      );
+              const ytChannelPage = new YtChannelPage(page, eventWatcher);
+              await ytChannelPage.navigateToVideoTab(tabnavigation);
+
+              await expect(page.locator(".play-all-btn")).toBeVisible();
+
+              const n = sort !== "Oldest" ? 3 : 1;
+              const channelTopVideoIds = await ytChannelPage.getTopVideoIds(n);
+              await ytChannelPage.navigateToPlayAll();
+
+              const ytVideoPage = new YtVideoPage(page);
+              const playlistVideoIds =
+                sort !== "Oldest"
+                  ? await ytVideoPage.getPlaylistVideoIds(n)
+                  : [await ytVideoPage.getPlaylistSelectedVideoId()];
+              expect(channelTopVideoIds).toEqual(playlistVideoIds);
+            },
+          );
+        });
+      });
     });
   });
 });
