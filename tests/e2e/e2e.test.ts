@@ -38,7 +38,6 @@ searchNavigations.forEach((searchNavigation) => {
                 tab === "Shorts" && sort === "Popular",
                 "Populared Shorts page has not been updated by YouTube",
               );
-              ytxTest.skip(channelnavigation === "hard", "temporary skip");
 
               const ytSearchPage = new YtSearchPage(page, eventWatcher);
               await ytSearchPage.search(channel, searchNavigation);
