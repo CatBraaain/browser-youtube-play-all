@@ -3,7 +3,7 @@ import {
   type CategoryKind,
   CategoryPage,
   type SortKind,
-} from "@/entrypoints/content/category-page";
+} from "@/entrypoints/play-all-button.content/category-page";
 import type { EventWatcher } from "./fixture";
 
 export class YtSearchPage {

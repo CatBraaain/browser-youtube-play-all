@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { CategoryPage } from "@/entrypoints/content/category-page";
+import { CategoryPage } from "@/entrypoints/play-all-button.content/category-page";
 import { ytxTest } from "../fixture";
 import { YtChannelPage, YtVideoPage } from "../utils";
 
