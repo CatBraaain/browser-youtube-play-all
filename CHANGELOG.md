@@ -1,3 +1,9 @@
+## [0.1.3] - 2025-11-05
+
+### 🐛 Bug Fixes
+
+- Fix oldest PlayAll button links to wrong video or channel
+
 ## [0.1.2] - 2025-11-05
 
 ### 🚀 Features
