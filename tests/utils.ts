@@ -102,7 +102,7 @@ export class YtVideoPage {
       );
   }
 
-  public async getPlaylistSelectedVideoId(n: number = 3): Promise<string> {
+  public async getPlaylistSelectedVideoId(): Promise<string> {
     return await this.page
       .locator('#playlist-items[selected] #thumbnail[href*="/watch?"]')
       .first()
