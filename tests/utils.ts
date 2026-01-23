@@ -127,6 +127,32 @@ export class YtChannelPage {
     await this.eventWatcher.waitForFired("yt-navigate-finish");
   }
 
+  public async collectPlayAllTestCaseByCategorySort(
+    categoryNavigationMode: "soft" | "hard",
+  ): Promise<PlayAllTestCaseMap> {
+    const playListMap: PlayAllTestCaseMap = Object.fromEntries(
+      CategoryPage.categories.map((category) => [category, {}]),
+    );
+
+    for (const category of CategoryPage.categories) {
+      await this.navigateToCategory(categoryNavigationMode, category);
+
+      for (const sort of CategoryPage.sorts) {
+        await this.navigateToSort(sort);
+
+        const playlistUrl = await this.getPlayAllUrl();
+        const topVideoIds = await this.getTopVideoIds(3);
+
+        playListMap[category][sort] = {
+          url: playlistUrl,
+          expectedTopVideoIds: topVideoIds,
+        };
+      }
+    }
+
+    return playListMap;
+  }
+
   public async navigateToCategory(
     navigation: "soft" | "hard",
     category: CategoryKind,
@@ -189,8 +215,17 @@ export class YtChannelPage {
     }
   }
 
-  public async navigateToPlayAll() {
-    await this.page.locator(".play-all-btn").click();
-    await this.eventWatcher.waitForFired("yt-navigate-finish");
+  public async getPlayAllUrl(): Promise<string> {
+    const href = await this.page.locator(".play-all-btn").getAttribute("href");
+    return `https://www.youtube.com${href}`;
   }
 }
+
+export type PlayAllTestCaseMap = {
+  [category: string]: {
+    [sort: string]: {
+      url: string;
+      expectedTopVideoIds: string[];
+    };
+  };
+};

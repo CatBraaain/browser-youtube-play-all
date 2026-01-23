@@ -1,7 +1,12 @@
 import { expect } from "@playwright/test";
 import { CategoryPage } from "@/entrypoints/play-all-button.content/category-page";
 import { ytxTest } from "../fixture";
-import { YtChannelPage, YtSearchPage, YtVideoPage } from "../utils";
+import {
+  type PlayAllTestCaseMap,
+  YtChannelPage,
+  YtSearchPage,
+  YtVideoPage,
+} from "../utils";
 
 const channel = "@Microsoft";
 const searchNavigationModes: ("soft" | "hard")[] = ["soft", "hard"];
@@ -29,47 +34,59 @@ searchNavigationModes.forEach((searchNavigationMode) => {
       const isSoftHardMixed = !allSoft && !allHard;
       if (isSoftHardMixed) return;
 
-      CategoryPage.categories.forEach((category) => {
-        CategoryPage.sorts.forEach((sort) => {
-          ytxTest(
-            `${channelNavigationMode} nav => ${categoryNavigationMode} nav => playlist: ${category} - ${sort}`,
-            async ({ page, eventWatcher }) => {
-              ytxTest.skip(
-                category === "Shorts" && sort === "Popular",
-                "Populared Shorts page has not been updated by YouTube",
-              );
+      ytxTest.describe(
+        `${channelNavigationMode} nav => ${categoryNavigationMode} nav`,
+        () => {
+          let playAllTestCaseMap: PlayAllTestCaseMap;
+          ytxTest.beforeAll(async ({ page, eventWatcher }) => {
+            const ytSearchPage = new YtSearchPage(page, eventWatcher);
+            await ytSearchPage.search(channel, searchNavigationMode);
+            await ytSearchPage.navigateToChannel(
+              channelNavigationMode,
+              channel,
+            );
 
-              const ytSearchPage = new YtSearchPage(page, eventWatcher);
-              await ytSearchPage.search(channel, searchNavigationMode);
-              await ytSearchPage.navigateToChannel(
-                channelNavigationMode,
-                channel,
-              );
+            const ytChannelPage = new YtChannelPage(
+              channel,
+              page,
+              eventWatcher,
+            );
 
-              const ytChannelPage = new YtChannelPage(
-                channel,
-                page,
-                eventWatcher,
-              );
-              await ytChannelPage.navigateToCategory(
+            playAllTestCaseMap =
+              await ytChannelPage.collectPlayAllTestCaseByCategorySort(
                 categoryNavigationMode,
-                category,
               );
+          });
 
-              const n = sort !== "Oldest" ? 3 : 1;
-              const channelTopVideoIds = await ytChannelPage.getTopVideoIds(n);
-              await ytChannelPage.navigateToPlayAll();
-
-              const ytVideoPage = new YtVideoPage(page);
-              const playlistVideoIds =
-                sort !== "Oldest"
-                  ? await ytVideoPage.getPlaylistVideoIds(n)
-                  : [await ytVideoPage.getPlaylistSelectedVideoId()];
-              expect(channelTopVideoIds).toEqual(playlistVideoIds);
-            },
-          );
-        });
-      });
+          CategoryPage.categories.forEach((category) => {
+            CategoryPage.sorts.forEach((sort) => {
+              ytxTest(
+                `playlist: ${category} - ${sort}`,
+                async ({ page, eventWatcher }) => {
+                  ytxTest.skip(
+                    category === "Shorts" && sort === "Popular",
+                    "Populared Shorts page has not been updated by YouTube",
+                  );
+                  const playAllTestCase = playAllTestCaseMap[category][sort];
+                  await page.goto(playAllTestCase.url);
+                  await eventWatcher.waitForFired("yt-navigate-finish");
+                  const ytVideoPage = new YtVideoPage(page);
+                  const n = sort !== "Oldest" ? 3 : 1;
+                  const playlistVideoIds =
+                    sort !== "Oldest"
+                      ? await ytVideoPage.getPlaylistVideoIds(n)
+                      : [await ytVideoPage.getPlaylistSelectedVideoId()];
+                  const expectedTopVideoIds =
+                    playAllTestCase.expectedTopVideoIds;
+                  expect(playlistVideoIds).toEqual(
+                    expectedTopVideoIds.slice(0, n),
+                  );
+                },
+              );
+            });
+          });
+        },
+      );
     });
   });
 });
