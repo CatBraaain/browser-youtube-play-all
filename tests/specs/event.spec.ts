@@ -27,9 +27,13 @@ youtubeChannels.forEach((channelName) => {
       ytTest(
         `event: ${navigation} from ${channelName}`,
         async ({ page, eventWatcher }) => {
-          const ytChannelPage = new YtChannelPage(page, eventWatcher);
-          await ytChannelPage.visit(channelName);
-          await ytChannelPage.navigateToVideoTab(navigation, false);
+          const ytChannelPage = new YtChannelPage(
+            channelName,
+            page,
+            eventWatcher,
+          );
+          await ytChannelPage.visit();
+          await ytChannelPage.navigateToCategory(navigation, "Videos", false);
 
           await eventWatcher.expect({
             eventName: "yt-navigate-finish",

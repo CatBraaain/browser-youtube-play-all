@@ -117,29 +117,31 @@ export class YtVideoPage {
 
 export class YtChannelPage {
   constructor(
+    private channelName: string,
     private page: Page,
     private eventWatcher: EventWatcher,
   ) {}
 
-  public get videoTab(): Locator {
-    return this.page.locator('ytd-browse [role="tablist"] [role="tab"]').nth(1);
-  }
-
-  public async visit(channelName: string) {
-    await this.page.goto(`https://www.youtube.com/${channelName}`);
+  public async visit() {
+    await this.page.goto(`https://www.youtube.com/${this.channelName}`);
     await this.eventWatcher.waitForFired("yt-navigate-finish");
   }
 
-  public async navigateToVideoTab(
+  public async navigateToCategory(
     navigation: "soft" | "hard",
-    wait: boolean = true,
+    category: CategoryKind,
+    wait = true,
   ) {
     switch (navigation) {
-      case "soft":
-        await this.videoTab.click();
+      case "soft": {
+        const n = CategoryPage.categories.indexOf(category) + 1;
+        await this.page.locator("yt-tab-shape").nth(n).click();
         break;
+      }
       case "hard": {
-        await this.page.goto(`${this.page.url()}/videos`);
+        await this.page.goto(
+          `https://www.youtube.com/${this.channelName}/${category.toLowerCase()}`,
+        );
         break;
       }
     }
@@ -148,24 +150,13 @@ export class YtChannelPage {
     }
   }
 
-  public async visitTab(
-    channelName: string,
-    category: CategoryKind,
-    sort: SortKind,
-  ) {
-    await this.page.goto(
-      `https://www.youtube.com/${channelName}/${category.toLocaleLowerCase()}`,
-    );
-    await this.eventWatcher.waitForFired("yt-navigate-finish");
-
+  public async navigateToSort(sort: SortKind) {
     await this.page
       .locator(`${CategoryPage.sortButtonHolderSelector}>*`)
       .nth(CategoryPage.sorts.indexOf(sort))
       .click();
     await this.page
-      .locator(
-        `.play-all-btn.${category.toLocaleLowerCase()}.${sort.toLocaleLowerCase()}`,
-      )
+      .locator(`.play-all-btn.${sort.toLocaleLowerCase()}`)
       .waitFor({ timeout: 10000 });
   }
 

@@ -4,21 +4,21 @@ import { ytxTest } from "../fixture";
 import { YtChannelPage, YtSearchPage, YtVideoPage } from "../utils";
 
 const channel = "@Microsoft";
-const searchNavigations: ("soft" | "hard")[] = ["soft", "hard"];
-const channelNavigations: ("soft1" | "soft2" | "hard")[] = [
+const searchNavigationModes: ("soft" | "hard")[] = ["soft", "hard"];
+const channelNavigationModes: ("soft1" | "soft2" | "hard")[] = [
   "soft1",
   "soft2",
   "hard",
 ];
-const tabNavigations: ("soft" | "hard")[] = ["soft", "hard"];
+const categoryNavigationModes: ("soft" | "hard")[] = ["soft", "hard"];
 
-searchNavigations.forEach((searchNavigation) => {
-  channelNavigations.forEach((channelnavigation) => {
-    tabNavigations.forEach((tabnavigation) => {
+searchNavigationModes.forEach((searchNavigationMode) => {
+  channelNavigationModes.forEach((channelNavigationMode) => {
+    categoryNavigationModes.forEach((categoryNavigationMode) => {
       const navigationCombinations = [
-        searchNavigation,
-        channelnavigation,
-        tabnavigation,
+        searchNavigationMode,
+        channelNavigationMode,
+        categoryNavigationMode,
       ];
       const allSoft = navigationCombinations.every((navigation) =>
         navigation.includes("soft"),
@@ -29,24 +29,32 @@ searchNavigations.forEach((searchNavigation) => {
       const isSoftHardMixed = !allSoft && !allHard;
       if (isSoftHardMixed) return;
 
-      CategoryPage.categories.forEach((tab) => {
+      CategoryPage.categories.forEach((category) => {
         CategoryPage.sorts.forEach((sort) => {
           ytxTest(
-            `${channelnavigation} to channel => ${tabnavigation} to tab => playlist: ${tab} - ${sort}`,
+            `${channelNavigationMode} nav => ${categoryNavigationMode} nav => playlist: ${category} - ${sort}`,
             async ({ page, eventWatcher }) => {
               ytxTest.skip(
-                tab === "Shorts" && sort === "Popular",
+                category === "Shorts" && sort === "Popular",
                 "Populared Shorts page has not been updated by YouTube",
               );
 
               const ytSearchPage = new YtSearchPage(page, eventWatcher);
-              await ytSearchPage.search(channel, searchNavigation);
-              await ytSearchPage.navigateToChannel(channelnavigation, channel);
+              await ytSearchPage.search(channel, searchNavigationMode);
+              await ytSearchPage.navigateToChannel(
+                channelNavigationMode,
+                channel,
+              );
 
-              const ytChannelPage = new YtChannelPage(page, eventWatcher);
-              await ytChannelPage.navigateToVideoTab(tabnavigation);
-
-              await expect(page.locator(".play-all-btn")).toBeVisible();
+              const ytChannelPage = new YtChannelPage(
+                channel,
+                page,
+                eventWatcher,
+              );
+              await ytChannelPage.navigateToCategory(
+                categoryNavigationMode,
+                category,
+              );
 
               const n = sort !== "Oldest" ? 3 : 1;
               const channelTopVideoIds = await ytChannelPage.getTopVideoIds(n);
