@@ -2,7 +2,7 @@
 
 ### 🚀 Features
 
-- Show oldest playall button for all video category pages
+- Show oldest playall button for all category pages
 
 ## [0.1.1] - 2025-10-30
 
