@@ -42,8 +42,8 @@ searchNavigationModes.forEach((searchNavigationMode) => {
             const ytSearchPage = new YtSearchPage(page, eventWatcher);
             await ytSearchPage.search(channel, searchNavigationMode);
             await ytSearchPage.navigateToChannel(
-              channelNavigationMode,
               channel,
+              channelNavigationMode,
             );
 
             const ytChannelPage = new YtChannelPage(

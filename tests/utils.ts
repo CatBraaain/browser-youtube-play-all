@@ -52,8 +52,8 @@ export class YtSearchPage {
   }
 
   public async navigateToChannel(
+    channelName: string | null,
     navigation: "soft1" | "soft2" | "hard",
-    channelName: string | null = null,
   ) {
     switch (navigation) {
       case "soft1":
@@ -122,11 +122,6 @@ export class YtChannelPage {
     private eventWatcher: EventWatcher,
   ) {}
 
-  public async visit() {
-    await this.page.goto(`https://www.youtube.com/${this.channelName}`);
-    await this.eventWatcher.waitForFired("yt-navigate-finish");
-  }
-
   public async collectPlayAllTestCaseByCategorySort(
     categoryNavigationMode: "soft" | "hard",
   ): Promise<PlayAllTestCaseMap> {
@@ -135,7 +130,7 @@ export class YtChannelPage {
     );
 
     for (const category of CategoryPage.categories) {
-      await this.navigateToCategory(categoryNavigationMode, category);
+      await this.navigateToCategory(category, categoryNavigationMode);
 
       for (const sort of CategoryPage.sorts) {
         await this.navigateToSort(sort);
@@ -154,8 +149,8 @@ export class YtChannelPage {
   }
 
   public async navigateToCategory(
-    navigation: "soft" | "hard",
     category: CategoryKind,
+    navigation: "soft" | "hard",
     wait = true,
   ) {
     switch (navigation) {

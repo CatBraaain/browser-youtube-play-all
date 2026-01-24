@@ -1,5 +1,5 @@
 import { ytTest } from "../fixture";
-import { YtChannelPage } from "../utils";
+import { YtChannelPage, YtSearchPage } from "../utils";
 
 type EventTestCase = {
   navigation: "soft" | "hard";
@@ -27,13 +27,16 @@ youtubeChannels.forEach((channelName) => {
       ytTest(
         `event: ${navigation} from ${channelName}`,
         async ({ page, eventWatcher }) => {
+          const ytSearchPage = new YtSearchPage(page, eventWatcher);
+          await ytSearchPage.search(channelName, "hard");
+          await ytSearchPage.navigateToChannel(channelName, "hard");
+
           const ytChannelPage = new YtChannelPage(
             channelName,
             page,
             eventWatcher,
           );
-          await ytChannelPage.visit();
-          await ytChannelPage.navigateToCategory(navigation, "Videos", false);
+          await ytChannelPage.navigateToCategory("Videos", navigation, false);
 
           await eventWatcher.expect({
             eventName: "yt-navigate-finish",

@@ -48,7 +48,7 @@ searchTestCases.forEach(({ navigation: searchNavigation, searchWord }) => {
         async ({ page, eventWatcher, channelIdFinder }) => {
           const ytSearchPage = new YtSearchPage(page, eventWatcher);
           await ytSearchPage.search(searchWord, searchNavigation);
-          await ytSearchPage.navigateToChannel(channelNavigation);
+          await ytSearchPage.navigateToChannel(null, channelNavigation);
 
           await channelIdFinder.expectNavigationEvent(existsOnEvent);
           await channelIdFinder.expectCanonicalLink(existsOnHtml);
