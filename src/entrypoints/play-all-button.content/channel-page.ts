@@ -2,9 +2,8 @@ import type { CategoryKind } from "./category-page";
 
 export class ChannelPage {
   public static get isChannelPage() {
-    const url = window.location.href;
-    const channelUrlPattern = /https:\/\/www.youtube.com\/(@.*|channel\/UC).*/;
-    return channelUrlPattern.test(url);
+    const channelUrlPattern = /\/(@.*|channel\/UC).*/;
+    return channelUrlPattern.test(window.location.pathname);
   }
 
   public static get categoryKind(): CategoryKindNullable {
