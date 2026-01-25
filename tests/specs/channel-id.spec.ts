@@ -50,7 +50,7 @@ searchTestCases.forEach(({ navigation: searchNavigation, searchWord }) => {
           await ytSearchPage.search(searchWord, searchNavigation);
           await ytSearchPage.navigateToChannel(null, channelNavigation);
 
-          await channelIdFinder.expectNavigationEvent(existsOnEvent);
+          await channelIdFinder.expectNavigationEndEvent(existsOnEvent);
           await channelIdFinder.expectCanonicalLink(existsOnHtml);
           await channelIdFinder.expectYtInitialData(existsOnHtml);
           await channelIdFinder.expectYtCommand(existsOnHtml);

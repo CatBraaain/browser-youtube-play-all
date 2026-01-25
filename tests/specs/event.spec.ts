@@ -3,27 +3,31 @@ import { YtChannelPage, YtSearchPage } from "../utils";
 
 type EventTestCase = {
   navigation: "soft" | "hard";
-  ytNavigateStartFired: boolean;
-  ytNavigateFinishFired: boolean;
+  expectNavigateStartEventFired: boolean;
+  expectNavigateEndEventFired: boolean;
 };
 
 const youtubeChannels = ["@Google", "@Apple"];
 const eventTestCases: EventTestCase[] = [
   {
     navigation: "soft",
-    ytNavigateStartFired: true,
-    ytNavigateFinishFired: true,
+    expectNavigateStartEventFired: true,
+    expectNavigateEndEventFired: true,
   },
   {
     navigation: "hard",
-    ytNavigateStartFired: false,
-    ytNavigateFinishFired: true,
+    expectNavigateStartEventFired: false,
+    expectNavigateEndEventFired: true,
   },
 ];
 
 youtubeChannels.forEach((channelName) => {
   eventTestCases.forEach(
-    ({ navigation, ytNavigateStartFired, ytNavigateFinishFired }) => {
+    ({
+      navigation,
+      expectNavigateStartEventFired,
+      expectNavigateEndEventFired,
+    }) => {
       ytTest(
         `event: ${navigation} from ${channelName}`,
         async ({ page, eventWatcher }) => {
@@ -40,11 +44,11 @@ youtubeChannels.forEach((channelName) => {
 
           await eventWatcher.expect({
             eventName: "yt-navigate-finish",
-            fired: ytNavigateFinishFired,
+            fired: expectNavigateEndEventFired,
           });
           await eventWatcher.expect({
             eventName: "yt-navigate-start",
-            fired: ytNavigateStartFired,
+            fired: expectNavigateStartEventFired,
             timeout: 500,
           });
         },
