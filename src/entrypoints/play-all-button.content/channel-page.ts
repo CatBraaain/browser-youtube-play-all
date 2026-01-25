@@ -26,9 +26,10 @@ export class ChannelPage {
   public static async fetchChannelId() {
     const res = await fetch(window.location.href);
     const html = await res.text();
-    const match = html.match(/<link rel="canonical" href="(.*?)"/i);
-    const href = match![1];
-    const channelId = href.split("/").at(-1)!;
+    const match = html.match(
+      /<link rel="canonical" href="https:\/\/www.youtube.com\/channel\/(.*?)">/i,
+    );
+    const channelId = match![1];
     return channelId;
   }
 }
