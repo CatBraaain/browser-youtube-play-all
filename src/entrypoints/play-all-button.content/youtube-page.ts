@@ -1,4 +1,7 @@
 export default class YoutubePage {
+  public static NAVIGATION_START_EVENT = "yt-navigate-start";
+  public static NAVIGATION_END_EVENT = "yt-navigate-finish";
+
   public static addStyleForPlayAllButton() {
     const style = document.createElement("style");
     style.textContent = `
@@ -32,5 +35,13 @@ export default class YoutubePage {
       }
     `;
     document.head.appendChild(style);
+  }
+
+  public static get NavigationStartEvent(): string {
+    return YoutubePage.NAVIGATION_START_EVENT;
+  }
+
+  public static get NavigationEndEvent(): string {
+    return YoutubePage.NAVIGATION_END_EVENT;
   }
 }

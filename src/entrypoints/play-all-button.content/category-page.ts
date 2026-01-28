@@ -1,6 +1,11 @@
 import { ChannelPage } from "./channel-page";
+import YoutubePage from "./youtube-page";
 
 export class CategoryPage {
+  public static SORT_BUTTON_HOLDER =
+    "ytd-browse[page-subtype='channels'] #chips";
+  public static SORT_BUTTON = `${this.SORT_BUTTON_HOLDER}>[selected]`;
+
   public static readonly sorts: SortKind[] = ["Latest", "Popular", "Oldest"];
   public static readonly categories: CategoryKind[] = [
     "Videos",
@@ -17,12 +22,10 @@ export class CategoryPage {
       await ChannelPage.fetchChannelId(),
       ChannelPage.categoryKind!,
     );
-    if (categoryPage.shouldAddButton) {
-      categoryPage.addPlayAllButton();
-    }
+    categoryPage.renderPlayAllButton();
     const watcher = categoryPage.watchSortSelect();
     window.addEventListener(
-      "yt-navigate-start",
+      YoutubePage.NavigationStartEvent,
       () => categoryPage.unwatchSortSelect(watcher),
       {
         once: true,
@@ -31,13 +34,11 @@ export class CategoryPage {
   }
 
   public static get sortButtonHolderSelector() {
-    return 'ytd-browse[page-subtype="channels"] #chips';
+    return CategoryPage.SORT_BUTTON_HOLDER;
   }
 
   public get sortKind(): SortKind {
-    const selectedButton = document.querySelector(
-      `${CategoryPage.sortButtonHolderSelector}>[selected]`,
-    );
+    const selectedButton = document.querySelector(CategoryPage.SORT_BUTTON);
     const index = selectedButton
       ? Array.from(selectedButton.parentNode?.children ?? []).indexOf(
           selectedButton,
@@ -53,11 +54,11 @@ export class CategoryPage {
 
   public watchSortSelect() {
     const buttonHolder = document.querySelector(
-      CategoryPage.sortButtonHolderSelector,
-    )!;
+      CategoryPage.sortButtonHolderSelector!,
+    );
     const observer = new MutationObserver(() => {
-      if (this.shouldAddButton) {
-        this.addPlayAllButton();
+      if (CategoryPage.isCategoryPage) {
+        this.renderPlayAllButton();
       }
     });
     if (buttonHolder) {
@@ -75,15 +76,19 @@ export class CategoryPage {
     observer.disconnect();
   }
 
-  public get shouldAddButton() {
-    const isSupportedPage = this.sortKind !== null;
-    const hasPlayAllButton = !!document.querySelector(".play-all-btn");
-    return isSupportedPage && !hasPlayAllButton;
-  }
-
-  public addPlayAllButton() {
+  public renderPlayAllButton() {
     const categoryKind = this.categoryKind;
     const sortKind = this.sortKind;
+
+    const targetPlayAllButton = document.querySelector(
+      `.play-all-btn.${categoryKind.toLowerCase()}.${sortKind.toLowerCase()}`,
+    );
+    const targetPlayAllButtonExists = targetPlayAllButton !== null;
+    if (targetPlayAllButtonExists) {
+      return;
+    }
+
+    document.querySelector(".play-all-btn")?.remove();
 
     const playAllButton = document.createElement("a");
     playAllButton.classList.add("play-all-btn");

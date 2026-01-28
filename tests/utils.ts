@@ -173,7 +173,8 @@ export class YtChannelPage {
 
   public async navigateToSort(sort: SortKind) {
     await this.page
-      .locator(`${CategoryPage.sortButtonHolderSelector}>*`)
+      .locator(CategoryPage.sortButtonHolderSelector)
+      .locator(":scope > *")
       .nth(CategoryPage.sorts.indexOf(sort))
       .click();
     await this.page

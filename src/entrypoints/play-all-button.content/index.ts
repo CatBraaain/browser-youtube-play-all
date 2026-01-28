@@ -14,7 +14,7 @@ async function onYoutubeActivated() {
     await CategoryPage.mount();
   }
 
-  window.addEventListener("yt-navigate-finish", async () => {
+  window.addEventListener(YoutubePage.NavigationEndEvent, async () => {
     if (CategoryPage.isCategoryPage) {
       await CategoryPage.mount();
     }
