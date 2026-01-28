@@ -2,8 +2,7 @@ import type { CategoryKind } from "./category-page";
 
 export class ChannelPage {
   public static get isChannelPage() {
-    const channelUrlPattern = /\/(@.*|channel\/UC).*/;
-    return channelUrlPattern.test(window.location.pathname);
+    return ChannelPage.fetchChannelId() !== undefined;
   }
 
   public static get categoryKind(): CategoryKindNullable {
@@ -29,7 +28,7 @@ export class ChannelPage {
     const match = html.match(
       /<link rel="canonical" href="https:\/\/www.youtube.com\/channel\/(.*?)">/i,
     );
-    const channelId = match![1];
+    const channelId = match?.at(1);
     return channelId;
   }
 }

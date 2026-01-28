@@ -19,7 +19,7 @@ export class CategoryPage {
 
   public static async mount() {
     const categoryPage = new CategoryPage(
-      await ChannelPage.fetchChannelId(),
+      (await ChannelPage.fetchChannelId())!,
       ChannelPage.categoryKind!,
     );
     categoryPage.renderPlayAllButton();
