@@ -17,7 +17,7 @@ export class YtSearchPage {
   ): Locator {
     return this.page
       .locator(
-        "#channel-thumbnail" +
+        "#channel-thumbnail:not([hidden])" +
           (channelName !== null ? `[href*="/${channelName}"]` : ""),
       )
       .first(); // [href^="/channel/"] or [href^="link:///"]
@@ -179,6 +179,7 @@ export class YtChannelPage {
     await this.page
       .locator(`.play-all-btn.${sort.toLocaleLowerCase()}`)
       .waitFor({ timeout: 10000 });
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
   public async getTopVideoIds(n: number = 3): Promise<string[]> {
