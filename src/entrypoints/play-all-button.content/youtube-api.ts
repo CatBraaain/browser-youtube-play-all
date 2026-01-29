@@ -107,13 +107,11 @@ function extractContinuationToken(
       category.toLowerCase(),
     ),
   )!;
-  const chipCloudChipRenderers =
-    videoTabRenderer.content.richGridRenderer.header.feedFilterChipBarRenderer
-      .contents;
-  const tokens = chipCloudChipRenderers.map(
-    (renderer) =>
-      renderer.chipCloudChipRenderer.navigationEndpoint.continuationCommand
-        .token,
+  const rendererHeader = videoTabRenderer.content.richGridRenderer.header;
+  const tokens = Array.from(
+    JSON.stringify(rendererHeader)
+      .matchAll(/"token":"(.*?)"/g)
+      .map((match) => match[1]),
   );
   const [latestVideoToken, popularVideoToken, oldestVideoToken] = tokens;
   switch (sortKind) {
@@ -140,19 +138,7 @@ type YtInitialData = {
           };
           content: {
             richGridRenderer: {
-              header: {
-                feedFilterChipBarRenderer: {
-                  contents: Array<{
-                    chipCloudChipRenderer: {
-                      navigationEndpoint: {
-                        continuationCommand: {
-                          token: string;
-                        };
-                      };
-                    };
-                  }>;
-                };
-              };
+              header: object;
             };
           };
         };

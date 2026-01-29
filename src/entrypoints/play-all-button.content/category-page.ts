@@ -5,6 +5,7 @@ import YoutubePage from "./youtube-page";
 export class CategoryPage {
   public static SORT_BUTTON_HOLDER =
     "ytd-browse[page-subtype='channels'] #chips";
+  public static NEW_SORT_BUTTON_HOLDER = "chip-bar-view-model";
   public static SORT_BUTTON = `${this.SORT_BUTTON_HOLDER}>[selected]`;
 
   public static readonly sorts: SortKind[] = ["Latest", "Popular", "Oldest"];
@@ -15,7 +16,10 @@ export class CategoryPage {
   ];
 
   public static get isCategoryPage() {
-    return ChannelPage.isChannelPage && ChannelPage.categoryKind !== null;
+    return (
+      ChannelPage.isChannelPage &&
+      window.location.href.match(/\/(videos|shorts|streams)$/)
+    );
   }
 
   public static async mount() {
@@ -35,7 +39,7 @@ export class CategoryPage {
   }
 
   public static get sortButtonHolderSelector() {
-    return CategoryPage.SORT_BUTTON_HOLDER;
+    return `${CategoryPage.SORT_BUTTON_HOLDER},${CategoryPage.NEW_SORT_BUTTON_HOLDER}`;
   }
 
   public get sortKind(): SortKind {
@@ -57,17 +61,42 @@ export class CategoryPage {
     const buttonHolder = document.querySelector(
       CategoryPage.sortButtonHolderSelector!,
     );
-    const observer = new MutationObserver(async () => {
-      if (CategoryPage.isCategoryPage) {
-        await this.renderPlayAllButton();
+    const observer = new MutationObserver(async (records) => {
+      const buttonHolder = document.querySelector(
+        CategoryPage.sortButtonHolderSelector!,
+      )!;
+      const selectedButton = records.find(
+        (e) => (e.target as any).ariaSelected === "true",
+      )!.target;
+      const sortKind: SortKind | null = (() => {
+        const i = Array.from(buttonHolder.children).findIndex((root) =>
+          root.contains(selectedButton),
+        );
+        switch (i) {
+          case 0:
+            return "Latest";
+          case 1:
+            return "Popular";
+          case 2:
+            return "Oldest";
+          default:
+            return null;
+        }
+      })();
+
+      if (CategoryPage.isCategoryPage && sortKind !== null) {
+        await this.renderPlayAllButton(sortKind);
       }
     });
     if (buttonHolder) {
       // buttonHolder may not exist when there are not enough items
-      observer.observe(buttonHolder, {
+      // observer.observe(buttonHolder, {
+      observer.observe(document, {
         subtree: true,
         childList: false,
         attributes: true,
+        attributeFilter: ["aria-selected"],
+        attributeOldValue: true,
       });
     }
     return observer;
@@ -77,9 +106,9 @@ export class CategoryPage {
     observer.disconnect();
   }
 
-  public async renderPlayAllButton() {
+  public async renderPlayAllButton(sortKind: SortKind = "Latest") {
     const categoryKind = this.categoryKind;
-    const sortKind = this.sortKind;
+    // const sortKind = this.sortKind;
 
     const targetPlayAllButton = document.querySelector(
       `.play-all-btn.${categoryKind.toLowerCase()}.${sortKind.toLowerCase()}`,
