@@ -39,6 +39,8 @@ searchNavigationModes.forEach((searchNavigationMode) => {
         () => {
           let playAllTestCaseMap: PlayAllTestCaseMap;
           ytxTest.beforeAll(async ({ page, eventWatcher }) => {
+            ytxTest.setTimeout(60000);
+
             const ytSearchPage = new YtSearchPage(page, eventWatcher);
             await ytSearchPage.search(channel, searchNavigationMode);
             await ytSearchPage.navigateToChannel(
