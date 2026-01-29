@@ -1,3 +1,14 @@
+## [0.2.0] - 2026-01-29
+
+### 🚀 Features
+
+- Use youtube private api for stalability and future enhancements
+
+### 🐛 Bug Fixes
+
+- Support channel URLs without @ prefix (e.g. /hikakintv)
+- Adapt to YouTube internal UI changes
+
 ## [0.1.3] - 2026-01-23
 
 ### 🐛 Bug Fixes
