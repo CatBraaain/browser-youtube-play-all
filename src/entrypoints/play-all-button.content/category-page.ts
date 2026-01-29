@@ -1,5 +1,5 @@
 import { ChannelPage } from "./channel-page";
-import { resolvePlaylistPath } from "./youtube-api";
+import { fetchChannelId, resolvePlaylistPath } from "./youtube-api";
 import YoutubePage from "./youtube-page";
 
 export class CategoryPage {
@@ -20,7 +20,7 @@ export class CategoryPage {
 
   public static async mount() {
     const categoryPage = new CategoryPage(
-      (await ChannelPage.fetchChannelId())!,
+      (await fetchChannelId(window.location.href))!,
       ChannelPage.categoryKind!,
     );
     await categoryPage.renderPlayAllButton();

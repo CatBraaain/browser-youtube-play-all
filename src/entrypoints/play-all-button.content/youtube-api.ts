@@ -5,7 +5,7 @@ export async function resolvePlaylistPath(
   categoryKind: CategoryKind,
   sortKind: SortKind,
 ): Promise<string> {
-  const channelId = await fetchChannelId(channelUrl);
+  const channelId = (await fetchChannelId(channelUrl))!;
   if (sortKind === "Oldest") {
     const videoId = await getOldestItemId(channelUrl, categoryKind);
     return videoId ? `/watch?v=${videoId}&list=UL01234567890` : "";
@@ -26,7 +26,7 @@ export async function fetchChannelId(channelUrl: string) {
     /<link rel="canonical" href="https:\/\/www.youtube.com\/channel\/(.*?)">/i,
   );
   const channelId = match?.at(1);
-  return channelId!;
+  return channelId;
 }
 
 function resolvePlaylistPrefix(

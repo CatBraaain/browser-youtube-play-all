@@ -1,8 +1,9 @@
 import type { CategoryKind } from "./category-page";
+import { fetchChannelId } from "./youtube-api";
 
 export class ChannelPage {
   public static get isChannelPage() {
-    return ChannelPage.fetchChannelId() !== undefined;
+    return fetchChannelId(window.location.href) !== undefined;
   }
 
   public static get categoryKind(): CategoryKindNullable {
@@ -20,16 +21,6 @@ export class ChannelPage {
       default:
         return null;
     }
-  }
-
-  public static async fetchChannelId() {
-    const res = await fetch(window.location.href);
-    const html = await res.text();
-    const match = html.match(
-      /<link rel="canonical" href="https:\/\/www.youtube.com\/channel\/(.*?)">/i,
-    );
-    const channelId = match?.at(1);
-    return channelId;
   }
 }
 
