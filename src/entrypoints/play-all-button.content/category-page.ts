@@ -1,4 +1,5 @@
 import { ChannelPage } from "./channel-page";
+import { resolvePlaylistPath } from "./youtube-api";
 import YoutubePage from "./youtube-page";
 
 export class CategoryPage {
@@ -22,7 +23,7 @@ export class CategoryPage {
       (await ChannelPage.fetchChannelId())!,
       ChannelPage.categoryKind!,
     );
-    categoryPage.renderPlayAllButton();
+    await categoryPage.renderPlayAllButton();
     const watcher = categoryPage.watchSortSelect();
     window.addEventListener(
       YoutubePage.NavigationStartEvent,
@@ -56,9 +57,9 @@ export class CategoryPage {
     const buttonHolder = document.querySelector(
       CategoryPage.sortButtonHolderSelector!,
     );
-    const observer = new MutationObserver(() => {
+    const observer = new MutationObserver(async () => {
       if (CategoryPage.isCategoryPage) {
-        this.renderPlayAllButton();
+        await this.renderPlayAllButton();
       }
     });
     if (buttonHolder) {
@@ -76,7 +77,7 @@ export class CategoryPage {
     observer.disconnect();
   }
 
-  public renderPlayAllButton() {
+  public async renderPlayAllButton() {
     const categoryKind = this.categoryKind;
     const sortKind = this.sortKind;
 
@@ -94,10 +95,10 @@ export class CategoryPage {
     playAllButton.classList.add("play-all-btn");
     playAllButton.classList.add(categoryKind.toLowerCase());
     playAllButton.classList.add(sortKind.toLowerCase());
-    playAllButton.href = this.resolvePlaylistPath(
+    playAllButton.href = await resolvePlaylistPath(
+      window.location.href,
       categoryKind,
       sortKind,
-      this.channelId,
     );
     playAllButton.textContent = `Play All (${sortKind})`;
 
@@ -105,54 +106,6 @@ export class CategoryPage {
       CategoryPage.sortButtonHolderSelector,
     );
     buttonHolder?.appendChild(playAllButton);
-  }
-
-  private resolvePlaylistPath(
-    categoryKind: CategoryKind,
-    sortKind: SortKind,
-    channelId: string,
-  ): string {
-    if (sortKind === "Oldest") {
-      const oldestVideoHref = document.querySelector<HTMLLinkElement>(
-        "ytd-browse[role='main'] [href*='/watch?v='],ytd-browse[role='main'] [href*='/shorts/']",
-      )?.href;
-      const videoId = oldestVideoHref
-        ?.match(/(?:watch\?v=|shorts\/)([^&]*)/)
-        ?.at(1);
-      return videoId ? `/watch?v=${videoId}&list=UL01234567890` : "";
-    } else {
-      if (categoryKind && sortKind) {
-        const playlistPrefix = this.resolvePlaylistPrefix(
-          categoryKind,
-          sortKind,
-        );
-        return `/playlist?list=${playlistPrefix}${channelId.slice(2)}&playnext=1`;
-      } else {
-        return "";
-      }
-    }
-  }
-
-  private resolvePlaylistPrefix(
-    categoryKind: CategoryKind,
-    sortKind: SortKind,
-  ): string {
-    switch (true) {
-      case categoryKind === "Videos" && sortKind === "Latest":
-        return "UULF";
-      case categoryKind === "Videos" && sortKind === "Popular":
-        return "UULP";
-      case categoryKind === "Shorts" && sortKind === "Latest":
-        return "UUSH";
-      case categoryKind === "Shorts" && sortKind === "Popular":
-        return "UUPS";
-      case categoryKind === "Streams" && sortKind === "Latest":
-        return "UULV";
-      case categoryKind === "Streams" && sortKind === "Popular":
-        return "UUPV";
-      default:
-        return "UU";
-    }
   }
 }
 
