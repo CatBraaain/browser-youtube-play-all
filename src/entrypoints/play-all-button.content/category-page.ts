@@ -16,10 +16,7 @@ export class CategoryPage {
   ];
 
   public static get isCategoryPage() {
-    return (
-      ChannelPage.isChannelPage &&
-      window.location.href.match(/\/(videos|shorts|streams)$/)
-    );
+    return window.location.pathname.match(/^\/[^/]+\/(videos|shorts|streams)$/);
   }
 
   public static async mount() {

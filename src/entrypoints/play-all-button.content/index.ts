@@ -1,5 +1,6 @@
 ﻿import { defineContentScript } from "#imports";
 import { CategoryPage } from "./category-page";
+import { ChannelPage } from "./channel-page";
 import YoutubePage from "./youtube-page";
 
 export default defineContentScript({
@@ -10,12 +11,12 @@ export default defineContentScript({
 
 async function onYoutubeActivated() {
   YoutubePage.addStyleForPlayAllButton();
-  if (CategoryPage.isCategoryPage) {
+  if (ChannelPage.isChannelPage && CategoryPage.isCategoryPage) {
     await CategoryPage.mount();
   }
 
   window.addEventListener(YoutubePage.NavigationEndEvent, async () => {
-    if (CategoryPage.isCategoryPage) {
+    if (ChannelPage.isChannelPage && CategoryPage.isCategoryPage) {
       await CategoryPage.mount();
     }
   });
