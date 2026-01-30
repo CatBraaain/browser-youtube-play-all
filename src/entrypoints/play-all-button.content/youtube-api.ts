@@ -5,11 +5,11 @@ export async function resolvePlaylistPath(
   categoryKind: CategoryKind,
   sortKind: SortKind,
 ): Promise<string> {
-  const channelId = (await fetchChannelId(channelUrl))!;
   if (sortKind === "Oldest") {
     const videoId = await getOldestItemId(channelUrl, categoryKind);
     return videoId ? `/watch?v=${videoId}&list=UL01234567890` : "";
   } else {
+    const channelId = (await fetchChannelId(channelUrl))!;
     if (categoryKind && sortKind) {
       const playlistPrefix = resolvePlaylistPrefix(categoryKind, sortKind);
       return `/playlist?list=${playlistPrefix}${channelId.slice(2)}&playnext=1`;
