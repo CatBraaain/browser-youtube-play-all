@@ -1,4 +1,4 @@
-import type { CategoryKind } from "./category-page";
+import type { CategoryKind } from "./category-tab";
 import { fetchChannelId } from "./youtube-api";
 
 export class ChannelPage {

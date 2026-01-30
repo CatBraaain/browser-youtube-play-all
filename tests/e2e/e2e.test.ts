@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { CategoryPage } from "@/entrypoints/play-all-button.content/category-page";
+import { CategoryTab } from "@/entrypoints/play-all-button.content/category-tab";
 import { ytxTest } from "../fixture";
 import {
   type PlayAllTestCaseMap,
@@ -60,8 +60,8 @@ searchNavigationModes.forEach((searchNavigationMode) => {
               );
           });
 
-          CategoryPage.categories.forEach((category) => {
-            CategoryPage.sorts.forEach((sort) => {
+          CategoryTab.categories.forEach((category) => {
+            CategoryTab.sorts.forEach((sort) => {
               ytxTest(
                 `playlist: ${category} - ${sort}`,
                 async ({ page, eventWatcher }) => {

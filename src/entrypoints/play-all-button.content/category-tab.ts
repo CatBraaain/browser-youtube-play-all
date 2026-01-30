@@ -2,7 +2,7 @@ import { ChannelPage } from "./channel-page";
 import { resolvePlaylistPath } from "./youtube-api";
 import YoutubePage from "./youtube-page";
 
-export class CategoryPage {
+export class CategoryTab {
   public static SORT_BUTTON_HOLDER =
     "ytd-browse[page-subtype='channels'] #chips";
   public static NEW_SORT_BUTTON_HOLDER = "chip-bar-view-model";
@@ -15,17 +15,17 @@ export class CategoryPage {
     "Streams",
   ];
 
-  public static get isCategoryPage() {
+  public static get isCategoryTab() {
     return window.location.pathname.match(/^\/[^/]+\/(videos|shorts|streams)$/);
   }
 
   public static async mount() {
-    const categoryPage = new CategoryPage(ChannelPage.categoryKind!);
-    await categoryPage.renderPlayAllButton();
-    const watcher = categoryPage.watchSortSelect();
+    const categoryTab = new CategoryTab(ChannelPage.categoryKind!);
+    await categoryTab.renderPlayAllButton();
+    const watcher = categoryTab.watchSortSelect();
     window.addEventListener(
       YoutubePage.NavigationStartEvent,
-      () => categoryPage.unwatchSortSelect(watcher),
+      () => categoryTab.unwatchSortSelect(watcher),
       {
         once: true,
       },
@@ -33,28 +33,28 @@ export class CategoryPage {
   }
 
   public static get sortButtonHolderSelector() {
-    return `${CategoryPage.SORT_BUTTON_HOLDER},${CategoryPage.NEW_SORT_BUTTON_HOLDER}`;
+    return `${CategoryTab.SORT_BUTTON_HOLDER},${CategoryTab.NEW_SORT_BUTTON_HOLDER}`;
   }
 
   public get sortKind(): SortKind {
-    const selectedButton = document.querySelector(CategoryPage.SORT_BUTTON);
+    const selectedButton = document.querySelector(CategoryTab.SORT_BUTTON);
     const index = selectedButton
       ? Array.from(selectedButton.parentNode?.children ?? []).indexOf(
           selectedButton,
         )
       : 0;
-    return CategoryPage.sorts[index];
+    return CategoryTab.sorts[index];
   }
 
   public constructor(public categoryKind: CategoryKind) {}
 
   public watchSortSelect() {
     const buttonHolder = document.querySelector(
-      CategoryPage.sortButtonHolderSelector!,
+      CategoryTab.sortButtonHolderSelector!,
     );
     const observer = new MutationObserver(async (records) => {
       const buttonHolder = document.querySelector(
-        CategoryPage.sortButtonHolderSelector!,
+        CategoryTab.sortButtonHolderSelector!,
       )!;
       const selectedButton = records.find(
         (e) => (e.target as any).ariaSelected === "true",
@@ -75,7 +75,7 @@ export class CategoryPage {
         }
       })();
 
-      if (CategoryPage.isCategoryPage && sortKind !== null) {
+      if (CategoryTab.isCategoryTab && sortKind !== null) {
         await this.renderPlayAllButton(sortKind);
       }
     });
@@ -123,7 +123,7 @@ export class CategoryPage {
     playAllButton.textContent = `Play All (${sortKind})`;
 
     const buttonHolder = document.querySelector(
-      CategoryPage.sortButtonHolderSelector,
+      CategoryTab.sortButtonHolderSelector,
     );
     buttonHolder?.appendChild(playAllButton);
   }

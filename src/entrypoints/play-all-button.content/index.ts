@@ -1,5 +1,5 @@
 ﻿import { defineContentScript } from "#imports";
-import { CategoryPage } from "./category-page";
+import { CategoryTab } from "./category-tab";
 import { ChannelPage } from "./channel-page";
 import YoutubePage from "./youtube-page";
 
@@ -11,13 +11,13 @@ export default defineContentScript({
 
 async function onYoutubeActivated() {
   YoutubePage.addStyleForPlayAllButton();
-  if (ChannelPage.isChannelPage && CategoryPage.isCategoryPage) {
-    await CategoryPage.mount();
+  if (ChannelPage.isChannelPage && CategoryTab.isCategoryTab) {
+    await CategoryTab.mount();
   }
 
   window.addEventListener(YoutubePage.NavigationEndEvent, async () => {
-    if (ChannelPage.isChannelPage && CategoryPage.isCategoryPage) {
-      await CategoryPage.mount();
+    if (ChannelPage.isChannelPage && CategoryTab.isCategoryTab) {
+      await CategoryTab.mount();
     }
   });
 }

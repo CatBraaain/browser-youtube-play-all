@@ -1,9 +1,9 @@
 import type { Locator, Page } from "@playwright/test";
 import {
   type CategoryKind,
-  CategoryPage,
+  CategoryTab,
   type SortKind,
-} from "@/entrypoints/play-all-button.content/category-page";
+} from "@/entrypoints/play-all-button.content/category-tab";
 import type { EventWatcher } from "./fixture";
 
 export class YtSearchPage {
@@ -126,13 +126,13 @@ export class YtChannelPage {
     categoryNavigationMode: "soft" | "hard",
   ): Promise<PlayAllTestCaseMap> {
     const playListMap: PlayAllTestCaseMap = Object.fromEntries(
-      CategoryPage.categories.map((category) => [category, {}]),
+      CategoryTab.categories.map((category) => [category, {}]),
     );
 
-    for (const category of CategoryPage.categories) {
+    for (const category of CategoryTab.categories) {
       await this.navigateToCategory(category, categoryNavigationMode);
 
-      for (const sort of CategoryPage.sorts) {
+      for (const sort of CategoryTab.sorts) {
         await this.navigateToSort(sort);
 
         const playlistUrl = await this.getPlayAllUrl();
@@ -155,7 +155,7 @@ export class YtChannelPage {
   ) {
     switch (navigation) {
       case "soft": {
-        const n = CategoryPage.categories.indexOf(category) + 1;
+        const n = CategoryTab.categories.indexOf(category) + 1;
         await this.page.locator("yt-tab-shape").nth(n).click();
         break;
       }
@@ -173,9 +173,9 @@ export class YtChannelPage {
 
   public async navigateToSort(sort: SortKind) {
     await this.page
-      .locator(CategoryPage.sortButtonHolderSelector)
+      .locator(CategoryTab.sortButtonHolderSelector)
       .locator(":scope > *")
-      .nth(CategoryPage.sorts.indexOf(sort))
+      .nth(CategoryTab.sorts.indexOf(sort))
       .click();
     await this.page
       .locator(`.play-all-btn.${sort.toLocaleLowerCase()}`)

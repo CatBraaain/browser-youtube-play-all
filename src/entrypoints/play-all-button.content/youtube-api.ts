@@ -1,4 +1,4 @@
-import type { CategoryKind, SortKind } from "./category-page";
+import type { CategoryKind, SortKind } from "./category-tab";
 
 export async function resolvePlaylistPath(
   channelUrl: string,
