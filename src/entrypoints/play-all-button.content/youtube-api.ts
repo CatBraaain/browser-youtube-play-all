@@ -102,12 +102,12 @@ function extractContinuationToken(
     ytInitialData.contents.twoColumnBrowseResultsRenderer.tabs.map(
       (tab) => tab.tabRenderer,
     );
-  const videoTabRenderer = tabRenderers.find((tab) =>
+  const categoryTabRenderer = tabRenderers.find((tab) =>
     tab.endpoint.commandMetadata.webCommandMetadata.url.endsWith(
       category.toLowerCase(),
     ),
   )!;
-  const rendererHeader = videoTabRenderer.content.richGridRenderer.header;
+  const rendererHeader = categoryTabRenderer.content.richGridRenderer.header;
   const tokens = Array.from(
     JSON.stringify(rendererHeader)
       .matchAll(/"token":"(.*?)"/g)
