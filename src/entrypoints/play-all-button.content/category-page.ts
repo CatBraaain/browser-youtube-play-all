@@ -1,5 +1,5 @@
 import { ChannelPage } from "./channel-page";
-import { fetchChannelId, resolvePlaylistPath } from "./youtube-api";
+import { resolvePlaylistPath } from "./youtube-api";
 import YoutubePage from "./youtube-page";
 
 export class CategoryPage {
@@ -20,10 +20,7 @@ export class CategoryPage {
   }
 
   public static async mount() {
-    const categoryPage = new CategoryPage(
-      (await fetchChannelId(window.location.href))!,
-      ChannelPage.categoryKind!,
-    );
+    const categoryPage = new CategoryPage(ChannelPage.categoryKind!);
     await categoryPage.renderPlayAllButton();
     const watcher = categoryPage.watchSortSelect();
     window.addEventListener(
@@ -49,10 +46,7 @@ export class CategoryPage {
     return CategoryPage.sorts[index];
   }
 
-  public constructor(
-    public channelId: string,
-    public categoryKind: CategoryKind,
-  ) {}
+  public constructor(public categoryKind: CategoryKind) {}
 
   public watchSortSelect() {
     const buttonHolder = document.querySelector(
