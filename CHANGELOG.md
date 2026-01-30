@@ -1,3 +1,9 @@
+## [0.2.1] - 2026-01-30
+
+### ⚡ Performance
+
+- Reduce api calling and improve speed
+
 ## [0.2.0] - 2026-01-29
 
 ### 🚀 Features
