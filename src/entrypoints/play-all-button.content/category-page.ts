@@ -90,7 +90,7 @@ export class CategoryPage {
     });
     if (buttonHolder) {
       // buttonHolder may not exist when there are not enough items
-      // observer.observe(buttonHolder, {
+      // buttonHolder may be regenerated; therefore, observe the document instead
       observer.observe(document, {
         subtree: true,
         childList: false,
