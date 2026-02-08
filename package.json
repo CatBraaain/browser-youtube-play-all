@@ -22,6 +22,7 @@
     "fix:sort-package-json": "sort-package-json package.json",
     "publish": "bun run zip && wxt submit",
     "publish-init": "wxt submit --init",
+    "publish-refresh-token-init": "bunx chrome-webstore-upload-keys",
     "setup": "bun install && wxt prepare && bunx lefthook install && bunx playwright install chromium firefox",
     "test": "bun run build && bunx playwright test tests/e2e",
     "test-specs": "bun run build && bunx playwright test tests/specs",
