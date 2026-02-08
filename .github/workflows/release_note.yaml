@@ -8,6 +8,9 @@ on:
     tags:
       - "v*.*.*"
 
+env:
+  GH_TOKEN: ${{ github.token }}
+
 jobs:
   version:
     runs-on: ubuntu-latest
