@@ -1,3 +1,10 @@
+## [0.2.2] - 2026-02-09
+
+### 🐛 Bug Fixes
+
+- Fix not showing button after soft navigation
+- Stabilize button generation logic
+
 ## [0.2.1] - 2026-01-30
 
 ### ⚡ Performance
