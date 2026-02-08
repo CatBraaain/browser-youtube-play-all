@@ -23,10 +23,14 @@ export class CategoryTab {
   public static async mount() {
     const categoryTab = new CategoryTab(ChannelPage.categoryKind!);
     await categoryTab.renderPlayAllButton();
-    const watcher = categoryTab.watchSortSelect();
+    const watchers = categoryTab.watchSortSelect();
     window.addEventListener(
       YoutubePage.NavigationStartEvent,
-      () => categoryTab.unwatchSortSelect(watcher),
+      () => {
+        watchers.forEach((w) => {
+          w.disconnect();
+        });
+      },
       {
         once: true,
       },
@@ -37,15 +41,7 @@ export class CategoryTab {
     return `${CategoryTab.SORT_BUTTON_HOLDER},${CategoryTab.NEW_SORT_BUTTON_HOLDER}`;
   }
 
-  public get sortKind(): SortKind {
-    const selectedButton = document.querySelector(CategoryTab.SORT_BUTTON);
-    const index = selectedButton
-      ? Array.from(selectedButton.parentNode?.children ?? []).indexOf(
-          selectedButton,
-        )
-      : 0;
-    return CategoryTab.sorts[index];
-  }
+  public lastSortKind: SortKind = "Latest";
 
   public constructor(public categoryKind: CategoryKind) {}
 
@@ -53,7 +49,7 @@ export class CategoryTab {
     const buttonHolder = document.querySelector(
       CategoryTab.sortButtonHolderSelector!,
     );
-    const observer = new MutationObserver(async (records) => {
+    const sortChangeObserver = new MutationObserver(async (records) => {
       const buttonHolder = document.querySelector(
         CategoryTab.sortButtonHolderSelector!,
       )!;
@@ -75,42 +71,42 @@ export class CategoryTab {
             return null;
         }
       })();
-
-      if (CategoryTab.isCategoryTab && sortKind !== null) {
-        await this.renderPlayAllButton(sortKind);
+      if (sortKind !== null) {
+        this.lastSortKind = sortKind;
+      }
+    });
+    const sortHolderObserver = new MutationObserver(async (records) => {
+      const buttonHolderRecords = records.filter(
+        (r) =>
+          r.target instanceof Element &&
+          r.target.matches(CategoryTab.sortButtonHolderSelector),
+      );
+      const isButtonRerendered = buttonHolderRecords.length > 0;
+      if (CategoryTab.isCategoryTab && isButtonRerendered) {
+        await this.renderPlayAllButton(this.lastSortKind);
       }
     });
     if (buttonHolder) {
       // buttonHolder may not exist when there are not enough items
       // buttonHolder may be regenerated; therefore, observe the document instead
-      observer.observe(document, {
+      sortChangeObserver.observe(document, {
         subtree: true,
         childList: false,
         attributes: true,
         attributeFilter: ["aria-selected"],
         attributeOldValue: true,
       });
+      sortHolderObserver.observe(document, {
+        subtree: true,
+        childList: true,
+        attributes: false,
+      });
     }
-    return observer;
-  }
-
-  public unwatchSortSelect(observer: MutationObserver) {
-    observer.disconnect();
+    return [sortChangeObserver, sortHolderObserver];
   }
 
   public async renderPlayAllButton(sortKind: SortKind = "Latest") {
     const categoryKind = this.categoryKind;
-    // const sortKind = this.sortKind;
-
-    const targetPlayAllButton = document.querySelector(
-      `.play-all-btn.${categoryKind.toLowerCase()}.${sortKind.toLowerCase()}`,
-    );
-    const targetPlayAllButtonExists = targetPlayAllButton !== null;
-    if (targetPlayAllButtonExists) {
-      return;
-    }
-
-    document.querySelector(".play-all-btn")?.remove();
 
     const playAllButton = document.createElement("a");
     playAllButton.classList.add("play-all-btn");
@@ -126,7 +122,14 @@ export class CategoryTab {
     const buttonHolder = document.querySelector(
       CategoryTab.sortButtonHolderSelector,
     );
-    buttonHolder?.appendChild(playAllButton);
+
+    const targetPlayAllButton = document.querySelector(
+      `.play-all-btn.${categoryKind.toLowerCase()}.${sortKind.toLowerCase()}`,
+    );
+    if (!targetPlayAllButton) {
+      document.querySelector(".play-all-btn")?.remove();
+      buttonHolder?.appendChild(playAllButton);
+    }
   }
 }
 
