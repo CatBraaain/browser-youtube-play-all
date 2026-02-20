@@ -4,7 +4,7 @@ import { ChannelPage } from "./channel-page";
 import YoutubePage from "./youtube-page";
 
 export default defineContentScript({
-  matches: ["https://www.youtube.com/*"],
+  matches: ["https://www.youtube.com/*", "https://m.youtube.com/*"],
   runAt: "document_end",
   main: onYoutubeActivated,
 });

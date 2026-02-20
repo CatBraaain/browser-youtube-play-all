@@ -1,5 +1,5 @@
 import type { CategoryKind, SortKind } from "./category-tab";
-
+import YoutubePage from "./youtube-page";
 export async function resolvePlaylistPath(
   channelUrl: string,
   categoryKind: CategoryKind,
@@ -58,8 +58,20 @@ async function getOldestItemId(
   const htmlRes = await fetch(channelUrl);
   const html = await htmlRes.text();
   const clientVersion = html.match(/"clientVersion":"(.*?)"/)![1];
+  const ytInitialDataString = html.match(
+    YoutubePage.isMobile
+      ? /var ytInitialData\s*=\s*'([\s\S]*?)';/
+      : /var ytInitialData\s*=\s*(\{[\s\S]*?\});/,
+  )![1];
+
   const ytInitialData = JSON.parse(
-    html.match(/var ytInitialData\s*=\s*(\{[\s\S]*?\});/)![1],
+    YoutubePage.isMobile
+      ? ytInitialDataString
+          .replace(/\\\\\\x22/g, '\\\\\\"')
+          .replace(/\\x([0-9A-Fa-f]{2})/g, (_, hex) =>
+            String.fromCharCode(parseInt(hex, 16)),
+          )
+      : ytInitialDataString,
   ) as YtInitialData;
   const continuationToken = extractContinuationToken(
     ytInitialData,
@@ -98,10 +110,9 @@ function extractContinuationToken(
   category: CategoryKind,
   sortKind: SortKind,
 ) {
-  const tabRenderers =
-    ytInitialData.contents.twoColumnBrowseResultsRenderer.tabs.map(
-      (tab) => tab.tabRenderer,
-    );
+  const tabs = (ytInitialData.contents.twoColumnBrowseResultsRenderer ??
+    ytInitialData.contents.singleColumnBrowseResultsRenderer)!.tabs;
+  const tabRenderers = tabs.map((tab) => tab.tabRenderer);
   const categoryTabRenderer = tabRenderers.find((tab) =>
     tab.endpoint.commandMetadata.webCommandMetadata.url.endsWith(
       category.toLowerCase(),
@@ -126,23 +137,30 @@ function extractContinuationToken(
 
 type YtInitialData = {
   contents: {
-    twoColumnBrowseResultsRenderer: {
-      tabs: Array<{
-        tabRenderer: {
-          endpoint: {
-            commandMetadata: {
-              webCommandMetadata: {
-                url: string;
-              };
-            };
-          };
-          content: {
-            richGridRenderer: {
-              header: object;
-            };
-          };
+    //desktop
+    twoColumnBrowseResultsRenderer?: {
+      tabs: Tab[];
+    };
+    // mobile
+    singleColumnBrowseResultsRenderer?: {
+      tabs: Tab[];
+    };
+  };
+};
+
+type Tab = {
+  tabRenderer: {
+    endpoint: {
+      commandMetadata: {
+        webCommandMetadata: {
+          url: string;
         };
-      }>;
+      };
+    };
+    content: {
+      richGridRenderer: {
+        header: object;
+      };
     };
   };
 };

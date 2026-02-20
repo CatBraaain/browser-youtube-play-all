@@ -16,7 +16,7 @@ export class CategoryTab {
   }
 
   public static SORT_BUTTON =
-    "ytd-browse[page-subtype='channels'] #primary [aria-selected]";
+    "ytd-browse[page-subtype='channels'] #primary [aria-selected],ytm-browse .tab-content [aria-selected]";
   public static get sortButtonLineages() {
     // sort buttons may not exist when there are not enough videos
     const sortButtons = Array.from(
@@ -103,6 +103,9 @@ export class CategoryTab {
       const isSortChanged = sortKind !== null;
       if (isSortChanged) {
         this.lastSortKind = sortKind;
+        if (YoutubePage.isMobile) {
+          await this.renderPlayAllButton(this.lastSortKind);
+        }
       }
     });
     const rerendererObserver = new MutationObserver(async (records) => {

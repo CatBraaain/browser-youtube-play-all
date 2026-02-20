@@ -1,6 +1,8 @@
 export default class YoutubePage {
   public static NAVIGATION_START_EVENT = "yt-navigate-start";
   public static NAVIGATION_END_EVENT = "yt-navigate-finish";
+  public static MNAVIGATION_START_EVENT = "state-navigatestart";
+  public static MNAVIGATION_END_EVENT = "state-navigateend";
 
   public static addStyleForPlayAllButton() {
     const style = document.createElement("style");
@@ -12,7 +14,7 @@ export default class YoutubePage {
         height: 32px;
         min-width: 12px;
 
-        display: inline-flex;
+        display: inline-flex !important;
         flex-direction: row;
         align-items: center;
         justify-content: center;
@@ -36,11 +38,19 @@ export default class YoutubePage {
     document.head.appendChild(style);
   }
 
+  public static get isMobile() {
+    return window.location.host === "m.youtube.com";
+  }
+
   public static get NavigationStartEvent(): string {
-    return YoutubePage.NAVIGATION_START_EVENT;
+    return YoutubePage.isMobile
+      ? YoutubePage.MNAVIGATION_START_EVENT
+      : YoutubePage.NAVIGATION_START_EVENT;
   }
 
   public static get NavigationEndEvent(): string {
-    return YoutubePage.NAVIGATION_END_EVENT;
+    return YoutubePage.isMobile
+      ? YoutubePage.MNAVIGATION_END_EVENT
+      : YoutubePage.NAVIGATION_END_EVENT;
   }
 }
