@@ -1,3 +1,9 @@
+## [0.2.3] - 2026-02-20
+
+### 🐛 Bug Fixes
+
+- Fix sorting not updating due to YouTube UI change
+
 ## [0.2.2] - 2026-02-09
 
 ### 🐛 Bug Fixes
