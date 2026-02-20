@@ -7,7 +7,7 @@ export class CategoryTab {
     "ytd-browse[page-subtype='channels'] #chips";
   public static NEW_SORT_BUTTON_HOLDER =
     "ytd-browse[page-subtype='channels'] chip-bar-view-model";
-  public static SORT_BUTTON = `${this.SORT_BUTTON_HOLDER}>[selected]`;
+  // public static SORT_BUTTON = `${this.SORT_BUTTON_HOLDER}>[selected]`;
 
   public static readonly sorts: SortKind[] = ["Latest", "Popular", "Oldest"];
   public static readonly categories: CategoryKind[] = [
