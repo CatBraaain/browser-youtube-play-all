@@ -4,8 +4,6 @@ import YoutubePage from "./youtube-page";
 
 export class CategoryTab {
   public static SORT_BUTTON_HOLDER =
-    "ytd-browse[page-subtype='channels'] #chips";
-  public static NEW_SORT_BUTTON_HOLDER =
     "ytd-browse[page-subtype='channels'] .ytChipBarViewModelChipBarScrollContainer";
   // public static SORT_BUTTON = `${this.SORT_BUTTON_HOLDER}>[selected]`;
 
@@ -34,7 +32,7 @@ export class CategoryTab {
   }
 
   public static get sortButtonHolderSelector() {
-    return `${CategoryTab.SORT_BUTTON_HOLDER},${CategoryTab.NEW_SORT_BUTTON_HOLDER}`;
+    return `${CategoryTab.SORT_BUTTON_HOLDER}`;
   }
 
   public lastSortKind: SortKind = "Latest";
