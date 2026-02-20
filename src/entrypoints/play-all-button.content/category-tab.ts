@@ -17,6 +17,7 @@ export class CategoryTab {
   ];
 
   public static get isCategoryTab() {
+    // Known issue: Cannot detect the category when the Home tab is hidden and the first tab is selected.
     return window.location.pathname.match(/^\/[^/]+\/(videos|shorts|streams)$/);
   }
 
