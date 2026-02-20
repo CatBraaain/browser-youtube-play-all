@@ -3,6 +3,18 @@ import { resolvePlaylistPath } from "./youtube-api";
 import YoutubePage from "./youtube-page";
 
 export class CategoryTab {
+  public static readonly sorts: SortKind[] = ["Latest", "Popular", "Oldest"];
+  public static readonly categories: CategoryKind[] = [
+    "Videos",
+    "Shorts",
+    "Streams",
+  ];
+
+  public static get isCategoryTab() {
+    // Known issue: Cannot detect the category when the Home tab is hidden and the first tab is selected.
+    return window.location.pathname.match(/^\/[^/]+\/(videos|shorts|streams)$/);
+  }
+
   public static SORT_BUTTON =
     "ytd-browse[page-subtype='channels'] #primary [aria-selected]";
   public static get sortButtonLineages() {
@@ -33,17 +45,9 @@ export class CategoryTab {
     return sortButtonHolder;
   }
 
-  public static readonly sorts: SortKind[] = ["Latest", "Popular", "Oldest"];
-  public static readonly categories: CategoryKind[] = [
-    "Videos",
-    "Shorts",
-    "Streams",
-  ];
+  public lastSortKind: SortKind = "Latest";
 
-  public static get isCategoryTab() {
-    // Known issue: Cannot detect the category when the Home tab is hidden and the first tab is selected.
-    return window.location.pathname.match(/^\/[^/]+\/(videos|shorts|streams)$/);
-  }
+  public constructor(public categoryKind: CategoryKind) {}
 
   public static async mount() {
     const categoryTab = new CategoryTab(ChannelPage.categoryKind!);
@@ -53,9 +57,28 @@ export class CategoryTab {
     await categoryTab.startSortUiSync();
   }
 
-  public lastSortKind: SortKind = "Latest";
+  public async renderPlayAllButton(sortKind: SortKind = "Latest") {
+    const categoryKind = this.categoryKind;
 
-  public constructor(public categoryKind: CategoryKind) {}
+    const playAllButton = document.createElement("a");
+    playAllButton.classList.add("play-all-btn");
+    playAllButton.classList.add(categoryKind.toLowerCase());
+    playAllButton.classList.add(sortKind.toLowerCase());
+    playAllButton.href = await resolvePlaylistPath(
+      window.location.href,
+      categoryKind,
+      sortKind,
+    );
+    playAllButton.textContent = `Play All (${sortKind})`;
+
+    const targetPlayAllButton = document.querySelector(
+      `.play-all-btn.${categoryKind.toLowerCase()}.${sortKind.toLowerCase()}`,
+    );
+    if (!targetPlayAllButton) {
+      document.querySelector(".play-all-btn")?.remove();
+      CategoryTab.sortButtonHolder?.appendChild(playAllButton);
+    }
+  }
 
   public startSortUiSync() {
     const sortStateObserver = new MutationObserver(async (records) => {
@@ -121,29 +144,6 @@ export class CategoryTab {
         once: true,
       },
     );
-  }
-
-  public async renderPlayAllButton(sortKind: SortKind = "Latest") {
-    const categoryKind = this.categoryKind;
-
-    const playAllButton = document.createElement("a");
-    playAllButton.classList.add("play-all-btn");
-    playAllButton.classList.add(categoryKind.toLowerCase());
-    playAllButton.classList.add(sortKind.toLowerCase());
-    playAllButton.href = await resolvePlaylistPath(
-      window.location.href,
-      categoryKind,
-      sortKind,
-    );
-    playAllButton.textContent = `Play All (${sortKind})`;
-
-    const targetPlayAllButton = document.querySelector(
-      `.play-all-btn.${categoryKind.toLowerCase()}.${sortKind.toLowerCase()}`,
-    );
-    if (!targetPlayAllButton) {
-      document.querySelector(".play-all-btn")?.remove();
-      CategoryTab.sortButtonHolder?.appendChild(playAllButton);
-    }
   }
 }
 
