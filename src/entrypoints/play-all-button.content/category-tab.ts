@@ -6,7 +6,7 @@ export class CategoryTab {
   public static SORT_BUTTON_HOLDER =
     "ytd-browse[page-subtype='channels'] #chips";
   public static NEW_SORT_BUTTON_HOLDER =
-    "ytd-browse[page-subtype='channels'] chip-bar-view-model";
+    "ytd-browse[page-subtype='channels'] .ytChipBarViewModelChipBarScrollContainer";
   // public static SORT_BUTTON = `${this.SORT_BUTTON_HOLDER}>[selected]`;
 
   public static readonly sorts: SortKind[] = ["Latest", "Popular", "Oldest"];
@@ -79,7 +79,8 @@ export class CategoryTab {
       const buttonHolderRecords = records.filter(
         (r) =>
           r.target instanceof Element &&
-          r.target.matches(CategoryTab.sortButtonHolderSelector),
+          (r.target.matches(CategoryTab.sortButtonHolderSelector) ||
+            r.target.querySelector(CategoryTab.sortButtonHolderSelector)),
       );
       const isButtonRerendered = buttonHolderRecords.length > 0;
       if (CategoryTab.isCategoryTab && isButtonRerendered) {
