@@ -124,7 +124,6 @@ export class CategoryTab {
     const buttonHolder = document.querySelector(
       CategoryTab.sortButtonHolderSelector,
     );
-
     const targetPlayAllButton = document.querySelector(
       `.play-all-btn.${categoryKind.toLowerCase()}.${sortKind.toLowerCase()}`,
     );
