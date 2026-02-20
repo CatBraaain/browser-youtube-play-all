@@ -22,20 +22,15 @@ export class CategoryTab {
   }
 
   public static async mount() {
-    const categoryTab = new CategoryTab(ChannelPage.categoryKind!);
-    await categoryTab.renderPlayAllButton();
-    const watchers = categoryTab.watchSortSelect();
-    window.addEventListener(
-      YoutubePage.NavigationStartEvent,
-      () => {
-        watchers.forEach((w) => {
-          w.disconnect();
-        });
-      },
-      {
-        once: true,
-      },
+    // buttonHolder may not exist when there are not enough videos
+    const buttonHolder = document.querySelector(
+      CategoryTab.sortButtonHolderSelector,
     );
+    if (buttonHolder) {
+      const categoryTab = new CategoryTab(ChannelPage.categoryKind!);
+      await categoryTab.renderPlayAllButton();
+      categoryTab.startSortUiSync();
+    }
   }
 
   public static get sortButtonHolderSelector() {
@@ -46,11 +41,8 @@ export class CategoryTab {
 
   public constructor(public categoryKind: CategoryKind) {}
 
-  public watchSortSelect() {
-    const buttonHolder = document.querySelector(
-      CategoryTab.sortButtonHolderSelector!,
-    );
-    const sortChangeObserver = new MutationObserver(async (records) => {
+  public startSortUiSync() {
+    const sortStateObserver = new MutationObserver(async (records) => {
       const buttonHolder = document.querySelector(
         CategoryTab.sortButtonHolderSelector!,
       )!;
@@ -72,11 +64,12 @@ export class CategoryTab {
             return null;
         }
       })();
-      if (sortKind !== null) {
+      const isSortChanged = sortKind !== null;
+      if (isSortChanged) {
         this.lastSortKind = sortKind;
       }
     });
-    const sortHolderObserver = new MutationObserver(async (records) => {
+    const rerendererObserver = new MutationObserver(async (records) => {
       const buttonHolderRecords = records.filter(
         (r) =>
           r.target instanceof Element &&
@@ -88,23 +81,32 @@ export class CategoryTab {
         await this.renderPlayAllButton(this.lastSortKind);
       }
     });
-    if (buttonHolder) {
-      // buttonHolder may not exist when there are not enough items
-      // buttonHolder may be regenerated; therefore, observe the document instead
-      sortChangeObserver.observe(document, {
-        subtree: true,
-        childList: false,
-        attributes: true,
-        attributeFilter: ["aria-selected"],
-        attributeOldValue: true,
-      });
-      sortHolderObserver.observe(document, {
-        subtree: true,
-        childList: true,
-        attributes: false,
-      });
-    }
-    return [sortChangeObserver, sortHolderObserver];
+
+    // buttonHolder may be rerendered; therefore, observe the document instead
+    sortStateObserver.observe(document, {
+      subtree: true,
+      childList: false,
+      attributes: true,
+      attributeFilter: ["aria-selected"],
+      attributeOldValue: true,
+    });
+    rerendererObserver.observe(document, {
+      subtree: true,
+      childList: true,
+      attributes: false,
+    });
+
+    window.addEventListener(
+      YoutubePage.NavigationStartEvent,
+      () => {
+        [sortStateObserver, rerendererObserver].forEach((w) => {
+          w.disconnect();
+        });
+      },
+      {
+        once: true,
+      },
+    );
   }
 
   public async renderPlayAllButton(sortKind: SortKind = "Latest") {
