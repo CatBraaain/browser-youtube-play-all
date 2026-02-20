@@ -21,7 +21,6 @@ export default class YoutubePage {
         border-radius: 8px;
         padding: 0 12px;
 
-        font-family: 'Roboto', 'Arial', sans-serif;
         font-size: 1.4rem;
         font-weight: 500;
         text-decoration: none;
