@@ -55,7 +55,7 @@ async function getOldestItemId(
   channelUrl: string,
   categoryKind: CategoryKind,
 ): Promise<string> {
-  const htmlRes = await fetch(`${channelUrl}/${categoryKind.toLowerCase()}`);
+  const htmlRes = await fetch(channelUrl);
   const html = await htmlRes.text();
   const clientVersion = html.match(/"clientVersion":"(.*?)"/)![1];
   const ytInitialData = JSON.parse(
