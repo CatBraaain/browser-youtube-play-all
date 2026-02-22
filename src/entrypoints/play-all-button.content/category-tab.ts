@@ -51,9 +51,29 @@ export class CategoryTab {
 
   public static async mount() {
     const categoryTab = new CategoryTab(ChannelPage.categoryKind!);
+    const sortKind: SortKind =
+      (() => {
+        const i = Array.from(
+          CategoryTab.sortButtonHolder?.children || [],
+        ).findIndex(
+          (eachButtonTree) =>
+            eachButtonTree.matches("[aria-selected=true]") ||
+            eachButtonTree.querySelector("[aria-selected=true]"),
+        );
+        switch (i) {
+          case 0:
+            return "Latest";
+          case 1:
+            return "Popular";
+          case 2:
+            return "Oldest";
+          default:
+            return null;
+        }
+      })() ?? "Latest";
     // At this moment, sort buttons may not be rendered yet.
     // Then `.renderPlayAllButton()` not working as initial rendering but `.startSortUiSync()` covers it.
-    await categoryTab.renderPlayAllButton();
+    await categoryTab.renderPlayAllButton(sortKind);
     await categoryTab.startSortUiSync();
   }
 
