@@ -1,6 +1,8 @@
 import path from "node:path";
 import type { Page } from "@playwright/test";
 import { chromium, expect, test } from "@playwright/test";
+import YoutubePage from "@/entrypoints/play-all-button.content/youtube-page";
+import { YtPage } from "./utils";
 
 export class EventWatcher {
   constructor(private page: Page) {}
@@ -68,14 +70,19 @@ export class EventWatcher {
 }
 
 export class ChannelIdFinder {
+  private ytPage: YtPage;
+
   constructor(
     private page: Page,
     private eventWatcher: EventWatcher,
-  ) {}
+  ) {
+    this.ytPage = new YtPage(this.page, this.eventWatcher);
+  }
 
   async expectNavigationEndEvent(exists: boolean) {
-    const lastEventContent =
-      await this.eventWatcher.getLastEventContent("yt-navigate-finish");
+    const lastEventContent = await this.eventWatcher.getLastEventContent(
+      this.ytPage.NavigationEndEvent,
+    );
     const channelId = lastEventContent?.endpoint.browseEndpoint?.browseId;
     this.expectChannelIdCorrect(channelId, exists);
   }
@@ -121,8 +128,14 @@ export const ytTest = test.extend<{
 }>({
   eventWatcher: async ({ page }, use) => {
     const eventWatcher = new EventWatcher(page);
-    await eventWatcher.setInitScript("yt-navigate-start");
-    await eventWatcher.setInitScript("yt-navigate-finish");
+    for (const eventName of [
+      YoutubePage.NAVIGATION_START_EVENT,
+      YoutubePage.NAVIGATION_END_EVENT,
+      YoutubePage.MNAVIGATION_START_EVENT,
+      YoutubePage.MNAVIGATION_END_EVENT,
+    ]) {
+      await eventWatcher.setInitScript(eventName);
+    }
     await use(eventWatcher);
   },
   channelIdFinder: async ({ page, eventWatcher }, use) => {

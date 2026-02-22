@@ -12,6 +12,11 @@ export default defineConfig({
       testDir: path.join(import.meta.dirname, "tests/specs"),
     },
     {
+      name: "chromium-mobile-spec",
+      use: devices["Pixel 5"],
+      testDir: path.join(import.meta.dirname, "tests/specs"),
+    },
+    {
       name: "firefox-spec",
       use: {
         ...devices["Desktop Firefox"],
@@ -28,6 +33,14 @@ export default defineConfig({
       name: "chromium-e2e",
       use: {
         ...devices["Desktop Chrome"],
+        channel: "chromium",
+      },
+      testDir: path.join(import.meta.dirname, "tests/e2e"),
+    },
+    {
+      name: "chromium-mobile-e2e",
+      use: {
+        ...devices["Pixel 5"],
         channel: "chromium",
       },
       testDir: path.join(import.meta.dirname, "tests/e2e"),

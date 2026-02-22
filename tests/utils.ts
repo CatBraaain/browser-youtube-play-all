@@ -5,24 +5,55 @@ import {
   type SortKind,
 } from "@/entrypoints/play-all-button.content/category-tab";
 import { SortTab } from "@/entrypoints/play-all-button.content/sort-tab";
+import YoutubePage from "@/entrypoints/play-all-button.content/youtube-page";
 import type { EventWatcher } from "./fixture";
 
+export class YtPage {
+  constructor(
+    private page: Page,
+    // biome-ignore lint/correctness/noUnusedPrivateClassMembers: <>
+    private eventWatcher: EventWatcher,
+  ) {}
+
+  public get isMobile() {
+    return new URL(this.page.url()).host === "m.youtube.com";
+  }
+
+  public get NavigationStartEvent(): string {
+    return this.isMobile
+      ? YoutubePage.MNAVIGATION_START_EVENT
+      : YoutubePage.NAVIGATION_START_EVENT;
+  }
+
+  public get NavigationEndEvent(): string {
+    return this.isMobile
+      ? YoutubePage.MNAVIGATION_END_EVENT
+      : YoutubePage.NAVIGATION_END_EVENT;
+  }
+}
+
 export class YtSearchPage {
+  private ytPage: YtPage;
+
   constructor(
     private page: Page,
     private eventWatcher: EventWatcher,
-  ) {}
+  ) {
+    this.ytPage = new YtPage(this.page, this.eventWatcher);
+  }
 
   public topVideoChannelThumbnailButton(
     channelName: string | null = null,
   ): Locator {
     return this.page
       .locator(
-        "#channel-thumbnail:not([hidden])" +
-          (channelName !== null ? `[href*="/${channelName}"]` : ""),
+        this.ytPage.isMobile
+          ? `.media-channel ${channelName !== null ? `[href="/${channelName}"]` : `[href*="/@"]`}`
+          : `#channel-thumbnail:not([hidden])${channelName !== null ? `[href="/${channelName}"]` : ""}`,
       )
       .first(); // [href^="/channel/"] or [href^="link:///"]
   }
+
   public topVideoChannelNameButton(channelName: string | null = null): Locator {
     return this.page
       .locator(
@@ -39,7 +70,10 @@ export class YtSearchPage {
     switch (navigation) {
       case "soft":
         await this.page.goto("https://www.youtube.com");
-        await this.eventWatcher.waitForFired("yt-navigate-finish");
+        await this.eventWatcher.waitForFired(this.ytPage.NavigationEndEvent);
+        if (this.ytPage.isMobile) {
+          await this.page.goto("https://m.youtube.com/#searching");
+        }
         await this.page.locator("input.yt-searchbox-input").fill(searchWord);
         await this.page.locator("input.yt-searchbox-input").press("Enter");
         break;
@@ -49,7 +83,7 @@ export class YtSearchPage {
         );
         break;
     }
-    await this.eventWatcher.waitForFired("yt-navigate-finish");
+    await this.eventWatcher.waitForFired(this.ytPage.NavigationEndEvent);
   }
 
   public async navigateToChannel(
@@ -72,7 +106,7 @@ export class YtSearchPage {
         break;
       }
     }
-    await this.eventWatcher.waitForFired("yt-navigate-finish");
+    await this.eventWatcher.waitForFired(this.ytPage.NavigationEndEvent);
   }
 }
 
@@ -87,25 +121,29 @@ export class YtVideoPage {
   }
 
   public async getPlaylistVideoIds(n: number = 3): Promise<string[]> {
-    return await this.page
-      .locator('#playlist #thumbnail[href*="/watch?"]')
-      .evaluateAll(
-        (links, n) =>
-          links
-            .slice(0, n)
-            .map(
-              (link) =>
-                new URL(
-                  `https://www.youtube.com${link.getAttribute("href")!}`,
-                ).searchParams.get("v")!,
-            ),
-        n,
-      );
+    const locator = this.page.locator(
+      '#playlist #thumbnail[href*="/watch?"],.YtmCompactMediaItemImage[href*="/watch"]',
+    );
+    await locator.first().waitFor();
+    return await locator.evaluateAll(
+      (links, n) =>
+        links
+          .slice(0, n)
+          .map(
+            (link) =>
+              new URL(
+                `https://www.youtube.com${link.getAttribute("href")!}`,
+              ).searchParams.get("v")!,
+          ),
+      n,
+    );
   }
 
   public async getPlaylistSelectedVideoId(): Promise<string> {
     return await this.page
-      .locator('#playlist-items[selected] #thumbnail[href*="/watch?"]')
+      .locator(
+        '#playlist-items[selected] #thumbnail[href*="/watch?"],.ytmPlaylistPanelVideoRendererV2Selected [href*="/watch?"]',
+      )
       .first()
       .evaluate(
         (link) =>
@@ -117,36 +155,14 @@ export class YtVideoPage {
 }
 
 export class YtChannelPage {
+  private ytPage: YtPage;
+
   constructor(
     private channelName: string,
     private page: Page,
     private eventWatcher: EventWatcher,
-  ) {}
-
-  public async collectPlayAllTestCaseByCategorySort(
-    categoryNavigationMode: "soft" | "hard",
-  ): Promise<PlayAllTestCaseMap> {
-    const playListMap: PlayAllTestCaseMap = Object.fromEntries(
-      CategoryTab.categories.map((category) => [category, {}]),
-    );
-
-    for (const category of CategoryTab.categories) {
-      await this.navigateToCategory(category, categoryNavigationMode);
-
-      for (const sort of SortTab.sorts) {
-        await this.navigateToSort(sort);
-
-        const playlistUrl = await this.getPlayAllUrl(category, sort);
-        const topVideoIds = await this.getTopVideoIds(3);
-
-        playListMap[category][sort] = {
-          url: playlistUrl,
-          expectedTopVideoIds: topVideoIds,
-        };
-      }
-    }
-
-    return playListMap;
+  ) {
+    this.ytPage = new YtPage(this.page, this.eventWatcher);
   }
 
   public async navigateToCategory(
@@ -168,7 +184,7 @@ export class YtChannelPage {
       }
     }
     if (wait) {
-      await this.eventWatcher.waitForFired("yt-navigate-finish");
+      await this.eventWatcher.waitForFired(this.ytPage.NavigationEndEvent);
     }
   }
 
@@ -186,7 +202,9 @@ export class YtChannelPage {
   public async getTopVideoIds(n: number = 3): Promise<string[]> {
     if (this.page.url().includes("shorts")) {
       return await this.page
-        .locator("ytd-browse[role='main'] [href*='/shorts'][title]")
+        .locator(
+          "ytd-browse[role='main'] [href*='/shorts'][title],ytm-shorts-lockup-view-model > [href*='/shorts'][title]",
+        )
         .evaluateAll(
           (links, n) =>
             links
@@ -196,7 +214,9 @@ export class YtChannelPage {
         );
     } else {
       return await this.page
-        .locator("ytd-browse[role='main'] [href*='/watch'][title]")
+        .locator(
+          "ytd-browse[role='main'] [href*='/watch'][title],.YtmCompactMediaItemImage[href*='/watch']",
+        )
         .evaluateAll(
           (links, n) =>
             links
@@ -222,12 +242,3 @@ export class YtChannelPage {
     return `https://www.youtube.com${href}`;
   }
 }
-
-export type PlayAllTestCaseMap = {
-  [category: string]: {
-    [sort: string]: {
-      url: string;
-      expectedTopVideoIds: string[];
-    };
-  };
-};

@@ -2,12 +2,7 @@ import { expect } from "@playwright/test";
 import { CategoryTab } from "@/entrypoints/play-all-button.content/category-tab";
 import { SortTab } from "@/entrypoints/play-all-button.content/sort-tab";
 import { ytxTest } from "../fixture";
-import {
-  type PlayAllTestCaseMap,
-  YtChannelPage,
-  YtSearchPage,
-  YtVideoPage,
-} from "../utils";
+import { YtChannelPage, YtPage, YtSearchPage, YtVideoPage } from "../utils";
 
 const channel = "@Microsoft";
 const searchNavigationModes: ("soft" | "hard")[] = ["soft", "hard"];
@@ -35,61 +30,61 @@ searchNavigationModes.forEach((searchNavigationMode) => {
       const isSoftHardMixed = !allSoft && !allHard;
       if (isSoftHardMixed) return;
 
-      ytxTest.describe(
-        `${channelNavigationMode} nav => ${categoryNavigationMode} nav`,
-        () => {
-          let playAllTestCaseMap: PlayAllTestCaseMap;
-          ytxTest.beforeAll(async ({ page, eventWatcher }) => {
-            ytxTest.setTimeout(60000);
+      ytxTest(
+        `Button: ${channelNavigationMode} - ${categoryNavigationMode} nav`,
+        async ({ page, eventWatcher, isMobile }) => {
+          ytxTest.skip(
+            channelNavigationMode === "soft2" && isMobile,
+            "soft navigation via channel name is not supported on mobile",
+          );
 
-            const ytSearchPage = new YtSearchPage(page, eventWatcher);
-            await ytSearchPage.search(channel, searchNavigationMode);
-            await ytSearchPage.navigateToChannel(
-              channel,
-              channelNavigationMode,
+          const ytSearchPage = new YtSearchPage(page, eventWatcher);
+          await ytSearchPage.search(channel, searchNavigationMode);
+          await ytSearchPage.navigateToChannel(channel, channelNavigationMode);
+
+          const ytChannelPage = new YtChannelPage(channel, page, eventWatcher);
+          for (const category of CategoryTab.categories) {
+            await ytChannelPage.navigateToCategory(
+              category,
+              categoryNavigationMode,
             );
-
-            const ytChannelPage = new YtChannelPage(
-              channel,
-              page,
-              eventWatcher,
-            );
-
-            playAllTestCaseMap =
-              await ytChannelPage.collectPlayAllTestCaseByCategorySort(
-                categoryNavigationMode,
-              );
-          });
-
-          CategoryTab.categories.forEach((category) => {
-            SortTab.sorts.forEach((sort) => {
-              ytxTest(
-                `playlist: ${category} - ${sort}`,
-                async ({ page, eventWatcher }) => {
-                  ytxTest.skip(
-                    category === "Shorts" && sort === "Popular",
-                    "Populared Shorts page has not been updated by YouTube",
-                  );
-                  const playAllTestCase = playAllTestCaseMap[category][sort];
-                  await page.goto(playAllTestCase.url);
-                  await eventWatcher.waitForFired("yt-navigate-finish");
-                  const ytVideoPage = new YtVideoPage(page);
-                  const n = sort !== "Oldest" ? 3 : 1;
-                  const playlistVideoIds =
-                    sort !== "Oldest"
-                      ? await ytVideoPage.getPlaylistVideoIds(n)
-                      : [await ytVideoPage.getPlaylistSelectedVideoId()];
-                  const expectedTopVideoIds =
-                    playAllTestCase.expectedTopVideoIds;
-                  expect(playlistVideoIds).toEqual(
-                    expectedTopVideoIds.slice(0, n),
-                  );
-                },
-              );
-            });
-          });
+            for (const sort of SortTab.sorts) {
+              await ytChannelPage.navigateToSort(sort);
+            }
+          }
         },
       );
     });
+  });
+});
+
+CategoryTab.categories.forEach((category) => {
+  SortTab.sorts.forEach((sort) => {
+    ytxTest(
+      `Playlist: ${category} - ${sort}`,
+      async ({ page, eventWatcher }) => {
+        ytxTest.skip(
+          category === "Shorts" && sort === "Popular",
+          "Populared Shorts page has not been updated by YouTube",
+        );
+        const ytChannelPage = new YtChannelPage(channel, page, eventWatcher);
+        await ytChannelPage.navigateToCategory(category, "hard");
+        await ytChannelPage.navigateToSort(sort);
+        const playlistUrl = await ytChannelPage.getPlayAllUrl(category, sort);
+        const topVideoIds = await ytChannelPage.getTopVideoIds(3);
+
+        await page.goto(playlistUrl);
+        const ytPage = new YtPage(page, eventWatcher);
+        await eventWatcher.waitForFired(ytPage.NavigationEndEvent);
+
+        const ytVideoPage = new YtVideoPage(page);
+        const n = sort !== "Oldest" ? 3 : 1;
+        const playlistVideoIds =
+          sort !== "Oldest"
+            ? await ytVideoPage.getPlaylistVideoIds(n)
+            : [await ytVideoPage.getPlaylistSelectedVideoId()];
+        expect(playlistVideoIds).toEqual(topVideoIds.slice(0, n));
+      },
+    );
   });
 });

@@ -45,7 +45,9 @@ searchTestCases.forEach(({ navigation: searchNavigation, searchWord }) => {
     ({ navigation: channelNavigation, existsOnHtml, existsOnEvent }) => {
       ytTest(
         `channelId: ${channelNavigation} from ${searchWord}`,
-        async ({ page, eventWatcher, channelIdFinder }) => {
+        async ({ page, eventWatcher, channelIdFinder, isMobile }) => {
+          ytTest.skip(isMobile, "skip mobile device");
+
           const ytSearchPage = new YtSearchPage(page, eventWatcher);
           await ytSearchPage.search(searchWord, searchNavigation);
           await ytSearchPage.navigateToChannel(null, channelNavigation);
