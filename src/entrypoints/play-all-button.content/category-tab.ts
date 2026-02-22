@@ -44,6 +44,25 @@ export class CategoryTab {
     );
     return sortButtonHolder;
   }
+  public static get sortKind(): SortKind | null {
+    const i = Array.from(
+      CategoryTab.sortButtonHolder?.children || [],
+    ).findIndex(
+      (eachButtonTree) =>
+        eachButtonTree.matches("[aria-selected=true]") ||
+        eachButtonTree.querySelector("[aria-selected=true]"),
+    );
+    switch (i) {
+      case 0:
+        return "Latest";
+      case 1:
+        return "Popular";
+      case 2:
+        return "Oldest";
+      default:
+        return null;
+    }
+  }
 
   public lastSortKind: SortKind = "Latest";
 
@@ -51,33 +70,13 @@ export class CategoryTab {
 
   public static async mount() {
     const categoryTab = new CategoryTab(ChannelPage.categoryKind!);
-    const sortKind: SortKind =
-      (() => {
-        const i = Array.from(
-          CategoryTab.sortButtonHolder?.children || [],
-        ).findIndex(
-          (eachButtonTree) =>
-            eachButtonTree.matches("[aria-selected=true]") ||
-            eachButtonTree.querySelector("[aria-selected=true]"),
-        );
-        switch (i) {
-          case 0:
-            return "Latest";
-          case 1:
-            return "Popular";
-          case 2:
-            return "Oldest";
-          default:
-            return null;
-        }
-      })() ?? "Latest";
     // At this moment, sort buttons may not be rendered yet.
     // Then `.renderPlayAllButton()` not working as initial rendering but `.startSortUiSync()` covers it.
-    await categoryTab.renderPlayAllButton(sortKind);
+    await categoryTab.renderPlayAllButton(CategoryTab.sortKind ?? "Latest");
     await categoryTab.startSortUiSync();
   }
 
-  public async renderPlayAllButton(sortKind: SortKind = "Latest") {
+  public async renderPlayAllButton(sortKind: SortKind) {
     const categoryKind = this.categoryKind;
 
     const playAllButton = document.createElement("a");
@@ -101,27 +100,8 @@ export class CategoryTab {
   }
 
   public startSortUiSync() {
-    const sortStateObserver = new MutationObserver(async (records) => {
-      const selectedButton = records.find(
-        (e) => (e.target as any).ariaSelected === "true",
-      )!.target;
-      const sortKind: SortKind | null = (() => {
-        const i = Array.from(
-          CategoryTab.sortButtonHolder?.children || [],
-        ).findIndex((eachButtonTree) =>
-          eachButtonTree.contains(selectedButton),
-        );
-        switch (i) {
-          case 0:
-            return "Latest";
-          case 1:
-            return "Popular";
-          case 2:
-            return "Oldest";
-          default:
-            return null;
-        }
-      })();
+    const sortStateObserver = new MutationObserver(async (_records) => {
+      const sortKind = CategoryTab.sortKind;
       const isSortChanged = sortKind !== null;
       if (isSortChanged) {
         this.lastSortKind = sortKind;
@@ -150,7 +130,6 @@ export class CategoryTab {
       childList: false,
       attributes: true,
       attributeFilter: ["aria-selected"],
-      attributeOldValue: true,
     });
     rerendererObserver.observe(document, {
       subtree: true,
