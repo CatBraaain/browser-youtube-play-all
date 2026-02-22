@@ -17,12 +17,12 @@ export class CategoryTab {
 
   public static SORT_BUTTON =
     "ytd-browse[page-subtype='channels'] #primary [aria-selected],ytm-browse .tab-content [aria-selected]";
-  public static get sortButtonLineages() {
+  public static get sortButtons() {
     // sort buttons may not exist when there are not enough videos
-    const sortButtons = Array.from(
-      document.querySelectorAll(CategoryTab.SORT_BUTTON),
-    );
-    const lineages = sortButtons.map((e) => {
+    return Array.from(document.querySelectorAll(CategoryTab.SORT_BUTTON));
+  }
+  public static get sortButtonLineages() {
+    return CategoryTab.sortButtons.map((e) => {
       const lineage = [];
       let current: Element | null = e;
       while (current) {
@@ -31,14 +31,12 @@ export class CategoryTab {
       }
       return lineage.reverse();
     });
-    return lineages;
   }
   public static get sortButtonHolder(): Element | undefined {
-    // Note: sort buttons may not exist when there are not enough videos
-    const sortButtonLineages = CategoryTab.sortButtonLineages;
-    if (sortButtonLineages.length !== 3) {
+    if (CategoryTab.sortButtons.length !== 3) {
       return undefined;
     }
+    const sortButtonLineages = CategoryTab.sortButtonLineages;
     const sortButtonHolder = sortButtonLineages[0].findLast((e) =>
       sortButtonLineages.slice(1).every((lineage) => lineage.includes(e)),
     );
@@ -70,9 +68,9 @@ export class CategoryTab {
 
   public static async mount() {
     const categoryTab = new CategoryTab(ChannelPage.categoryKind!);
-    // At this moment, sort buttons may not be rendered yet.
-    // Then `.renderPlayAllButton()` not working as initial rendering but `.startSortUiSync()` covers it.
-    await categoryTab.renderPlayAllButton(CategoryTab.sortKind ?? "Latest");
+    if (CategoryTab.sortButtonHolder) {
+      await categoryTab.renderPlayAllButton(CategoryTab.sortKind ?? "Latest");
+    }
     await categoryTab.startSortUiSync();
   }
 
@@ -102,34 +100,36 @@ export class CategoryTab {
   public startSortUiSync() {
     const sortStateObserver = new MutationObserver(async (_records) => {
       const sortKind = CategoryTab.sortKind;
-      const isSortChanged = sortKind !== null;
-      if (isSortChanged) {
+      if (sortKind && this.lastSortKind !== sortKind) {
         this.lastSortKind = sortKind;
-        if (YoutubePage.isMobile) {
-          await this.renderPlayAllButton(this.lastSortKind);
+        // Workaround to avoid test failures caused by a Youtube desktop UI bug
+        // TODO: Tweak desktop test and remove this
+        if (!YoutubePage.isMobile) {
+          return;
         }
-      }
-    });
-    const rerendererObserver = new MutationObserver(async (records) => {
-      const sortButtonRelatedSet = new Set(
-        CategoryTab.sortButtonLineages.flat(),
-      );
-      const buttonHolderRecords = records.filter(
-        (r) =>
-          r.target instanceof Element && sortButtonRelatedSet.has(r.target),
-      );
-      const isButtonRerendered = buttonHolderRecords.length > 0;
-      if (CategoryTab.isCategoryTab && isButtonRerendered) {
         await this.renderPlayAllButton(this.lastSortKind);
       }
     });
-
     // buttonHolder may be rerendered; therefore, observe the document instead
     sortStateObserver.observe(document, {
       subtree: true,
       childList: false,
       attributes: true,
       attributeFilter: ["aria-selected"],
+    });
+
+    const rerendererObserver = new MutationObserver(async (records) => {
+      const sortButtonRelatedSet = new Set(
+        CategoryTab.sortButtonLineages.flat(),
+      );
+      const sortButtonRelatedRecords = records.filter(
+        (r) =>
+          r.target instanceof Element && sortButtonRelatedSet.has(r.target),
+      );
+      const isButtonRerendered = sortButtonRelatedRecords.length > 0;
+      if (CategoryTab.isCategoryTab && isButtonRerendered) {
+        await this.renderPlayAllButton(this.lastSortKind);
+      }
     });
     rerendererObserver.observe(document, {
       subtree: true,
