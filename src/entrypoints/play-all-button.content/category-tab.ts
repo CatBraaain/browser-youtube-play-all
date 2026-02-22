@@ -53,7 +53,8 @@ export class CategoryTab {
   public startSortUiSync() {
     const sortStateObserver = new MutationObserver(async (_records) => {
       const sortKind = SortTab.sortKind;
-      if (sortKind && this.lastSortKind !== sortKind) {
+      const isSortChanged = sortKind && sortKind !== this.lastSortKind;
+      if (isSortChanged) {
         this.lastSortKind = sortKind;
         // Workaround to avoid test failures caused by a Youtube desktop UI bug
         // TODO: Tweak desktop test and remove this
