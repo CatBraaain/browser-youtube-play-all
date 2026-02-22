@@ -4,6 +4,7 @@ import {
   CategoryTab,
   type SortKind,
 } from "@/entrypoints/play-all-button.content/category-tab";
+import { SortTab } from "@/entrypoints/play-all-button.content/sort-tab";
 import type { EventWatcher } from "./fixture";
 
 export class YtSearchPage {
@@ -132,7 +133,7 @@ export class YtChannelPage {
     for (const category of CategoryTab.categories) {
       await this.navigateToCategory(category, categoryNavigationMode);
 
-      for (const sort of CategoryTab.sorts) {
+      for (const sort of SortTab.sorts) {
         await this.navigateToSort(sort);
 
         const playlistUrl = await this.getPlayAllUrl();
@@ -173,8 +174,8 @@ export class YtChannelPage {
 
   public async navigateToSort(sort: SortKind) {
     await this.page
-      .locator(CategoryTab.SORT_BUTTON)
-      .nth(CategoryTab.sorts.indexOf(sort))
+      .locator(SortTab.SORT_BUTTON)
+      .nth(SortTab.sorts.indexOf(sort))
       .click();
     await this.page
       .locator(`.play-all-btn.${sort.toLocaleLowerCase()}`)

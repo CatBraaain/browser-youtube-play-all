@@ -1,5 +1,6 @@
 import { expect } from "@playwright/test";
 import { CategoryTab } from "@/entrypoints/play-all-button.content/category-tab";
+import { SortTab } from "@/entrypoints/play-all-button.content/sort-tab";
 import { ytxTest } from "../fixture";
 import {
   type PlayAllTestCaseMap,
@@ -61,7 +62,7 @@ searchNavigationModes.forEach((searchNavigationMode) => {
           });
 
           CategoryTab.categories.forEach((category) => {
-            CategoryTab.sorts.forEach((sort) => {
+            SortTab.sorts.forEach((sort) => {
               ytxTest(
                 `playlist: ${category} - ${sort}`,
                 async ({ page, eventWatcher }) => {

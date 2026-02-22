@@ -1,9 +1,9 @@
 import { ChannelPage } from "./channel-page";
+import { type SortKind, SortTab } from "./sort-tab";
 import { resolvePlaylistPath } from "./youtube-api";
 import YoutubePage from "./youtube-page";
 
 export class CategoryTab {
-  public static readonly sorts: SortKind[] = ["Latest", "Popular", "Oldest"];
   public static readonly categories: CategoryKind[] = [
     "Videos",
     "Shorts",
@@ -15,61 +15,14 @@ export class CategoryTab {
     return window.location.pathname.match(/^\/[^/]+\/(videos|shorts|streams)$/);
   }
 
-  public static SORT_BUTTON =
-    "ytd-browse[page-subtype='channels'] #primary [aria-selected],ytm-browse .tab-content [aria-selected]";
-  public static get sortButtons() {
-    // sort buttons may not exist when there are not enough videos
-    return Array.from(document.querySelectorAll(CategoryTab.SORT_BUTTON));
-  }
-  public static get sortButtonLineages() {
-    return CategoryTab.sortButtons.map((e) => {
-      const lineage = [];
-      let current: Element | null = e;
-      while (current) {
-        lineage.push(current);
-        current = current.parentElement;
-      }
-      return lineage.reverse();
-    });
-  }
-  public static get sortButtonHolder(): Element | undefined {
-    if (CategoryTab.sortButtons.length !== 3) {
-      return undefined;
-    }
-    const sortButtonLineages = CategoryTab.sortButtonLineages;
-    const sortButtonHolder = sortButtonLineages[0].findLast((e) =>
-      sortButtonLineages.slice(1).every((lineage) => lineage.includes(e)),
-    );
-    return sortButtonHolder;
-  }
-  public static get sortKind(): SortKind | null {
-    const i = Array.from(
-      CategoryTab.sortButtonHolder?.children || [],
-    ).findIndex(
-      (eachButtonTree) =>
-        eachButtonTree.matches("[aria-selected=true]") ||
-        eachButtonTree.querySelector("[aria-selected=true]"),
-    );
-    switch (i) {
-      case 0:
-        return "Latest";
-      case 1:
-        return "Popular";
-      case 2:
-        return "Oldest";
-      default:
-        return null;
-    }
-  }
-
   public lastSortKind: SortKind = "Latest";
 
   public constructor(public categoryKind: CategoryKind) {}
 
   public static async mount() {
     const categoryTab = new CategoryTab(ChannelPage.categoryKind!);
-    if (CategoryTab.sortButtonHolder) {
-      await categoryTab.renderPlayAllButton(CategoryTab.sortKind ?? "Latest");
+    if (SortTab.sortButtonHolder) {
+      await categoryTab.renderPlayAllButton(SortTab.sortKind ?? "Latest");
     }
     await categoryTab.startSortUiSync();
   }
@@ -93,13 +46,13 @@ export class CategoryTab {
     );
     if (!targetPlayAllButton) {
       document.querySelector(".play-all-btn")?.remove();
-      CategoryTab.sortButtonHolder?.appendChild(playAllButton);
+      SortTab.sortButtonHolder?.appendChild(playAllButton);
     }
   }
 
   public startSortUiSync() {
     const sortStateObserver = new MutationObserver(async (_records) => {
-      const sortKind = CategoryTab.sortKind;
+      const sortKind = SortTab.sortKind;
       if (sortKind && this.lastSortKind !== sortKind) {
         this.lastSortKind = sortKind;
         // Workaround to avoid test failures caused by a Youtube desktop UI bug
@@ -119,9 +72,7 @@ export class CategoryTab {
     });
 
     const rerendererObserver = new MutationObserver(async (records) => {
-      const sortButtonRelatedSet = new Set(
-        CategoryTab.sortButtonLineages.flat(),
-      );
+      const sortButtonRelatedSet = new Set(SortTab.sortButtonLineages.flat());
       const sortButtonRelatedRecords = records.filter(
         (r) =>
           r.target instanceof Element && sortButtonRelatedSet.has(r.target),
@@ -152,4 +103,4 @@ export class CategoryTab {
 }
 
 export type CategoryKind = "Videos" | "Shorts" | "Streams";
-export type SortKind = "Latest" | "Popular" | "Oldest";
+export type { SortKind };
