@@ -88,7 +88,9 @@ export class CategoryTab {
       const sortKind: SortKind | null = (() => {
         const i = Array.from(
           CategoryTab.sortButtonHolder?.children || [],
-        ).findIndex((root) => root.contains(selectedButton));
+        ).findIndex((eachButtonTree) =>
+          eachButtonTree.contains(selectedButton),
+        );
         switch (i) {
           case 0:
             return "Latest";
