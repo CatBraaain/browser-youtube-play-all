@@ -136,7 +136,7 @@ export class YtChannelPage {
       for (const sort of SortTab.sorts) {
         await this.navigateToSort(sort);
 
-        const playlistUrl = await this.getPlayAllUrl();
+        const playlistUrl = await this.getPlayAllUrl(category, sort);
         const topVideoIds = await this.getTopVideoIds(3);
 
         playListMap[category][sort] = {
@@ -212,8 +212,13 @@ export class YtChannelPage {
     }
   }
 
-  public async getPlayAllUrl(): Promise<string> {
-    const href = await this.page.locator(".play-all-btn").getAttribute("href");
+  public async getPlayAllUrl(
+    category: CategoryKind,
+    sort: SortKind,
+  ): Promise<string> {
+    const href = await this.page
+      .locator(`.play-all-btn.${category.toLowerCase()}.${sort.toLowerCase()}`)
+      .getAttribute("href");
     return `https://www.youtube.com${href}`;
   }
 }
