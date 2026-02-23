@@ -56,11 +56,6 @@ export class CategoryTab {
       const isSortChanged = sortKind && sortKind !== this.lastSortKind;
       if (isSortChanged) {
         this.lastSortKind = sortKind;
-        // Workaround to avoid test failures caused by a Youtube desktop UI bug
-        // TODO: Tweak desktop test and remove this
-        if (!YoutubePage.isMobile) {
-          return;
-        }
         await this.renderPlayAllButton(this.lastSortKind);
       }
     });
