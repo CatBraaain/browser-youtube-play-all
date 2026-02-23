@@ -203,32 +203,28 @@ export class YtChannelPage {
     if (this.page.url().includes("shorts")) {
       return await this.page
         .locator(
-          "ytd-browse[role='main'] [href*='/shorts'][title],ytm-shorts-lockup-view-model > [href*='/shorts'][title]",
+          "ytd-browse[role='main'] [href*='/shorts'],ytm-browse [href*='/shorts']",
         )
-        .evaluateAll(
-          (links, n) =>
-            links
-              .slice(0, n)
-              .map((link) => link.getAttribute("href")!.split("/").at(-1)!),
-          n,
-        );
+        .evaluateAll((links, n) => {
+          const videoIds = links.map(
+            (link) => link.getAttribute("href")!.split("/").at(-1)!,
+          );
+          return [...new Set(videoIds)].slice(0, n);
+        }, n);
     } else {
       return await this.page
         .locator(
-          "ytd-browse[role='main'] [href*='/watch'][title],.YtmCompactMediaItemImage[href*='/watch']",
+          "ytd-browse[role='main'] [href*='/watch'],ytm-browse [href*='/watch']",
         )
-        .evaluateAll(
-          (links, n) =>
-            links
-              .slice(0, n)
-              .map(
-                (link) =>
-                  new URL(
-                    `https://www.youtube.com${link.getAttribute("href")!}`,
-                  ).searchParams.get("v")!,
-              ),
-          n,
-        );
+        .evaluateAll((links, n) => {
+          const videoIds = links.map(
+            (link) =>
+              new URL(
+                `https://www.youtube.com${link.getAttribute("href")!}`,
+              ).searchParams.get("v")!,
+          );
+          return [...new Set(videoIds)].slice(0, n);
+        }, n);
     }
   }
 
