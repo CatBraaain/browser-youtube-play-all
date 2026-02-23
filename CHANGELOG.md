@@ -1,3 +1,15 @@
+## [0.3.0] - 2026-02-23
+
+### 🚀 Features
+
+- Improve stability against YouTube UI changes
+- Add mobile support
+
+### 🐛 Bug Fixes
+
+- Remove duplicate subpath from fetch URL
+- Prevent stale observers on rapid category and sort changes
+
 ## [0.2.3] - 2026-02-20
 
 ### 🐛 Bug Fixes
