@@ -1,7 +1,6 @@
 import { ChannelPage } from "./channel-page";
 import { type SortKind, SortTab } from "./sort-tab";
 import { resolvePlaylistPath } from "./youtube-api";
-import YoutubePage from "./youtube-page";
 
 export class CategoryTab {
   public static readonly categories: CategoryKind[] = [
@@ -51,14 +50,21 @@ export class CategoryTab {
   }
 
   public startSortUiSync() {
-    const sortStateObserver = new MutationObserver(async (_records) => {
-      const sortKind = SortTab.sortKind;
-      const isSortChanged = sortKind && sortKind !== this.lastSortKind;
-      if (isSortChanged) {
-        this.lastSortKind = sortKind;
-        await this.renderPlayAllButton(this.lastSortKind);
-      }
-    });
+    const sortStateObserver = new MutationObserver(
+      async (_records, observer) => {
+        if (this.categoryKind !== ChannelPage.categoryKind) {
+          observer.disconnect();
+          return;
+        }
+
+        const sortKind = SortTab.sortKind;
+        const isSortChanged = sortKind && sortKind !== this.lastSortKind;
+        if (isSortChanged) {
+          this.lastSortKind = sortKind;
+          await this.renderPlayAllButton(this.lastSortKind);
+        }
+      },
+    );
     // buttonHolder may be rerendered; therefore, observe the document instead
     sortStateObserver.observe(document, {
       subtree: true,
@@ -67,34 +73,29 @@ export class CategoryTab {
       attributeFilter: ["aria-selected"],
     });
 
-    const rerendererObserver = new MutationObserver(async (records) => {
-      const sortButtonRelatedSet = new Set(SortTab.sortButtonLineages.flat());
-      const sortButtonRelatedRecords = records.filter(
-        (r) =>
-          r.target instanceof Element && sortButtonRelatedSet.has(r.target),
-      );
-      const isButtonRerendered = sortButtonRelatedRecords.length > 0;
-      if (CategoryTab.isCategoryTab && isButtonRerendered) {
-        await this.renderPlayAllButton(this.lastSortKind);
-      }
-    });
+    const rerendererObserver = new MutationObserver(
+      async (records, observer) => {
+        if (this.categoryKind !== ChannelPage.categoryKind) {
+          observer.disconnect();
+          return;
+        }
+
+        const sortButtonRelatedSet = new Set(SortTab.sortButtonLineages.flat());
+        const sortButtonRelatedRecords = records.filter(
+          (r) =>
+            r.target instanceof Element && sortButtonRelatedSet.has(r.target),
+        );
+        const isButtonRerendered = sortButtonRelatedRecords.length > 0;
+        if (CategoryTab.isCategoryTab && isButtonRerendered) {
+          await this.renderPlayAllButton(this.lastSortKind);
+        }
+      },
+    );
     rerendererObserver.observe(document, {
       subtree: true,
       childList: true,
       attributes: false,
     });
-
-    window.addEventListener(
-      YoutubePage.NavigationStartEvent,
-      () => {
-        [sortStateObserver, rerendererObserver].forEach((w) => {
-          w.disconnect();
-        });
-      },
-      {
-        once: true,
-      },
-    );
   }
 }
 
