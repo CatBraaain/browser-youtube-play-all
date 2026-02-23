@@ -51,8 +51,12 @@ searchNavigationModes.forEach((searchNavigationMode) => {
               await ytChannelPage.navigateToSort(sort);
               await page
                 .locator(`.play-all-btn.${sort.toLocaleLowerCase()}`)
-                .waitFor({ timeout: 10000 });
+                .waitFor({ timeout: 3000 });
+              // The play-all button may be rerendered, so wait and re-check
               await new Promise((resolve) => setTimeout(resolve, 500));
+              await page
+                .locator(`.play-all-btn.${sort.toLocaleLowerCase()}`)
+                .waitFor({ timeout: 3000 });
             }
           }
         },
