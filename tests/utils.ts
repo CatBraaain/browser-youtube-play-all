@@ -122,7 +122,7 @@ export class YtVideoPage {
 
   public async getPlaylistVideoIds(n: number = 3): Promise<string[]> {
     const locator = this.page.locator(
-      '#playlist #thumbnail[href*="/watch?"],.YtmCompactMediaItemImage[href*="/watch"]',
+      "#playlist #thumbnail[href*='/watch?'],.YtmCompactMediaItemImage[href*='/watch']",
     );
     await locator.first().waitFor();
     return await locator.evaluateAll(
@@ -142,7 +142,7 @@ export class YtVideoPage {
   public async getPlaylistSelectedVideoId(): Promise<string> {
     return await this.page
       .locator(
-        '#playlist-items[selected] #thumbnail[href*="/watch?"],.ytmPlaylistPanelVideoRendererV2Selected [href*="/watch?"]',
+        "#playlist-items[selected] #thumbnail[href*='/watch?'],.ytmPlaylistPanelVideoRendererV2Selected [href*='/watch?']",
       )
       .first()
       .evaluate(

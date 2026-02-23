@@ -88,7 +88,7 @@ export class ChannelIdFinder {
   }
 
   async expectCanonicalLink(exists: boolean) {
-    const locator = this.page.locator('[rel="canonical"]');
+    const locator = this.page.locator("[rel='canonical']");
     const channelId =
       (await locator.count()) > 0
         ? (await locator.first().getAttribute("href"))!
