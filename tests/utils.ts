@@ -193,10 +193,6 @@ export class YtChannelPage {
       .locator(SortTab.SORT_BUTTON)
       .nth(SortTab.sorts.indexOf(sort))
       .click();
-    await this.page
-      .locator(`.play-all-btn.${sort.toLocaleLowerCase()}`)
-      .waitFor({ timeout: 10000 });
-    await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
   public async getTopVideoIds(n: number = 3): Promise<string[]> {

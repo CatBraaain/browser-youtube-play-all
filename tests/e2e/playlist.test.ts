@@ -5,6 +5,7 @@ import { ytxTest } from "../fixture";
 import { YtChannelPage, YtPage, YtVideoPage } from "../utils";
 
 const channel = "@Microsoft";
+const checkVideoCount = 3;
 
 CategoryTab.categories.forEach((category) => {
   SortTab.sorts.forEach((sort) => {
@@ -19,14 +20,14 @@ CategoryTab.categories.forEach((category) => {
         await ytChannelPage.navigateToCategory(category, "hard");
         await ytChannelPage.navigateToSort(sort);
         const playlistUrl = await ytChannelPage.getPlayAllUrl(category, sort);
-        const topVideoIds = await ytChannelPage.getTopVideoIds(3);
+        const topVideoIds = await ytChannelPage.getTopVideoIds(checkVideoCount);
 
         await page.goto(playlistUrl);
         const ytPage = new YtPage(page, eventWatcher);
         await eventWatcher.waitForFired(ytPage.NavigationEndEvent);
 
         const ytVideoPage = new YtVideoPage(page);
-        const n = sort !== "Oldest" ? 3 : 1;
+        const n = sort !== "Oldest" ? checkVideoCount : 1;
         const playlistVideoIds =
           sort !== "Oldest"
             ? await ytVideoPage.getPlaylistVideoIds(n)

@@ -49,6 +49,10 @@ searchNavigationModes.forEach((searchNavigationMode) => {
             );
             for (const sort of SortTab.sorts) {
               await ytChannelPage.navigateToSort(sort);
+              await page
+                .locator(`.play-all-btn.${sort.toLocaleLowerCase()}`)
+                .waitFor({ timeout: 10000 });
+              await new Promise((resolve) => setTimeout(resolve, 500));
             }
           }
         },
