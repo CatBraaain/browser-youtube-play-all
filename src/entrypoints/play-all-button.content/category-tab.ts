@@ -1,6 +1,7 @@
 import { ChannelPage } from "./channel-page";
 import { type SortKind, SortTab } from "./sort-tab";
 import { resolvePlaylistPath } from "./youtube-api";
+import YoutubePage from "./youtube-page";
 
 export class CategoryTab {
   public static readonly categories: CategoryKind[] = [
@@ -96,6 +97,18 @@ export class CategoryTab {
       childList: true,
       attributes: false,
     });
+
+    window.addEventListener(
+      YoutubePage.NavigationStartEvent,
+      () => {
+        [sortStateObserver, rerendererObserver].forEach((w) => {
+          w.disconnect();
+        });
+      },
+      {
+        once: true,
+      },
+    );
   }
 }
 
