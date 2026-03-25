@@ -1,3 +1,14 @@
+## [0.3.1] - 2026-03-25
+
+### 🚀 Features
+
+- Expand supported browser versions
+
+### 🐛 Bug Fixes
+
+- Prevent duplicate observer
+- Fix channel page detection not working correctly
+
 ## [0.3.0] - 2026-02-23
 
 ### 🚀 Features
