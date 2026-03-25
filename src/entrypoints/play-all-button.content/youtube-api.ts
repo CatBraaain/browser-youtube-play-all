@@ -123,10 +123,8 @@ function extractContinuationToken(
   )!;
   const rendererHeader = categoryTabRenderer.content.richGridRenderer.header;
   const tokens = Array.from(
-    JSON.stringify(rendererHeader)
-      .matchAll(/"token":"(.*?)"/g)
-      .map((match) => match[1]),
-  );
+    JSON.stringify(rendererHeader).matchAll(/"token":"(.*?)"/g),
+  ).map((match) => match[1]);
   const [latestVideoToken, popularVideoToken, oldestVideoToken] = tokens;
   const token = (() => {
     switch (sortKind) {
