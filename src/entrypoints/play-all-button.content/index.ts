@@ -12,13 +12,13 @@ export default defineContentScript({
 
 async function onYoutubeActivated() {
   YoutubePage.addStyleForPlayAllButton();
-  if (ChannelPage.isChannelPage && CategoryTab.isCategoryTab) {
+  if ((await ChannelPage.isChannelPage()) && CategoryTab.isCategoryTab) {
     await CategoryTab.mount();
   }
 
   window.addEventListener(YoutubePage.NavigationEndEvent, async () => {
     logger.info("onYoutubeActivated()", "NavigationEndEvent fired");
-    if (ChannelPage.isChannelPage && CategoryTab.isCategoryTab) {
+    if ((await ChannelPage.isChannelPage()) && CategoryTab.isCategoryTab) {
       await CategoryTab.mount();
     }
   });

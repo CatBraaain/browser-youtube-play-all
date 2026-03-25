@@ -3,8 +3,9 @@ import type { CategoryKind } from "./category-tab";
 import { fetchChannelId } from "./youtube-api";
 
 export class ChannelPage {
-  public static get isChannelPage() {
-    const isChannel = fetchChannelId(window.location.href) !== undefined;
+  public static async isChannelPage() {
+    const isChannel =
+      (await fetchChannelId(window.location.href)) !== undefined;
     logger.info("ChannelPage.isChannelPage()", {
       url: window.location.href,
       isChannel,
