@@ -1,5 +1,7 @@
+import { logger } from "../../logger";
 import type { CategoryKind, SortKind } from "./category-tab";
 import YoutubePage from "./youtube-page";
+
 export async function resolvePlaylistPath(
   channelUrl: string,
   categoryKind: CategoryKind,
@@ -102,6 +104,7 @@ async function getOldestItemId(
     .match(/"videoId":"(.*?)"/i)
     ?.at(1);
 
+  logger.info("getOldestItemId()", { topVideoId });
   return topVideoId!;
 }
 
@@ -125,14 +128,18 @@ function extractContinuationToken(
       .map((match) => match[1]),
   );
   const [latestVideoToken, popularVideoToken, oldestVideoToken] = tokens;
-  switch (sortKind) {
-    case "Latest":
-      return latestVideoToken;
-    case "Popular":
-      return popularVideoToken;
-    case "Oldest":
-      return oldestVideoToken;
-  }
+  const token = (() => {
+    switch (sortKind) {
+      case "Latest":
+        return latestVideoToken;
+      case "Popular":
+        return popularVideoToken;
+      case "Oldest":
+        return oldestVideoToken;
+    }
+  })();
+  logger.info("extractContinuationToken()", { token });
+  return token;
 }
 
 type YtInitialData = {

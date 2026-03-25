@@ -1,3 +1,4 @@
+import { logger } from "../../logger";
 import { ChannelPage } from "./channel-page";
 import { type SortKind, SortTab } from "./sort-tab";
 import { resolvePlaylistPath } from "./youtube-api";
@@ -48,9 +49,16 @@ export class CategoryTab {
       document.querySelector(".play-all-btn")?.remove();
       SortTab.sortButtonHolder?.appendChild(playAllButton);
     }
+    logger.info("CategoryTab.renderPlayAllButton()", {
+      buttonExists: !!targetPlayAllButton,
+      buttonHolderExists: !!SortTab.sortButtonHolder,
+      href: playAllButton.href,
+    });
   }
 
   public startSortUiSync() {
+    logger.info("CategoryTab.startSortUiSync", "start");
+
     const sortStateObserver = new MutationObserver(
       async (_records, observer) => {
         if (this.categoryKind !== ChannelPage.categoryKind) {
@@ -61,6 +69,10 @@ export class CategoryTab {
         const sortKind = SortTab.sortKind;
         const isSortChanged = sortKind && sortKind !== this.lastSortKind;
         if (isSortChanged) {
+          logger.info(
+            "CategoryTab.startSortUiSync",
+            `Sort changed from ${this.lastSortKind} to ${sortKind}`,
+          );
           this.lastSortKind = sortKind;
           await this.renderPlayAllButton(this.lastSortKind);
         }
@@ -86,8 +98,12 @@ export class CategoryTab {
           (r) =>
             r.target instanceof Element && sortButtonRelatedSet.has(r.target),
         );
-        const isButtonRerendered = sortButtonRelatedRecords.length > 0;
-        if (CategoryTab.isCategoryTab && isButtonRerendered) {
+        const isSortButtonRerendered = sortButtonRelatedRecords.length > 0;
+        if (CategoryTab.isCategoryTab && isSortButtonRerendered) {
+          logger.info(
+            "CategoryTab.startSortUiSync",
+            "sort button was rerendered",
+          );
           await this.renderPlayAllButton(this.lastSortKind);
         }
       },
@@ -101,6 +117,10 @@ export class CategoryTab {
     window.addEventListener(
       YoutubePage.NavigationStartEvent,
       () => {
+        logger.info(
+          "CategoryTab.startSortUiSync",
+          "NavigationStartEvent fired, disconnecting observers",
+        );
         [sortStateObserver, rerendererObserver].forEach((w) => {
           w.disconnect();
         });

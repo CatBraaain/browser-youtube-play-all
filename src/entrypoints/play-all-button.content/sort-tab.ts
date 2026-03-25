@@ -1,3 +1,5 @@
+import { logger } from "../../logger";
+
 export class SortTab {
   public static readonly sorts: SortKind[] = ["Latest", "Popular", "Oldest"];
 
@@ -38,16 +40,25 @@ export class SortTab {
         eachButtonTree.matches("[aria-selected=true]") ||
         eachButtonTree.querySelector("[aria-selected=true]"),
     );
-    switch (i) {
-      case 0:
-        return "Latest";
-      case 1:
-        return "Popular";
-      case 2:
-        return "Oldest";
-      default:
-        return null;
-    }
+    const sortKind = (() => {
+      switch (i) {
+        case 0:
+          return "Latest";
+        case 1:
+          return "Popular";
+        case 2:
+          return "Oldest";
+        default:
+          return null;
+      }
+    })();
+    logger.info("SortTab.sortKind()", {
+      sortButtonHolder: SortTab.sortButtonHolder,
+      sortButtonLineages: SortTab.sortButtonLineages,
+      sortButtons: SortTab.sortButtons,
+      sortKind,
+    });
+    return sortKind;
   }
 }
 

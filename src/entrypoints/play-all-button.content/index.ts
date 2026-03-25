@@ -1,4 +1,5 @@
 ﻿import { defineContentScript } from "#imports";
+import { logger } from "../../logger";
 import { CategoryTab } from "./category-tab";
 import { ChannelPage } from "./channel-page";
 import YoutubePage from "./youtube-page";
@@ -16,6 +17,7 @@ async function onYoutubeActivated() {
   }
 
   window.addEventListener(YoutubePage.NavigationEndEvent, async () => {
+    logger.info("onYoutubeActivated()", "NavigationEndEvent fired");
     if (ChannelPage.isChannelPage && CategoryTab.isCategoryTab) {
       await CategoryTab.mount();
     }
