@@ -1,5 +1,5 @@
 import { logger } from "../../logger";
-import { ChannelMeta } from "./channel-meta";
+import type { ChannelMeta } from "./channel-meta";
 import { ChannelPage } from "./channel-page";
 import { type SortKind, SortTab } from "./sort-tab";
 import YoutubePage from "./youtube-page";
@@ -20,8 +20,7 @@ export class CategoryTab {
 
   public constructor(public categoryKind: CategoryKind) {}
 
-  public static async mount(channelId: string) {
-    const channelMeta = await ChannelMeta.create(channelId);
+  public static async mount(channelMeta: ChannelMeta) {
     const categoryTab = new CategoryTab(ChannelPage.categoryKind!);
     if (SortTab.sortButtonHolder) {
       await categoryTab.renderPlayAllButton(

@@ -1,6 +1,7 @@
 ﻿import { defineContentScript } from "#imports";
 import { logger } from "../../logger";
 import { CategoryTab } from "./category-tab";
+import { ChannelMeta } from "./channel-meta";
 import { fetchChannelId } from "./youtube-api";
 import YoutubePage from "./youtube-page";
 
@@ -13,10 +14,13 @@ export default defineContentScript({
 async function onYoutubeActivated() {
   YoutubePage.addStyleForPlayAllButton();
 
+  let channelMeta: ChannelMeta | null = null;
+
   const channelId = await fetchChannelId(window.location.href);
   if (channelId) {
+    channelMeta = await ChannelMeta.create(channelId);
     if (CategoryTab.isCategoryTab) {
-      await CategoryTab.mount(channelId);
+      await CategoryTab.mount(channelMeta);
     }
   }
 
@@ -25,8 +29,11 @@ async function onYoutubeActivated() {
 
     const channelId = await fetchChannelId(window.location.href);
     if (channelId) {
+      if (channelMeta?.id !== channelId) {
+        channelMeta = await ChannelMeta.create(channelId);
+      }
       if (CategoryTab.isCategoryTab) {
-        await CategoryTab.mount(channelId);
+        await CategoryTab.mount(channelMeta);
       }
     }
   });
