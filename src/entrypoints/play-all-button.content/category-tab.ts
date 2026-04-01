@@ -1,7 +1,7 @@
 import { logger } from "../../logger";
+import { ChannelMeta } from "./channel-meta";
 import { ChannelPage } from "./channel-page";
 import { type SortKind, SortTab } from "./sort-tab";
-import { resolvePlaylistPath } from "./youtube-api";
 import YoutubePage from "./youtube-page";
 
 export class CategoryTab {
@@ -20,23 +20,29 @@ export class CategoryTab {
 
   public constructor(public categoryKind: CategoryKind) {}
 
-  public static async mount() {
+  public static async mount(channelId: string) {
+    const channelMeta = await ChannelMeta.create(channelId);
     const categoryTab = new CategoryTab(ChannelPage.categoryKind!);
     if (SortTab.sortButtonHolder) {
-      await categoryTab.renderPlayAllButton(SortTab.sortKind ?? "Latest");
+      await categoryTab.renderPlayAllButton(
+        channelMeta,
+        SortTab.sortKind ?? "Latest",
+      );
     }
-    await categoryTab.startSortUiSync();
+    await categoryTab.startSortUiSync(channelMeta);
   }
 
-  public async renderPlayAllButton(sortKind: SortKind) {
+  public async renderPlayAllButton(
+    channelMeta: ChannelMeta,
+    sortKind: SortKind,
+  ) {
     const categoryKind = this.categoryKind;
 
     const playAllButton = document.createElement("a");
     playAllButton.classList.add("play-all-btn");
     playAllButton.classList.add(categoryKind.toLowerCase());
     playAllButton.classList.add(sortKind.toLowerCase());
-    playAllButton.href = await resolvePlaylistPath(
-      window.location.href,
+    playAllButton.href = await channelMeta.getPlaylistPath(
       categoryKind,
       sortKind,
     );
@@ -56,7 +62,7 @@ export class CategoryTab {
     });
   }
 
-  public startSortUiSync() {
+  public startSortUiSync(channelMeta: ChannelMeta) {
     logger.info("CategoryTab.startSortUiSync", "start");
 
     const sortStateObserver = new MutationObserver(
@@ -74,7 +80,7 @@ export class CategoryTab {
             `Sort changed from ${this.lastSortKind} to ${sortKind}`,
           );
           this.lastSortKind = sortKind;
-          await this.renderPlayAllButton(this.lastSortKind);
+          await this.renderPlayAllButton(channelMeta, this.lastSortKind);
         }
       },
     );
@@ -104,7 +110,7 @@ export class CategoryTab {
             "CategoryTab.startSortUiSync",
             "sort button was rerendered",
           );
-          await this.renderPlayAllButton(this.lastSortKind);
+          await this.renderPlayAllButton(channelMeta, this.lastSortKind);
         }
       },
     );

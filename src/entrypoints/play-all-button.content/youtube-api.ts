@@ -3,11 +3,10 @@ import type { CategoryKind, SortKind } from "./category-tab";
 import YoutubePage from "./youtube-page";
 
 export async function resolvePlaylistPath(
-  channelUrl: string,
+  channelId: string,
   categoryKind: CategoryKind,
   sortKind: SortKind,
 ): Promise<string> {
-  const channelId = (await fetchChannelId(channelUrl))!;
   if (sortKind === "Oldest") {
     const videoId = await getOldestItemId(channelId, categoryKind);
     return videoId ? `/watch?v=${videoId}&list=UL01234567890` : "";

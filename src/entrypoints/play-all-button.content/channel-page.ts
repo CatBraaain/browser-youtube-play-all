@@ -1,18 +1,6 @@
-import { logger } from "../../logger";
 import type { CategoryKind } from "./category-tab";
-import { fetchChannelId } from "./youtube-api";
 
 export class ChannelPage {
-  public static async isChannelPage() {
-    const isChannel =
-      (await fetchChannelId(window.location.href)) !== undefined;
-    logger.info("ChannelPage.isChannelPage()", {
-      url: window.location.href,
-      isChannel,
-    });
-    return isChannel;
-  }
-
   public static get categoryKind(): CategoryKindNullable {
     const categorySlug = window.location.pathname
       .split("/")

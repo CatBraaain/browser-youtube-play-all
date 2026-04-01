@@ -1,7 +1,7 @@
 ﻿import { defineContentScript } from "#imports";
 import { logger } from "../../logger";
 import { CategoryTab } from "./category-tab";
-import { ChannelPage } from "./channel-page";
+import { fetchChannelId } from "./youtube-api";
 import YoutubePage from "./youtube-page";
 
 export default defineContentScript({
@@ -12,14 +12,22 @@ export default defineContentScript({
 
 async function onYoutubeActivated() {
   YoutubePage.addStyleForPlayAllButton();
-  if ((await ChannelPage.isChannelPage()) && CategoryTab.isCategoryTab) {
-    await CategoryTab.mount();
+
+  const channelId = await fetchChannelId(window.location.href);
+  if (channelId) {
+    if (CategoryTab.isCategoryTab) {
+      await CategoryTab.mount(channelId);
+    }
   }
 
   window.addEventListener(YoutubePage.NavigationEndEvent, async () => {
     logger.info("onYoutubeActivated()", "NavigationEndEvent fired");
-    if ((await ChannelPage.isChannelPage()) && CategoryTab.isCategoryTab) {
-      await CategoryTab.mount();
+
+    const channelId = await fetchChannelId(window.location.href);
+    if (channelId) {
+      if (CategoryTab.isCategoryTab) {
+        await CategoryTab.mount(channelId);
+      }
     }
   });
 }
