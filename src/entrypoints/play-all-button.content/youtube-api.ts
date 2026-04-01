@@ -7,17 +7,12 @@ export async function resolvePlaylistPath(
   categoryKind: CategoryKind,
   sortKind: SortKind,
 ): Promise<string> {
+  const channelId = (await fetchChannelId(channelUrl))!;
   if (sortKind === "Oldest") {
-    const videoId = await getOldestItemId(channelUrl, categoryKind);
+    const videoId = await getOldestItemId(channelId, categoryKind);
     return videoId ? `/watch?v=${videoId}&list=UL01234567890` : "";
   } else {
-    const channelId = (await fetchChannelId(channelUrl))!;
-    if (categoryKind && sortKind) {
-      const playlistPrefix = resolvePlaylistPrefix(categoryKind, sortKind);
-      return `/playlist?list=${playlistPrefix}${channelId.slice(2)}&playnext=1`;
-    } else {
-      return "";
-    }
+    return `${resolveFilteredPlaylistUrl(channelId, categoryKind, sortKind)}&playnext=1`;
   }
 }
 
@@ -31,42 +26,47 @@ export async function fetchChannelId(channelUrl: string) {
   return channelId;
 }
 
-function resolvePlaylistPrefix(
+function resolveFilteredPlaylistUrl(
+  channelId: string,
   categoryKind: CategoryKind,
   sortKind: SortKind,
 ): string {
-  switch (true) {
-    case categoryKind === "Videos" && sortKind === "Latest":
-      return "UULF";
-    case categoryKind === "Videos" && sortKind === "Popular":
-      return "UULP";
-    case categoryKind === "Shorts" && sortKind === "Latest":
-      return "UUSH";
-    case categoryKind === "Shorts" && sortKind === "Popular":
-      return "UUPS";
-    case categoryKind === "Streams" && sortKind === "Latest":
-      return "UULV";
-    case categoryKind === "Streams" && sortKind === "Popular":
-      return "UUPV";
-    default:
-      return "UU";
-  }
+  const playlistPrefix = (() => {
+    switch (true) {
+      case categoryKind === "Videos" && sortKind === "Latest":
+        return "UULF";
+      case categoryKind === "Videos" && sortKind === "Popular":
+        return "UULP";
+      case categoryKind === "Shorts" && sortKind === "Latest":
+        return "UUSH";
+      case categoryKind === "Shorts" && sortKind === "Popular":
+        return "UUPS";
+      case categoryKind === "Streams" && sortKind === "Latest":
+        return "UULV";
+      case categoryKind === "Streams" && sortKind === "Popular":
+        return "UUPV";
+      default:
+        return "UU";
+    }
+  })();
+  const playlistUrl = `/playlist?list=${playlistPrefix}${channelId.slice(2)}`;
+  return playlistUrl;
 }
 
 async function getOldestItemId(
-  channelUrl: string,
+  channelId: string,
   categoryKind: CategoryKind,
 ): Promise<string> {
-  const playlistPrefix = resolvePlaylistPrefix(categoryKind, "Latest");
-  const channelId = (await fetchChannelId(channelUrl))!;
-  const playlistUrl = `${window.location.origin}/playlist?list=${playlistPrefix}${channelId.slice(2)}&hl=en&persist_hl=1`;
-  const videoCount = (await fetchYtInitialData(playlistUrl)).header
-    .playlistHeaderRenderer.stats[0].runs[0].text;
+  const playlistUrl = `${resolveFilteredPlaylistUrl(channelId, categoryKind, "Latest")}`;
+
+  const videoCount = (
+    await fetchYtInitialData(`${playlistUrl}&hl=en&persist_hl=1`)
+  ).header.playlistHeaderRenderer.stats[0].runs[0].text;
   logger.info({ videoCount });
 
-  const oldestVideoUrl = `${window.location.origin}/playlist?list=${playlistPrefix}${channelId!.slice(2)}&index=${videoCount}&playnext=1`;
-  const oldestVideoId = (await fetchYtInitialData(oldestVideoUrl))
-    .currentVideoEndpoint.watchEndpoint.videoId;
+  const oldestVideoId = (
+    await fetchYtInitialData(`${playlistUrl}&index=${videoCount}&playnext=1`)
+  ).currentVideoEndpoint.watchEndpoint.videoId;
   logger.info({ oldestVideoId });
   return oldestVideoId;
 }
