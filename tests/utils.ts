@@ -201,7 +201,7 @@ export class YtChannelPage {
     if (this.page.url().includes("shorts")) {
       return await this.page
         .locator(
-          "ytd-browse[role='main'] [href*='/shorts'],ytm-browse [href*='/shorts']",
+          "ytd-browse[role='main'] #primary #contents [href*='/shorts'],ytm-browse .modern-tabs [href*='/shorts']",
         )
         .evaluateAll((links, n) => {
           const videoIds = links.map(
@@ -212,7 +212,7 @@ export class YtChannelPage {
     } else {
       return await this.page
         .locator(
-          "ytd-browse[role='main'] [href*='/watch'],ytm-browse [href*='/watch']",
+          "ytd-browse[role='main'] #primary #contents [href*='/watch'],ytm-browse .modern-tabs [href*='/watch']",
         )
         .evaluateAll((links, n) => {
           const videoIds = links.map(

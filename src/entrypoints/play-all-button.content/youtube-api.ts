@@ -17,6 +17,9 @@ export async function resolvePlaylistPath(
 ): Promise<string> {
   if (sortKind === "Oldest") {
     const videoId = await getOldestItemId(channelId, categoryKind);
+    if (videoId === null) {
+      return "";
+    }
     return videoId ? `/watch?v=${videoId}&list=UL01234567890` : "";
   } else {
     return `${resolveFilteredPlaylistUrl(channelId, categoryKind, sortKind)}&playnext=1`;
@@ -26,12 +29,16 @@ export async function resolvePlaylistPath(
 async function getOldestItemId(
   channelId: string,
   categoryKind: CategoryKind,
-): Promise<string> {
+): Promise<string | null> {
   const playlistUrl = `${resolveFilteredPlaylistUrl(channelId, categoryKind, "Latest")}`;
 
-  const videoCount = (
-    await fetchYtInitialData(`${playlistUrl}&hl=en&persist_hl=1`)
-  ).header.playlistHeaderRenderer.stats[0].runs[0].text;
+  const playlistHeader = (await fetchYtInitialData(playlistUrl)).header;
+  if (playlistHeader === undefined) {
+    return null;
+  }
+
+  const videoCount =
+    playlistHeader.playlistHeaderRenderer.stats[0].runs[0].text;
 
   const oldestVideoId = (
     await fetchYtInitialData(`${playlistUrl}&index=${videoCount}&playnext=1`)

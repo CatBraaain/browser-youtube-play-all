@@ -14,6 +14,9 @@ export default defineContentScript({
 function main() {
   setHooks();
 
+  ytxEventEmitter.on(YTX_EVENTS.CHANNEL_ENTER, async (channel) => {
+    await renderDropdown(channel);
+  });
   [
     YTX_EVENTS.CATEGORY_ENTER,
     YTX_EVENTS.SORT_CHANGED,
@@ -61,4 +64,51 @@ async function maybeRenderButton(channel: Channel) {
     document.querySelector(".play-all-btn")?.remove();
     YoutubeDOM.sortButtonHolder!.appendChild(playAllButton);
   }
+}
+
+async function renderDropdown(channel: Channel) {
+  if (document.querySelector("yt-flexible-actions-view-model .play-all-btns")) {
+    return;
+  }
+
+  const container = document.createElement("div");
+  container.className = "play-all-btns";
+
+  const button = document.createElement("button");
+  button.textContent = "Play All Buttons ▼";
+
+  const menu = document.createElement("div");
+  menu.className = "hidden";
+
+  for (const categoryKind of YoutubeDOM.categories) {
+    for (const sortKind of YoutubeDOM.sorts) {
+      const href = await channel.getPlaylistPath(categoryKind, sortKind);
+      if (href) {
+        const a = document.createElement("a");
+        a.href = href;
+        a.textContent = `${categoryKind} (${sortKind})`;
+        menu.appendChild(a);
+      }
+    }
+  }
+
+  container.append(button, menu);
+
+  document
+    .querySelector("yt-flexible-actions-view-model")
+    ?.appendChild(container);
+
+  let isOpen = false;
+  button.addEventListener("click", (e) => {
+    e.stopPropagation();
+    isOpen = !isOpen;
+    menu.classList.toggle("hidden", !isOpen);
+  });
+  menu.addEventListener("click", (e) => {
+    e.stopPropagation();
+  });
+  document.addEventListener("click", () => {
+    isOpen = false;
+    menu.classList.add("hidden");
+  });
 }

@@ -40,6 +40,7 @@ searchNavigationModes.forEach((searchNavigationMode) => {
           await ytSearchPage.search(channel, searchNavigationMode);
           await ytSearchPage.navigateToChannel(channel, channelNavigationMode);
 
+          await page.locator(`.play-all-btns`).waitFor({ timeout: 3000 });
           const ytChannelPage = new YtChannelPage(channel, page, eventWatcher);
           for (const category of YoutubeDOM.categories) {
             await ytChannelPage.navigateToCategory(
