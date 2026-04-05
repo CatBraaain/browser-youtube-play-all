@@ -1,3 +1,22 @@
+## [0.4.0] - 2026-04-06
+
+### 💥 BREAKING CHANGE
+
+- Fetch oldest video id from playlist instead of innertube
+- Prepare playlist URLs on channel page load
+
+### 🚀 Features
+
+- Add dropdown menu to display all buttons
+
+### ⚡ Performance
+
+- Reuse data across soft navigation
+
+### ⚙️ Miscellaneous Tasks
+
+- _(deps)_ Update dependency typescript to v6 (#8)
+
 ## [0.3.1] - 2026-03-25
 
 ### 🚀 Features
