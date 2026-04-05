@@ -33,6 +33,9 @@
     "zip:chrome": "wxt zip -b chrome",
     "zip:firefox": "wxt zip -b firefox"
   },
+  "dependencies": {
+    "eventemitter3": "^5.0.4"
+  },
   "devDependencies": {
     "@biomejs/biome": "^2.2.6",
     "@playwright/test": "^1.56.1",

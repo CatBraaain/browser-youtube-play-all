@@ -1,6 +1,14 @@
-import { logger } from "../../logger";
-import type { CategoryKind, SortKind } from "./category-tab";
-import YoutubePage from "./youtube-page";
+import { type CategoryKind, type SortKind, YoutubeDOM } from "./youtube-dom";
+
+export async function fetchChannelId(channelUrl: string) {
+  const res = await fetch(channelUrl);
+  const html = await res.text();
+  const match = html.match(
+    /<link rel="canonical" href="https:\/\/www.youtube.com\/channel\/(.*?)">/i,
+  );
+  const channelId = match?.at(1);
+  return channelId;
+}
 
 export async function resolvePlaylistPath(
   channelId: string,
@@ -15,14 +23,21 @@ export async function resolvePlaylistPath(
   }
 }
 
-export async function fetchChannelId(channelUrl: string) {
-  const res = await fetch(channelUrl);
-  const html = await res.text();
-  const match = html.match(
-    /<link rel="canonical" href="https:\/\/www.youtube.com\/channel\/(.*?)">/i,
-  );
-  const channelId = match?.at(1);
-  return channelId;
+async function getOldestItemId(
+  channelId: string,
+  categoryKind: CategoryKind,
+): Promise<string> {
+  const playlistUrl = `${resolveFilteredPlaylistUrl(channelId, categoryKind, "Latest")}`;
+
+  const videoCount = (
+    await fetchYtInitialData(`${playlistUrl}&hl=en&persist_hl=1`)
+  ).header.playlistHeaderRenderer.stats[0].runs[0].text;
+
+  const oldestVideoId = (
+    await fetchYtInitialData(`${playlistUrl}&index=${videoCount}&playnext=1`)
+  ).currentVideoEndpoint.watchEndpoint.videoId;
+
+  return oldestVideoId;
 }
 
 function resolveFilteredPlaylistUrl(
@@ -52,34 +67,16 @@ function resolveFilteredPlaylistUrl(
   return playlistUrl;
 }
 
-async function getOldestItemId(
-  channelId: string,
-  categoryKind: CategoryKind,
-): Promise<string> {
-  const playlistUrl = `${resolveFilteredPlaylistUrl(channelId, categoryKind, "Latest")}`;
-
-  const videoCount = (
-    await fetchYtInitialData(`${playlistUrl}&hl=en&persist_hl=1`)
-  ).header.playlistHeaderRenderer.stats[0].runs[0].text;
-  logger.info({ videoCount });
-
-  const oldestVideoId = (
-    await fetchYtInitialData(`${playlistUrl}&index=${videoCount}&playnext=1`)
-  ).currentVideoEndpoint.watchEndpoint.videoId;
-  logger.info({ oldestVideoId });
-  return oldestVideoId;
-}
-
 async function fetchYtInitialData(url: string) {
   const htmlRes = await fetch(url);
   const html = await htmlRes.text();
   const ytInitialDataString = html.match(
-    YoutubePage.isMobile
+    YoutubeDOM.isMobile
       ? /var ytInitialData\s*=\s*'([\s\S]*?)';/
       : /var ytInitialData\s*=\s*(\{[\s\S]*?\});/,
   )![1];
   const ytInitialData = JSON.parse(
-    YoutubePage.isMobile
+    YoutubeDOM.isMobile
       ? ytInitialDataString
           .replace(/\\\\\\x22/g, '\\\\\\"')
           .replace(/\\x([0-9A-Fa-f]{2})/g, (_, hex) =>

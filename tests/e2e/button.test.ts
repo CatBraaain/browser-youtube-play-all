@@ -1,5 +1,4 @@
-import { CategoryTab } from "@/entrypoints/play-all-button.content/category-tab";
-import { SortTab } from "@/entrypoints/play-all-button.content/sort-tab";
+import { YoutubeDOM } from "@/entrypoints/play-all-button.content/youtube-dom";
 import { ytxTest } from "../fixture";
 import { YtChannelPage, YtSearchPage } from "../utils";
 
@@ -42,12 +41,12 @@ searchNavigationModes.forEach((searchNavigationMode) => {
           await ytSearchPage.navigateToChannel(channel, channelNavigationMode);
 
           const ytChannelPage = new YtChannelPage(channel, page, eventWatcher);
-          for (const category of CategoryTab.categories) {
+          for (const category of YoutubeDOM.categories) {
             await ytChannelPage.navigateToCategory(
               category,
               categoryNavigationMode,
             );
-            for (const sort of SortTab.sorts) {
+            for (const sort of YoutubeDOM.sorts) {
               await ytChannelPage.navigateToSort(sort);
               await page
                 .locator(`.play-all-btn.${sort.toLocaleLowerCase()}`)

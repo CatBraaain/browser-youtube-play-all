@@ -1,11 +1,13 @@
 import type { Locator, Page } from "@playwright/test";
 import {
   type CategoryKind,
-  CategoryTab,
   type SortKind,
-} from "@/entrypoints/play-all-button.content/category-tab";
-import { SortTab } from "@/entrypoints/play-all-button.content/sort-tab";
-import YoutubePage from "@/entrypoints/play-all-button.content/youtube-page";
+  YoutubeDOM,
+} from "@/entrypoints/play-all-button.content/youtube-dom";
+import {
+  YTD_EVENTS,
+  YTM_EVENTS,
+} from "@/entrypoints/play-all-button.content/youtube-hooks";
 import type { EventWatcher } from "./fixture";
 
 export class YtPage {
@@ -21,14 +23,14 @@ export class YtPage {
 
   public get NavigationStartEvent(): string {
     return this.isMobile
-      ? YoutubePage.MNAVIGATION_START_EVENT
-      : YoutubePage.NAVIGATION_START_EVENT;
+      ? YTM_EVENTS.NAVIGATION_START
+      : YTD_EVENTS.NAVIGATION_START;
   }
 
   public get NavigationEndEvent(): string {
     return this.isMobile
-      ? YoutubePage.MNAVIGATION_END_EVENT
-      : YoutubePage.NAVIGATION_END_EVENT;
+      ? YTM_EVENTS.NAVIGATION_END
+      : YTD_EVENTS.NAVIGATION_END;
   }
 }
 
@@ -172,7 +174,7 @@ export class YtChannelPage {
   ) {
     switch (navigation) {
       case "soft": {
-        const n = CategoryTab.categories.indexOf(category) + 1;
+        const n = YoutubeDOM.categories.indexOf(category) + 1;
         await this.page.locator("yt-tab-shape").nth(n).click();
         break;
       }
@@ -190,8 +192,8 @@ export class YtChannelPage {
 
   public async navigateToSort(sort: SortKind) {
     await this.page
-      .locator(SortTab.SORT_BUTTON)
-      .nth(SortTab.sorts.indexOf(sort))
+      .locator(YoutubeDOM.SORT_BUTTON)
+      .nth(YoutubeDOM.sorts.indexOf(sort))
       .click();
   }
 

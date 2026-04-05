@@ -1,6 +1,34 @@
-import { logger } from "../../logger";
+export class YoutubeDOM {
+  public static get isMobile() {
+    return window.location.host === "m.youtube.com";
+  }
 
-export class SortTab {
+  public static readonly categories: CategoryKind[] = [
+    "Videos",
+    "Shorts",
+    "Streams",
+  ];
+
+  public static get categoryKind(): CategoryKind | null {
+    const categorySlug = window.location.pathname
+      .split("/")
+      .at(-1)!
+      .split("?")[0];
+    const categoryKind = (() => {
+      switch (categorySlug) {
+        case "videos":
+          return "Videos";
+        case "shorts":
+          return "Shorts";
+        case "streams":
+          return "Streams";
+        default:
+          return null;
+      }
+    })();
+    return categoryKind;
+  }
+
   public static readonly sorts: SortKind[] = ["Latest", "Popular", "Oldest"];
 
   public static SORT_BUTTON =
@@ -8,11 +36,11 @@ export class SortTab {
 
   public static get sortButtons() {
     // sort buttons may not exist when there are not enough videos
-    return Array.from(document.querySelectorAll(SortTab.SORT_BUTTON));
+    return Array.from(document.querySelectorAll(YoutubeDOM.SORT_BUTTON));
   }
 
   public static get sortButtonLineages() {
-    return SortTab.sortButtons.map((e) => {
+    return YoutubeDOM.sortButtons.map((e) => {
       const lineage = [];
       let current: Element | null = e;
       while (current) {
@@ -24,10 +52,10 @@ export class SortTab {
   }
 
   public static get sortButtonHolder(): Element | undefined {
-    if (SortTab.sortButtons.length !== 3) {
+    if (YoutubeDOM.sortButtons.length !== 3) {
       return undefined;
     }
-    const sortButtonLineages = SortTab.sortButtonLineages;
+    const sortButtonLineages = YoutubeDOM.sortButtonLineages;
     const sortButtonHolder = sortButtonLineages[0].findLast((e) =>
       sortButtonLineages.slice(1).every((lineage) => lineage.includes(e)),
     );
@@ -35,7 +63,7 @@ export class SortTab {
   }
 
   public static get sortKind(): SortKind | null {
-    const i = Array.from(SortTab.sortButtonHolder?.children || []).findIndex(
+    const i = Array.from(YoutubeDOM.sortButtonHolder?.children || []).findIndex(
       (eachButtonTree) =>
         eachButtonTree.matches("[aria-selected=true]") ||
         eachButtonTree.querySelector("[aria-selected=true]"),
@@ -52,14 +80,10 @@ export class SortTab {
           return null;
       }
     })();
-    logger.info("SortTab.sortKind()", {
-      sortButtonHolder: SortTab.sortButtonHolder,
-      sortButtonLineages: SortTab.sortButtonLineages,
-      sortButtons: SortTab.sortButtons,
-      sortKind,
-    });
+
     return sortKind;
   }
 }
 
+export type CategoryKind = "Videos" | "Shorts" | "Streams";
 export type SortKind = "Latest" | "Popular" | "Oldest";

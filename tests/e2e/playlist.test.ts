@@ -1,14 +1,13 @@
 import { expect } from "@playwright/test";
-import { CategoryTab } from "@/entrypoints/play-all-button.content/category-tab";
-import { SortTab } from "@/entrypoints/play-all-button.content/sort-tab";
+import { YoutubeDOM } from "@/entrypoints/play-all-button.content/youtube-dom";
 import { ytxTest } from "../fixture";
 import { YtChannelPage, YtPage, YtVideoPage } from "../utils";
 
 const channel = "@Microsoft";
 const checkVideoCount = 3;
 
-CategoryTab.categories.forEach((category) => {
-  SortTab.sorts.forEach((sort) => {
+YoutubeDOM.categories.forEach((category) => {
+  YoutubeDOM.sorts.forEach((sort) => {
     ytxTest(
       `Playlist: ${category} - ${sort}`,
       async ({ page, eventWatcher }) => {

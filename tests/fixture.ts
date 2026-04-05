@@ -1,7 +1,10 @@
 import path from "node:path";
 import type { Page } from "@playwright/test";
 import { chromium, expect, test } from "@playwright/test";
-import YoutubePage from "@/entrypoints/play-all-button.content/youtube-page";
+import {
+  YTD_EVENTS,
+  YTM_EVENTS,
+} from "@/entrypoints/play-all-button.content/youtube-hooks";
 import { YtPage } from "./utils";
 
 export class EventWatcher {
@@ -129,10 +132,10 @@ export const ytTest = test.extend<{
   eventWatcher: async ({ page }, use) => {
     const eventWatcher = new EventWatcher(page);
     for (const eventName of [
-      YoutubePage.NAVIGATION_START_EVENT,
-      YoutubePage.NAVIGATION_END_EVENT,
-      YoutubePage.MNAVIGATION_START_EVENT,
-      YoutubePage.MNAVIGATION_END_EVENT,
+      YTD_EVENTS.NAVIGATION_START,
+      YTD_EVENTS.NAVIGATION_END,
+      YTM_EVENTS.NAVIGATION_START,
+      YTM_EVENTS.NAVIGATION_END,
     ]) {
       await eventWatcher.setInitScript(eventName);
     }
