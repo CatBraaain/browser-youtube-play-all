@@ -27,7 +27,7 @@ function main() {
     });
   });
 
-  ytxEventEmitter.emit(YTX_EVENTS.NAVIGATION_END);
+  ytxEventEmitter.emit(YTX_EVENTS.PAGE_ENTER);
 }
 
 async function maybeRenderButton(channel: Channel) {

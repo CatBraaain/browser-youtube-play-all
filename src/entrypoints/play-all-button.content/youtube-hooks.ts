@@ -104,8 +104,10 @@ function setSortHooks() {
         attributes: true,
         attributeFilter: ["aria-selected"],
       });
-      ytxEventEmitter.once(YTX_EVENTS.PAGE_LEAVE, () => {
-        sortChangeObserver.disconnect();
+      [YTX_EVENTS.PAGE_ENTER, YTX_EVENTS.PAGE_LEAVE].forEach((e) => {
+        ytxEventEmitter.once(e, () => {
+          sortChangeObserver.disconnect();
+        });
       });
     },
   );
@@ -132,8 +134,10 @@ function setSortHooks() {
         childList: true,
         attributes: false,
       });
-      ytxEventEmitter.once(YTX_EVENTS.PAGE_LEAVE, () => {
-        rerendererObserver.disconnect();
+      [YTX_EVENTS.PAGE_ENTER, YTX_EVENTS.PAGE_LEAVE].forEach((e) => {
+        ytxEventEmitter.once(e, () => {
+          rerendererObserver.disconnect();
+        });
       });
     },
   );
