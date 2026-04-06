@@ -27,7 +27,7 @@
     "setup": "bun install && wxt prepare && bunx lefthook install && bunx playwright install chromium firefox",
     "test": "bun run build && bunx playwright test tests/e2e",
     "test-specs": "bun run build && bunx playwright test tests/specs",
-    "test-ui": "bun run build && bunx playwright test --ui",
+    "test-ui-mode": "bun run build && bunx playwright test --ui",
     "typecheck": "tsc --noEmit",
     "zip": "conc \"bun:zip:*\"",
     "zip:chrome": "wxt zip -b chrome",
