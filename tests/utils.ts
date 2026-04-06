@@ -71,10 +71,14 @@ export class YtSearchPage {
   ): Promise<void> {
     switch (navigation) {
       case "soft":
-        await this.page.goto("https://www.youtube.com");
+        await this.page.goto("https://www.youtube.com", {
+          waitUntil: "domcontentloaded",
+        });
         await this.eventWatcher.waitForFired(this.ytPage.NavigationEndEvent);
         if (this.ytPage.isMobile) {
-          await this.page.goto("https://m.youtube.com/#searching");
+          await this.page.goto("https://m.youtube.com/#searching", {
+            waitUntil: "domcontentloaded",
+          });
         }
         await this.page.locator("input.yt-searchbox-input").fill(searchWord);
         await this.page.locator("input.yt-searchbox-input").press("Enter");
@@ -82,6 +86,9 @@ export class YtSearchPage {
       case "hard":
         await this.page.goto(
           `https://www.youtube.com/results?search_query=${searchWord}`,
+          {
+            waitUntil: "domcontentloaded",
+          },
         );
         break;
     }
@@ -104,7 +111,9 @@ export class YtSearchPage {
           await this.topVideoChannelThumbnailButton(channelName).getAttribute(
             "href",
           );
-        await this.page.goto(`https://www.youtube.com${relUrl}`);
+        await this.page.goto(`https://www.youtube.com${relUrl}`, {
+          waitUntil: "domcontentloaded",
+        });
         break;
       }
     }
@@ -181,6 +190,9 @@ export class YtChannelPage {
       case "hard": {
         await this.page.goto(
           `https://www.youtube.com/${this.channelName}/${category.toLowerCase()}`,
+          {
+            waitUntil: "domcontentloaded",
+          },
         );
         break;
       }

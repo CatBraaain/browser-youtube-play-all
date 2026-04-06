@@ -35,6 +35,7 @@ searchNavigationModes.forEach((searchNavigationMode) => {
             channelNavigationMode === "soft2" && isMobile,
             "soft navigation via channel name is not supported on mobile",
           );
+          ytxTest.setTimeout(40_000);
 
           const ytSearchPage = new YtSearchPage(page, eventWatcher);
           await ytSearchPage.search(channel, searchNavigationMode);

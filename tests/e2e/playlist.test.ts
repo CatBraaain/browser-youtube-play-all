@@ -18,10 +18,16 @@ YoutubeDOM.categories.forEach((category) => {
         const ytChannelPage = new YtChannelPage(channel, page, eventWatcher);
         await ytChannelPage.navigateToCategory(category, "hard");
         await ytChannelPage.navigateToSort(sort);
+
+        // wait for video list refresh
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
         const playlistUrl = await ytChannelPage.getPlayAllUrl(category, sort);
         const topVideoIds = await ytChannelPage.getTopVideoIds(checkVideoCount);
 
-        await page.goto(playlistUrl);
+        await page.goto(playlistUrl, {
+          waitUntil: "domcontentloaded",
+        });
         const ytPage = new YtPage(page, eventWatcher);
         await eventWatcher.waitForFired(ytPage.NavigationEndEvent);
 
