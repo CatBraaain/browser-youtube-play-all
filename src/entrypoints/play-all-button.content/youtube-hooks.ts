@@ -34,15 +34,15 @@ export const ytxEventEmitter = new EventEmitter<{
   [YTX_EVENTS.SORT_RERENDERED]: (channel: Channel) => void;
 }>();
 
-export function setHooks() {
-  setNavigationHooks();
-  setChannelHooks();
-  setCategoryHooks();
-  setSortHooks();
-  setupHooksLog();
+export function registerHooks() {
+  registerNavigationHooks();
+  registerChannelHooks();
+  registerCategoryHooks();
+  registerSortHooks();
+  registerLoggingHooks();
 }
 
-function setNavigationHooks() {
+function registerNavigationHooks() {
   window.addEventListener(YTD_EVENTS.NAVIGATION_START, () => {
     ytxEventEmitter.emit(YTX_EVENTS.PAGE_LEAVE);
   });
@@ -58,7 +58,7 @@ function setNavigationHooks() {
   });
 }
 
-function setChannelHooks() {
+function registerChannelHooks() {
   let currentChannel: Channel | null = null;
   ytxEventEmitter.on(YTX_EVENTS.PAGE_ENTER, async () => {
     const channelId = await fetchChannelId(window.location.href);
@@ -75,7 +75,7 @@ function setChannelHooks() {
   });
 }
 
-function setCategoryHooks() {
+function registerCategoryHooks() {
   ytxEventEmitter.on(YTX_EVENTS.CHANNEL_ENTER, async (currentChannel) => {
     const categoryKind = YoutubeDOM.categoryKind;
     if (categoryKind) {
@@ -84,7 +84,7 @@ function setCategoryHooks() {
   });
 }
 
-function setSortHooks() {
+function registerSortHooks() {
   // sort changed hook
   ytxEventEmitter.on(
     YTX_EVENTS.CATEGORY_ENTER,
@@ -143,7 +143,7 @@ function setSortHooks() {
   );
 }
 
-function setupHooksLog() {
+function registerLoggingHooks() {
   [YTX_EVENTS.PAGE_ENTER, YTX_EVENTS.PAGE_LEAVE].forEach((e) => {
     ytxEventEmitter.on(e, () => {
       logger.info(`${e} fired`, {

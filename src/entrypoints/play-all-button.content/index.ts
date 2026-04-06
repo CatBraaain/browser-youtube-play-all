@@ -1,7 +1,7 @@
 import { defineContentScript } from "#imports";
 import type { Channel } from "./channel";
 import { YoutubeDOM } from "./youtube-dom";
-import { setHooks, YTX_EVENTS, ytxEventEmitter } from "./youtube-hooks";
+import { registerHooks, YTX_EVENTS, ytxEventEmitter } from "./youtube-hooks";
 
 import "./play-all-button.css";
 
@@ -12,7 +12,7 @@ export default defineContentScript({
 });
 
 function main() {
-  setHooks();
+  registerHooks();
 
   ytxEventEmitter.on(YTX_EVENTS.CHANNEL_ENTER, async (channel) => {
     await renderDropdown(channel);
