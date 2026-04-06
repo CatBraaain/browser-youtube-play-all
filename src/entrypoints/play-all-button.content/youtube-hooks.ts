@@ -15,26 +15,21 @@ export const YTM_EVENTS = {
 } as const;
 
 export const YTX_EVENTS = {
-  NAVIGATION_START: "ytx-navigation-start",
-  NAVIGATION_END: "ytx-navigation-end",
+  PAGE_ENTER: "ytx-page-enter",
+  PAGE_LEAVE: "ytx-page-leave",
 
   CHANNEL_ENTER: "ytx-channel-enter",
-  CHANNEL_LEAVE: "ytx-channel-leave",
-
   CATEGORY_ENTER: "ytx-category-enter",
-  CATEGORY_LEAVE: "ytx-category-leave",
 
   SORT_CHANGED: "ytx-sort-changed",
   SORT_RERENDERED: "ytx-sort-rerendered",
 } as const;
 
 export const ytxEventEmitter = new EventEmitter<{
-  [YTX_EVENTS.NAVIGATION_START]: () => void;
-  [YTX_EVENTS.NAVIGATION_END]: () => void;
+  [YTX_EVENTS.PAGE_ENTER]: () => void;
+  [YTX_EVENTS.PAGE_LEAVE]: () => void;
   [YTX_EVENTS.CHANNEL_ENTER]: (channel: Channel) => void;
-  [YTX_EVENTS.CHANNEL_LEAVE]: () => void;
   [YTX_EVENTS.CATEGORY_ENTER]: (channel: Channel) => void;
-  [YTX_EVENTS.CATEGORY_LEAVE]: () => void;
   [YTX_EVENTS.SORT_CHANGED]: (channel: Channel) => void;
   [YTX_EVENTS.SORT_RERENDERED]: (channel: Channel) => void;
 }>();
@@ -49,23 +44,23 @@ export function setHooks() {
 
 function setNavigationHooks() {
   window.addEventListener(YTD_EVENTS.NAVIGATION_START, () => {
-    ytxEventEmitter.emit(YTX_EVENTS.NAVIGATION_START);
+    ytxEventEmitter.emit(YTX_EVENTS.PAGE_LEAVE);
   });
   window.addEventListener(YTM_EVENTS.NAVIGATION_START, () => {
-    ytxEventEmitter.emit(YTX_EVENTS.NAVIGATION_START);
+    ytxEventEmitter.emit(YTX_EVENTS.PAGE_LEAVE);
   });
 
   window.addEventListener(YTD_EVENTS.NAVIGATION_END, () => {
-    ytxEventEmitter.emit(YTX_EVENTS.NAVIGATION_END);
+    ytxEventEmitter.emit(YTX_EVENTS.PAGE_ENTER);
   });
   window.addEventListener(YTM_EVENTS.NAVIGATION_END, () => {
-    ytxEventEmitter.emit(YTX_EVENTS.NAVIGATION_END);
+    ytxEventEmitter.emit(YTX_EVENTS.PAGE_ENTER);
   });
 }
 
 function setChannelHooks() {
   let currentChannel: Channel | null = null;
-  ytxEventEmitter.on(YTX_EVENTS.NAVIGATION_END, async () => {
+  ytxEventEmitter.on(YTX_EVENTS.PAGE_ENTER, async () => {
     const channelId = await fetchChannelId(window.location.href);
     const oldChannelId = currentChannel?.id;
     const isChannelIdChanged = channelId !== oldChannelId;
@@ -76,9 +71,6 @@ function setChannelHooks() {
         currentChannel = Channel.load(channelId);
       }
       ytxEventEmitter.emit(YTX_EVENTS.CHANNEL_ENTER, currentChannel!);
-      ytxEventEmitter.once(YTX_EVENTS.NAVIGATION_START, () => {
-        ytxEventEmitter.emit(YTX_EVENTS.CHANNEL_LEAVE);
-      });
     }
   });
 }
@@ -88,9 +80,6 @@ function setCategoryHooks() {
     const categoryKind = YoutubeDOM.categoryKind;
     if (categoryKind) {
       ytxEventEmitter.emit(YTX_EVENTS.CATEGORY_ENTER, currentChannel);
-      ytxEventEmitter.once(YTX_EVENTS.NAVIGATION_START, () => {
-        ytxEventEmitter.emit(YTX_EVENTS.CATEGORY_LEAVE);
-      });
     }
   });
 }
@@ -115,7 +104,7 @@ function setSortHooks() {
         attributes: true,
         attributeFilter: ["aria-selected"],
       });
-      ytxEventEmitter.once(YTX_EVENTS.CATEGORY_LEAVE, () => {
+      ytxEventEmitter.once(YTX_EVENTS.PAGE_LEAVE, () => {
         sortChangeObserver.disconnect();
       });
     },
@@ -143,7 +132,7 @@ function setSortHooks() {
         childList: true,
         attributes: false,
       });
-      ytxEventEmitter.once(YTX_EVENTS.CATEGORY_LEAVE, () => {
+      ytxEventEmitter.once(YTX_EVENTS.PAGE_LEAVE, () => {
         rerendererObserver.disconnect();
       });
     },
@@ -151,12 +140,7 @@ function setSortHooks() {
 }
 
 function setupHooksLog() {
-  [
-    YTX_EVENTS.NAVIGATION_START,
-    YTX_EVENTS.NAVIGATION_END,
-    YTX_EVENTS.CHANNEL_LEAVE,
-    YTX_EVENTS.CATEGORY_LEAVE,
-  ].forEach((e) => {
+  [YTX_EVENTS.PAGE_ENTER, YTX_EVENTS.PAGE_LEAVE].forEach((e) => {
     ytxEventEmitter.on(e, () => {
       logger.info(`${e} fired`, {
         categoryKind: YoutubeDOM.categoryKind,
