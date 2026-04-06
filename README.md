@@ -13,6 +13,9 @@ Youtube Play All is a browser extension that adds "Play All" buttons for Videos,
 ## Screenshots
 
 ![play-all-btn1](screenshots/play-all-btn1.png)
+
+---
+
 ![play-all-btns](screenshots/play-all-btns.png)
 
 ## Usage
