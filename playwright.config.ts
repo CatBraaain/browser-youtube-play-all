@@ -1,49 +1,49 @@
 import path from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
+const DesktopChrome = {
+  name: "chrome-desktop",
+  device: {
+    ...devices["Desktop Chrome"],
+    channel: "chromium",
+  },
+};
+const MobileChrome = {
+  name: "chrome-mobile",
+  device: {
+    ...devices["Pixel 5"],
+    channel: "chromium",
+  },
+};
+const DesktopFirefox = {
+  name: "firefox-desktop",
+  device: {
+    ...devices["Desktop Firefox"],
+    channel: "firefox",
+    launchOptions: {
+      firefoxUserPrefs: {
+        "media.autoplay.blocking_policy": 2, // altearnative to --mute-audio
+      },
+    },
+  },
+};
+
 export default defineConfig({
   retries: 1,
   workers: 2,
   fullyParallel: true,
   projects: [
-    {
-      name: "chromium-spec",
-      use: devices["Desktop Chrome"],
-      testDir: path.join(import.meta.dirname, "tests/specs"),
-    },
-    {
-      name: "chromium-mobile-spec",
-      use: devices["Pixel 5"],
-      testDir: path.join(import.meta.dirname, "tests/specs"),
-    },
-    {
-      name: "firefox-spec",
-      use: {
-        ...devices["Desktop Firefox"],
-        launchOptions: {
-          firefoxUserPrefs: {
-            "media.autoplay.blocking_policy": 2, // altearnative to --mute-audio
-          },
-        },
-      },
-      testDir: path.join(import.meta.dirname, "tests/specs"),
-      grepInvert: /channelId: fetch from .*/,
-    },
-    {
-      name: "chromium-e2e",
-      use: {
-        ...devices["Desktop Chrome"],
-        channel: "chromium",
-      },
+    ...[DesktopChrome, MobileChrome, DesktopFirefox].map(
+      ({ name, device }) => ({
+        name: `${name}-spec`,
+        use: device,
+        testDir: path.join(import.meta.dirname, "tests/specs"),
+      }),
+    ),
+    ...[DesktopChrome, MobileChrome].map(({ name, device }) => ({
+      name: `${name}-e2e`,
+      use: device,
       testDir: path.join(import.meta.dirname, "tests/e2e"),
-    },
-    {
-      name: "chromium-mobile-e2e",
-      use: {
-        ...devices["Pixel 5"],
-        channel: "chromium",
-      },
-      testDir: path.join(import.meta.dirname, "tests/e2e"),
-    },
+    })),
   ],
 });
