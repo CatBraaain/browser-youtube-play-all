@@ -26,6 +26,8 @@ function main() {
       await maybeRenderButton(channel);
     });
   });
+
+  ytxEventEmitter.emit(YTX_EVENTS.NAVIGATION_END);
 }
 
 async function maybeRenderButton(channel: Channel) {
@@ -58,10 +60,6 @@ async function maybeRenderButton(channel: Channel) {
 }
 
 async function renderDropdown(channel: Channel) {
-  if (document.querySelector("yt-flexible-actions-view-model .play-all-btns")) {
-    return;
-  }
-
   const container = document.createElement("div");
   container.className = "play-all-btns";
 
@@ -85,21 +83,26 @@ async function renderDropdown(channel: Channel) {
 
   container.append(button, menu);
 
-  document
-    .querySelector("yt-flexible-actions-view-model")
-    ?.appendChild(container);
+  if (
+    document.querySelector("yt-flexible-actions-view-model .play-all-btns") ===
+    null
+  ) {
+    document
+      .querySelector("yt-flexible-actions-view-model")
+      ?.appendChild(container);
 
-  let isOpen = false;
-  button.addEventListener("click", (e) => {
-    e.stopPropagation();
-    isOpen = !isOpen;
-    menu.classList.toggle("hidden", !isOpen);
-  });
-  menu.addEventListener("click", (e) => {
-    e.stopPropagation();
-  });
-  document.addEventListener("click", () => {
-    isOpen = false;
-    menu.classList.add("hidden");
-  });
+    let isOpen = false;
+    button.addEventListener("click", (e) => {
+      e.stopPropagation();
+      isOpen = !isOpen;
+      menu.classList.toggle("hidden", !isOpen);
+    });
+    menu.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+    document.addEventListener("click", () => {
+      isOpen = false;
+      menu.classList.add("hidden");
+    });
+  }
 }
