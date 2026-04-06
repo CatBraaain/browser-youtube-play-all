@@ -1,3 +1,18 @@
+## [0.4.2] - 2026-04-06
+
+### 🚀 Features
+
+- Avoid duplicate dropdown button
+
+### 🐛 Bug Fixes
+
+- Fix button not rendering on hard navigation due to timing issue
+
+### 🧪 Testing
+
+- Add firefox extension e2e test
+- Improve stability
+
 ## [0.4.1] - 2026-04-06
 
 ### 🐛 Bug Fixes
