@@ -30,7 +30,10 @@ async function getOldestItemId(
   channelId: string,
   categoryKind: CategoryKind,
 ): Promise<string | null> {
-  const playlistUrl = `${resolveFilteredPlaylistUrl(channelId, categoryKind, "Latest")}`;
+  const playlistUrl = new URL(
+    `${resolveFilteredPlaylistUrl(channelId, categoryKind, "Latest")}`,
+    window.location.href,
+  ).toString();
 
   const playlistHeader = (await fetchYtInitialData(playlistUrl)).header;
   if (playlistHeader === undefined) {
