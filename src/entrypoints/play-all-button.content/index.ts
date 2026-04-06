@@ -26,15 +26,6 @@ function main() {
       await maybeRenderButton(channel);
     });
   });
-  ytxEventEmitter.on(YTX_EVENTS.CATEGORY_ENTER, async (channel) => {
-    await maybeRenderButton(channel);
-  });
-  ytxEventEmitter.on(YTX_EVENTS.SORT_CHANGED, async (channel) => {
-    await maybeRenderButton(channel);
-  });
-  ytxEventEmitter.on(YTX_EVENTS.SORT_RERENDERED, async (channel) => {
-    await maybeRenderButton(channel);
-  });
 }
 
 async function maybeRenderButton(channel: Channel) {
