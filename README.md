@@ -1,35 +1,30 @@
 ﻿# Youtube Play All
 
-Youtube Play All is a browser extension that adds a **"Play All"** button to YouTube's Videos, Shorts, and Streams pages. This button allows you to play all videos in the selected sorting order: Latest, Popular, or Oldest.
+Youtube Play All is a browser extension that adds "Play All" buttons for Videos, Shorts, and Streams on YouTube, with sorting by Latest, Popular, or Oldest.
 
 ## Features
 
-- Adds a **Play All** button to YouTube's video list pages.
-- Supports three sorting options:
-  - **Latest**: Play videos in chronological order from newest to oldest.
-  - **Popular**: Play videos sorted by popularity.
-  - **Oldest**: Play videos in chronological order from oldest to newest. \*(all video types are mixed in — YouTube doesn’t support separate sorting)
+- Adds "Play All" buttons to YouTube channel pages.
+- Supports category options (Videos, Shorts and Streams)
+- Supports sort options (Latest, Popular and Oldest)
+  \*Oldest playlist are all video types are mixed — YouTube does not support separate sort.
+- Supports mobile pages.
 
 ## Screenshots
 
-![Example](screenshots/example-1280x800.png)
-
-### All patterns
-
-![Latest](screenshots/latest-button.png)
-![Popular](screenshots/popular-button.png)
-![Oldest](screenshots/oldest-button.png)
+![play-all-btn1](screenshots/play-all-btn1.png)
+![play-all-btns](screenshots/play-all-btns.png)
 
 ## Usage
 
 1. Download the extension from the [Chrome Web Store] or [Firefox Add-ons].
-2. Open any YouTube channel and go to the **Videos** tab. (e.g., [MrBeast Videos]).
-3. Choose a sorting option (**Latest**, **Popular**, **Oldest**).
-4. Click the **Play All** button to play videos in the chosen order.
+2. Open any YouTube channel and go to the Videos tab. (e.g., [@YouTube]).
+3. Choose a sorting option (Latest, Popular, Oldest).
+4. Click the "Play All" button to play videos in the chosen order.
 
 [Chrome Web Store]: https://chromewebstore.google.com/detail/youtube-play-all/lcgfhpllcjejniehjnhbfhnkdpmkeoce
 [Firefox Add-ons]: https://addons.mozilla.org/firefox/addon/youtube-play-all/
-[MrBeast Videos]: https://www.youtube.com/@MrBeast/videos
+[@YouTube]: https://www.youtube.com/@YouTube/videos
 
 ## Issues
 
