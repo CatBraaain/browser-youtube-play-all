@@ -1,6 +1,7 @@
 import path from "node:path";
 import type { Page } from "@playwright/test";
-import { chromium, expect, test } from "@playwright/test";
+import { chromium, expect, firefox, test } from "@playwright/test";
+import { withExtension } from "playwright-webextext";
 import {
   YTD_EVENTS,
   YTM_EVENTS,
@@ -156,12 +157,26 @@ export const ytxTest = ytTest.extend({
           "../dist/chrome-mv3",
         );
         const context = await chromium.launchPersistentContext("", {
-          channel: "chromium",
           args: [
             `--disable-extensions-except=${chromeExtensionPath}`,
             `--load-extension=${chromeExtensionPath}`,
             "--mute-audio",
           ],
+        });
+        await use(context);
+        await context.close();
+        break;
+      }
+      case "firefox": {
+        const firefoxExtensionPath = path.join(
+          import.meta.dirname,
+          "../dist/firefox-mv2",
+        );
+        const firefoxWithExt = withExtension(firefox, firefoxExtensionPath);
+        const context = await firefoxWithExt.launchPersistentContext("", {
+          firefoxUserPrefs: {
+            "media.autoplay.blocking_policy": 2, // altearnative to --mute-audio
+          },
         });
         await use(context);
         await context.close();

@@ -20,11 +20,6 @@ const DesktopFirefox = {
   device: {
     ...devices["Desktop Firefox"],
     channel: "firefox",
-    launchOptions: {
-      firefoxUserPrefs: {
-        "media.autoplay.blocking_policy": 2, // altearnative to --mute-audio
-      },
-    },
   },
 };
 
@@ -40,10 +35,12 @@ export default defineConfig({
         testDir: path.join(import.meta.dirname, "tests/specs"),
       }),
     ),
-    ...[DesktopChrome, MobileChrome].map(({ name, device }) => ({
-      name: `${name}-e2e`,
-      use: device,
-      testDir: path.join(import.meta.dirname, "tests/e2e"),
-    })),
+    ...[DesktopChrome, MobileChrome, DesktopFirefox].map(
+      ({ name, device }) => ({
+        name: `${name}-e2e`,
+        use: device,
+        testDir: path.join(import.meta.dirname, "tests/e2e"),
+      }),
+    ),
   ],
 });
