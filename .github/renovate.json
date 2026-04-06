@@ -4,6 +4,7 @@
   "automerge": true,
   "dependencyDashboard": false,
   "prHourlyLimit": 0,
+  "rangeStrategy": "bump",
   "timezone": "Asia/Tokyo",
   "schedule": ["* 3-6 * * 6#1,6#3"]
 }
