@@ -16,8 +16,5 @@ jobs:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
       - run: bun run setup
-      - run: bun ci
-      - run: bunx sort-package-json --check
-      - run: bunx biome check --no-errors-on-unmatched --files-ignore-unknown=true
-      - run: bunx tsc --noEmit
+      - run: bun run check
       - run: bun run test
