@@ -3,10 +3,12 @@ import { type CategoryKind, type SortKind, YoutubeDOM } from "./youtube-dom";
 export async function fetchChannelId(channelUrl: string) {
   const res = await fetch(channelUrl);
   const html = await res.text();
-  const match = html.match(
-    /<link rel="canonical" href="https:\/\/www.youtube.com\/channel\/(.*?)">/i,
-  );
-  const channelId = match?.at(1);
+  const matches = [
+    ...(html.match(/<link rel="canonical" href="https:\/\/www.youtube.com\/channel\/(.*?)">/i) ??
+      []),
+    ...(html.match(/"https:\/\/www.youtube.com\/channel\/(.*?)"/i) ?? []),
+  ];
+  const channelId = matches?.at(1);
   return channelId;
 }
 
