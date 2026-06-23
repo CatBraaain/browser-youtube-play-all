@@ -11,10 +11,6 @@ const checkVideoCount = 3;
 YoutubeDOM.categories.forEach((category) => {
   YoutubeDOM.sorts.forEach((sort) => {
     ytxTest(`Playlist: ${category} - ${sort}`, async ({ page, eventWatcher }) => {
-      ytxTest.skip(
-        category === "Shorts" && sort === "Popular",
-        "Populared Shorts page has not been updated by YouTube",
-      );
       const ytChannelPage = new YtChannelPage(channel, page, eventWatcher);
       await ytChannelPage.navigateToCategory(category, "hard");
       await ytChannelPage.navigateToSort(sort);
