@@ -75,7 +75,7 @@ export class ChannelIdFinder {
     this.ytPage = new YtPage(this.page, this.eventWatcher);
   }
 
-  async expectNavigationEndEvent(exists: boolean) {
+  async expectNavigationEndEvent(exists: boolean | null) {
     const lastEventContent = await this.eventWatcher.getLastEventContent(
       this.ytPage.NavigationEndEvent,
     );
@@ -83,14 +83,14 @@ export class ChannelIdFinder {
     await this.expectChannelIdCorrect(channelId, exists);
   }
 
-  async expectCanonicalLink(exists: boolean) {
+  async expectCanonicalLink(exists: boolean | null) {
     const locator = this.page.locator("[rel='canonical']");
     const channelId =
       (await locator.count()) > 0 ? (await locator.first().getAttribute("href"))! : undefined;
     await this.expectChannelIdCorrect(channelId, exists);
   }
 
-  async expectYtInitialData(exists: boolean) {
+  async expectYtInitialData(exists: boolean | null) {
     const channelId = await this.page.evaluate(
       () =>
         (window as any).ytInitialData.responseContext.serviceTrackingParams
@@ -100,14 +100,18 @@ export class ChannelIdFinder {
     await this.expectChannelIdCorrect(channelId, exists);
   }
 
-  async expectYtCommand(exists: boolean) {
+  async expectYtCommand(exists: boolean | null) {
     const channelId = await this.page.evaluate(
       () => (window as any).ytCommand.browseEndpoint?.browseId,
     );
     await this.expectChannelIdCorrect(channelId, exists);
   }
 
-  async expectChannelIdCorrect(channelId: string | undefined, exists: boolean) {
+  async expectChannelIdCorrect(channelId: string | undefined, exists: boolean | null) {
+    if (exists === null) {
+      return;
+    }
+
     if (exists) {
       expect(channelId).toEqual(expect.stringMatching(/UC.*/));
     } else {

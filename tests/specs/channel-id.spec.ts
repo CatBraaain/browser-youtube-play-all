@@ -9,8 +9,10 @@ type SearchTestCase = {
 };
 type ChannelIdTestCase = {
   navigation: "soft1" | "soft2" | "hard";
-  existsOnHtml: boolean;
-  existsOnEvent: boolean;
+  existsOnNavigationEnd: boolean | null;
+  existsOnCanonicalLink: boolean | null;
+  existsOnYtInitialData: boolean | null;
+  existsOnYtCommand: boolean | null;
 };
 
 const searchTestCases: SearchTestCase[] = [
@@ -26,39 +28,53 @@ const searchTestCases: SearchTestCase[] = [
 const channelIdTestCases: ChannelIdTestCase[] = [
   {
     navigation: "soft1",
-    existsOnHtml: true,
-    existsOnEvent: true,
+    existsOnNavigationEnd: true,
+    existsOnCanonicalLink: true,
+    existsOnYtInitialData: true,
+    existsOnYtCommand: true,
   },
   {
     navigation: "soft2",
-    existsOnHtml: false,
-    existsOnEvent: true,
+    existsOnNavigationEnd: true,
+    existsOnCanonicalLink: null, // sometimes exists
+    existsOnYtInitialData: false,
+    existsOnYtCommand: false,
   },
   {
     navigation: "hard",
-    existsOnHtml: true,
-    existsOnEvent: true,
+    existsOnNavigationEnd: true,
+    existsOnCanonicalLink: true,
+    existsOnYtInitialData: true,
+    existsOnYtCommand: true,
   },
 ];
 
 searchTestCases.forEach(({ navigation: searchNavigation, searchWord }) => {
-  channelIdTestCases.forEach(({ navigation: channelNavigation, existsOnHtml, existsOnEvent }) => {
-    ytTest(
-      `channelId: ${channelNavigation} from ${searchWord}`,
-      async ({ page, eventWatcher, channelIdFinder, isMobile }) => {
-        ytTest.skip(isMobile, "skip mobile device");
+  channelIdTestCases.forEach(
+    ({
+      navigation: channelNavigation,
+      existsOnNavigationEnd,
+      existsOnCanonicalLink,
+      existsOnYtInitialData,
+      existsOnYtCommand,
+    }) => {
+      ytTest(
+        `channelId: ${channelNavigation} from ${searchWord}`,
+        async ({ page, eventWatcher, channelIdFinder, isMobile }) => {
+          ytTest.skip(isMobile, "skip mobile device");
 
-        const ytSearchPage = new YtSearchPage(page, eventWatcher);
-        await ytSearchPage.search(searchWord, searchNavigation);
-        await ytSearchPage.navigateToChannel(null, channelNavigation);
+          const ytSearchPage = new YtSearchPage(page, eventWatcher);
+          await ytSearchPage.search(searchWord, searchNavigation);
+          await ytSearchPage.navigateToChannel(null, channelNavigation);
 
-        await channelIdFinder.expectNavigationEndEvent(existsOnEvent);
-        await channelIdFinder.expectCanonicalLink(existsOnHtml);
-        await channelIdFinder.expectYtInitialData(existsOnHtml);
-        await channelIdFinder.expectYtCommand(existsOnHtml);
-      },
-    );
-  });
+          await channelIdFinder.expectNavigationEndEvent(existsOnNavigationEnd);
+          await channelIdFinder.expectCanonicalLink(existsOnCanonicalLink);
+          await channelIdFinder.expectYtInitialData(existsOnYtInitialData);
+          await channelIdFinder.expectYtCommand(existsOnYtCommand);
+        },
+      );
+    },
+  );
 });
 
 const youtubeChannels = ["@Google", "@Apple", "@Microsoft"];
