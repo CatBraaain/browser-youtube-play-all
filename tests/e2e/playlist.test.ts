@@ -11,6 +11,10 @@ const checkVideoCount = 3;
 YoutubeDOM.categories.forEach((category) => {
   YoutubeDOM.sorts.forEach((sort) => {
     ytxTest(`Playlist: ${category} - ${sort}`, async ({ page, eventWatcher }) => {
+      ytxTest.skip(
+        category === "Streams",
+        "TODO: temporary workaround for Youtube's bug on streams tab",
+      );
       const ytChannelPage = new YtChannelPage(channel, page, eventWatcher);
       await ytChannelPage.navigateToCategory(category, "hard");
       await ytChannelPage.navigateToSort(sort);

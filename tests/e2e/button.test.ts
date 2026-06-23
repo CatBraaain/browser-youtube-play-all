@@ -38,6 +38,7 @@ searchNavigationModes.forEach((searchNavigationMode) => {
           const ytChannelPage = new YtChannelPage(channel, page, eventWatcher);
           for (const category of YoutubeDOM.categories) {
             await ytChannelPage.navigateToCategory(category, categoryNavigationMode);
+            if (category === "Streams") continue; // TODO: temporary workaround for Youtube's bug on streams tab
             for (const sort of YoutubeDOM.sorts) {
               await ytChannelPage.navigateToSort(sort);
               await page.locator(`.play-all-btns`).waitFor({ timeout: 3000 });
