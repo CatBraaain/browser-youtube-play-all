@@ -1,11 +1,11 @@
 import path from "node:path";
+
 import type { Page } from "@playwright/test";
 import { chromium, expect, firefox, test } from "@playwright/test";
 import { withExtension } from "playwright-webextext";
-import {
-  YTD_EVENTS,
-  YTM_EVENTS,
-} from "@/entrypoints/play-all-button.content/youtube-hooks";
+
+import { YTD_EVENTS, YTM_EVENTS } from "@/entrypoints/play-all-button.content/youtube-hooks";
+
 import { YtPage } from "./utils";
 
 export class EventWatcher {
@@ -25,20 +25,12 @@ export class EventWatcher {
     );
   }
 
-  public async expect(expectation: {
-    eventName: string;
-    fired: boolean;
-    timeout?: number;
-  }) {
+  public async expect(expectation: { eventName: string; fired: boolean; timeout?: number }) {
     const { eventName, fired, timeout = 5000 } = expectation;
     if (fired) {
-      await expect(
-        this.waitForFired(eventName, timeout),
-      ).resolves.not.toThrow();
+      await expect(this.waitForFired(eventName, timeout)).resolves.not.toThrow();
     } else {
-      await expect(this.waitForFired(eventName, timeout)).rejects.toThrow(
-        "Timeout",
-      );
+      await expect(this.waitForFired(eventName, timeout)).rejects.toThrow("Timeout");
     }
   }
 
@@ -94,9 +86,7 @@ export class ChannelIdFinder {
   async expectCanonicalLink(exists: boolean) {
     const locator = this.page.locator("[rel='canonical']");
     const channelId =
-      (await locator.count()) > 0
-        ? (await locator.first().getAttribute("href"))!
-        : undefined;
+      (await locator.count()) > 0 ? (await locator.first().getAttribute("href"))! : undefined;
     this.expectChannelIdCorrect(channelId, exists);
   }
 
@@ -152,10 +142,7 @@ export const ytxTest = ytTest.extend({
   context: async ({ browserName }, use) => {
     switch (browserName) {
       case "chromium": {
-        const chromeExtensionPath = path.join(
-          import.meta.dirname,
-          "../dist/chrome-mv3",
-        );
+        const chromeExtensionPath = path.join(import.meta.dirname, "../dist/chrome-mv3");
         const context = await chromium.launchPersistentContext("", {
           args: [
             `--disable-extensions-except=${chromeExtensionPath}`,
@@ -168,10 +155,7 @@ export const ytxTest = ytTest.extend({
         break;
       }
       case "firefox": {
-        const firefoxExtensionPath = path.join(
-          import.meta.dirname,
-          "../dist/firefox-mv2",
-        );
+        const firefoxExtensionPath = path.join(import.meta.dirname, "../dist/firefox-mv2");
         const firefoxWithExt = withExtension(firefox, firefoxExtensionPath);
         const context = await firefoxWithExt.launchPersistentContext("", {
           firefoxUserPrefs: {

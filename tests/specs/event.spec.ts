@@ -23,37 +23,26 @@ const eventTestCases: EventTestCase[] = [
 
 youtubeChannels.forEach((channelName) => {
   eventTestCases.forEach(
-    ({
-      navigation,
-      expectNavigateStartEventFired,
-      expectNavigateEndEventFired,
-    }) => {
-      ytTest(
-        `event: ${navigation} from ${channelName}`,
-        async ({ page, eventWatcher }) => {
-          const ytSearchPage = new YtSearchPage(page, eventWatcher);
-          await ytSearchPage.search(channelName, "hard");
-          await ytSearchPage.navigateToChannel(channelName, "hard");
+    ({ navigation, expectNavigateStartEventFired, expectNavigateEndEventFired }) => {
+      ytTest(`event: ${navigation} from ${channelName}`, async ({ page, eventWatcher }) => {
+        const ytSearchPage = new YtSearchPage(page, eventWatcher);
+        await ytSearchPage.search(channelName, "hard");
+        await ytSearchPage.navigateToChannel(channelName, "hard");
 
-          const ytChannelPage = new YtChannelPage(
-            channelName,
-            page,
-            eventWatcher,
-          );
-          await ytChannelPage.navigateToCategory("Videos", navigation, false);
+        const ytChannelPage = new YtChannelPage(channelName, page, eventWatcher);
+        await ytChannelPage.navigateToCategory("Videos", navigation, false);
 
-          const ytPage = new YtPage(page, eventWatcher);
-          await eventWatcher.expect({
-            eventName: ytPage.NavigationEndEvent,
-            fired: expectNavigateEndEventFired,
-          });
-          await eventWatcher.expect({
-            eventName: ytPage.NavigationStartEvent,
-            fired: expectNavigateStartEventFired,
-            timeout: 500,
-          });
-        },
-      );
+        const ytPage = new YtPage(page, eventWatcher);
+        await eventWatcher.expect({
+          eventName: ytPage.NavigationEndEvent,
+          fired: expectNavigateEndEventFired,
+        });
+        await eventWatcher.expect({
+          eventName: ytPage.NavigationStartEvent,
+          fired: expectNavigateStartEventFired,
+          timeout: 500,
+        });
+      });
     },
   );
 });

@@ -40,12 +40,10 @@ async function getOldestItemId(
     return null;
   }
 
-  const videoCount =
-    playlistHeader.playlistHeaderRenderer.stats[0].runs[0].text;
+  const videoCount = playlistHeader.playlistHeaderRenderer.stats[0].runs[0].text;
 
-  const oldestVideoId = (
-    await fetchYtInitialData(`${playlistUrl}&index=${videoCount}&playnext=1`)
-  ).currentVideoEndpoint.watchEndpoint.videoId;
+  const oldestVideoId = (await fetchYtInitialData(`${playlistUrl}&index=${videoCount}&playnext=1`))
+    .currentVideoEndpoint.watchEndpoint.videoId;
 
   return oldestVideoId;
 }
@@ -89,9 +87,7 @@ async function fetchYtInitialData(url: string) {
     YoutubeDOM.isMobile
       ? ytInitialDataString
           .replace(/\\\\\\x22/g, '\\\\\\"')
-          .replace(/\\x([0-9A-Fa-f]{2})/g, (_, hex) =>
-            String.fromCharCode(parseInt(hex, 16)),
-          )
+          .replace(/\\x([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
       : ytInitialDataString,
   );
   return ytInitialData;

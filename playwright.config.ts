@@ -1,4 +1,5 @@
 import path from "node:path";
+
 import { defineConfig, devices } from "@playwright/test";
 
 const DesktopChrome = {
@@ -28,19 +29,15 @@ export default defineConfig({
   workers: 2,
   fullyParallel: true,
   projects: [
-    ...[DesktopChrome, MobileChrome, DesktopFirefox].map(
-      ({ name, device }) => ({
-        name: `${name}-spec`,
-        use: device,
-        testDir: path.join(import.meta.dirname, "tests/specs"),
-      }),
-    ),
-    ...[DesktopChrome, MobileChrome, DesktopFirefox].map(
-      ({ name, device }) => ({
-        name: `${name}-e2e`,
-        use: device,
-        testDir: path.join(import.meta.dirname, "tests/e2e"),
-      }),
-    ),
+    ...[DesktopChrome, MobileChrome, DesktopFirefox].map(({ name, device }) => ({
+      name: `${name}-spec`,
+      use: device,
+      testDir: path.join(import.meta.dirname, "tests/specs"),
+    })),
+    ...[DesktopChrome, MobileChrome, DesktopFirefox].map(({ name, device }) => ({
+      name: `${name}-e2e`,
+      use: device,
+      testDir: path.join(import.meta.dirname, "tests/e2e"),
+    })),
   ],
 });

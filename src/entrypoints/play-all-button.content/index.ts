@@ -1,4 +1,5 @@
 import { defineContentScript } from "#imports";
+
 import type { Channel } from "./channel";
 import { YoutubeDOM } from "./youtube-dom";
 import { registerHooks, YTX_EVENTS, ytxEventEmitter } from "./youtube-hooks";
@@ -17,11 +18,7 @@ function main() {
   ytxEventEmitter.on(YTX_EVENTS.CHANNEL_ENTER, async (channel) => {
     await renderDropdown(channel);
   });
-  [
-    YTX_EVENTS.CATEGORY_ENTER,
-    YTX_EVENTS.SORT_CHANGED,
-    YTX_EVENTS.SORT_RERENDERED,
-  ].forEach((e) => {
+  [YTX_EVENTS.CATEGORY_ENTER, YTX_EVENTS.SORT_CHANGED, YTX_EVENTS.SORT_RERENDERED].forEach((e) => {
     ytxEventEmitter.on(e, async (channel) => {
       await maybeRenderButton(channel);
     });
@@ -83,13 +80,8 @@ async function renderDropdown(channel: Channel) {
 
   container.append(button, menu);
 
-  if (
-    document.querySelector("yt-flexible-actions-view-model .play-all-btns") ===
-    null
-  ) {
-    document
-      .querySelector("yt-flexible-actions-view-model")
-      ?.appendChild(container);
+  if (document.querySelector("yt-flexible-actions-view-model .play-all-btns") === null) {
+    document.querySelector("yt-flexible-actions-view-model")?.appendChild(container);
 
     let isOpen = false;
     button.addEventListener("click", (e) => {

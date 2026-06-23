@@ -3,17 +3,10 @@ export class YoutubeDOM {
     return window.location.host === "m.youtube.com";
   }
 
-  public static readonly categories: CategoryKind[] = [
-    "Videos",
-    "Shorts",
-    "Streams",
-  ];
+  public static readonly categories: CategoryKind[] = ["Videos", "Shorts", "Streams"];
 
   public static get categoryKind(): CategoryKind | null {
-    const categorySlug = window.location.pathname
-      .split("/")
-      .at(-1)!
-      .split("?")[0];
+    const categorySlug = window.location.pathname.split("/").at(-1)!.split("?")[0];
     const categoryKind = (() => {
       switch (categorySlug) {
         case "videos":

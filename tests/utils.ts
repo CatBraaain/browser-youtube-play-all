@@ -1,19 +1,17 @@
 import type { Locator, Page } from "@playwright/test";
+
 import {
   type CategoryKind,
   type SortKind,
   YoutubeDOM,
 } from "@/entrypoints/play-all-button.content/youtube-dom";
-import {
-  YTD_EVENTS,
-  YTM_EVENTS,
-} from "@/entrypoints/play-all-button.content/youtube-hooks";
+import { YTD_EVENTS, YTM_EVENTS } from "@/entrypoints/play-all-button.content/youtube-hooks";
+
 import type { EventWatcher } from "./fixture";
 
 export class YtPage {
   constructor(
     private page: Page,
-    // biome-ignore lint/correctness/noUnusedPrivateClassMembers: <>
     private eventWatcher: EventWatcher,
   ) {}
 
@@ -22,15 +20,11 @@ export class YtPage {
   }
 
   public get NavigationStartEvent(): string {
-    return this.isMobile
-      ? YTM_EVENTS.NAVIGATION_START
-      : YTD_EVENTS.NAVIGATION_START;
+    return this.isMobile ? YTM_EVENTS.NAVIGATION_START : YTD_EVENTS.NAVIGATION_START;
   }
 
   public get NavigationEndEvent(): string {
-    return this.isMobile
-      ? YTM_EVENTS.NAVIGATION_END
-      : YTD_EVENTS.NAVIGATION_END;
+    return this.isMobile ? YTM_EVENTS.NAVIGATION_END : YTD_EVENTS.NAVIGATION_END;
   }
 }
 
@@ -44,9 +38,7 @@ export class YtSearchPage {
     this.ytPage = new YtPage(this.page, this.eventWatcher);
   }
 
-  public topVideoChannelThumbnailButton(
-    channelName: string | null = null,
-  ): Locator {
+  public topVideoChannelThumbnailButton(channelName: string | null = null): Locator {
     return this.page
       .locator(
         this.ytPage.isMobile
@@ -65,10 +57,7 @@ export class YtSearchPage {
       .first();
   }
 
-  public async search(
-    searchWord: string,
-    navigation: "soft" | "hard",
-  ): Promise<void> {
+  public async search(searchWord: string, navigation: "soft" | "hard"): Promise<void> {
     switch (navigation) {
       case "soft":
         await this.page.goto("https://www.youtube.com", {
@@ -84,12 +73,9 @@ export class YtSearchPage {
         await this.page.locator("input.yt-searchbox-input").press("Enter");
         break;
       case "hard":
-        await this.page.goto(
-          `https://www.youtube.com/results?search_query=${searchWord}`,
-          {
-            waitUntil: "domcontentloaded",
-          },
-        );
+        await this.page.goto(`https://www.youtube.com/results?search_query=${searchWord}`, {
+          waitUntil: "domcontentloaded",
+        });
         break;
     }
     await this.eventWatcher.waitForFired(this.ytPage.NavigationEndEvent);
@@ -107,10 +93,7 @@ export class YtSearchPage {
         this.topVideoChannelNameButton(channelName).click();
         break;
       case "hard": {
-        const relUrl =
-          await this.topVideoChannelThumbnailButton(channelName).getAttribute(
-            "href",
-          );
+        const relUrl = await this.topVideoChannelThumbnailButton(channelName).getAttribute("href");
         await this.page.goto(`https://www.youtube.com${relUrl}`, {
           waitUntil: "domcontentloaded",
         });
@@ -142,9 +125,9 @@ export class YtVideoPage {
           .slice(0, n)
           .map(
             (link) =>
-              new URL(
-                `https://www.youtube.com${link.getAttribute("href")!}`,
-              ).searchParams.get("v")!,
+              new URL(`https://www.youtube.com${link.getAttribute("href")!}`).searchParams.get(
+                "v",
+              )!,
           ),
       n,
     );
@@ -158,9 +141,7 @@ export class YtVideoPage {
       .first()
       .evaluate(
         (link) =>
-          new URL(
-            `https://www.youtube.com${link.getAttribute("href")!}`,
-          ).searchParams.get("v")!,
+          new URL(`https://www.youtube.com${link.getAttribute("href")!}`).searchParams.get("v")!,
       );
   }
 }
@@ -203,10 +184,7 @@ export class YtChannelPage {
   }
 
   public async navigateToSort(sort: SortKind) {
-    await this.page
-      .locator(YoutubeDOM.SORT_BUTTON)
-      .nth(YoutubeDOM.sorts.indexOf(sort))
-      .click();
+    await this.page.locator(YoutubeDOM.SORT_BUTTON).nth(YoutubeDOM.sorts.indexOf(sort)).click();
   }
 
   public async getTopVideoIds(n: number = 3): Promise<string[]> {
@@ -216,9 +194,7 @@ export class YtChannelPage {
           "ytd-browse[role='main'] #primary #contents [href*='/shorts'],ytm-browse .modern-tabs [href*='/shorts']",
         )
         .evaluateAll((links, n) => {
-          const videoIds = links.map(
-            (link) => link.getAttribute("href")!.split("/").at(-1)!,
-          );
+          const videoIds = links.map((link) => link.getAttribute("href")!.split("/").at(-1)!);
           return [...new Set(videoIds)].slice(0, n);
         }, n);
     } else {
@@ -229,19 +205,16 @@ export class YtChannelPage {
         .evaluateAll((links, n) => {
           const videoIds = links.map(
             (link) =>
-              new URL(
-                `https://www.youtube.com${link.getAttribute("href")!}`,
-              ).searchParams.get("v")!,
+              new URL(`https://www.youtube.com${link.getAttribute("href")!}`).searchParams.get(
+                "v",
+              )!,
           );
           return [...new Set(videoIds)].slice(0, n);
         }, n);
     }
   }
 
-  public async getPlayAllUrl(
-    category: CategoryKind,
-    sort: SortKind,
-  ): Promise<string> {
+  public async getPlayAllUrl(category: CategoryKind, sort: SortKind): Promise<string> {
     const href = await this.page
       .locator(`.play-all-btn.${category.toLowerCase()}.${sort.toLowerCase()}`)
       .getAttribute("href");

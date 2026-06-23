@@ -1,5 +1,3 @@
-/** biome-ignore-all lint/complexity/useLiteralKeys: <> */
-
 import { resolvePlaylistPath } from "./youtube-api";
 import type { CategoryKind, SortKind } from "./youtube-dom";
 import { YoutubeDOM } from "./youtube-dom";
@@ -23,9 +21,7 @@ export class Channel {
           [
             c,
             Object.fromEntries(
-              YoutubeDOM.sorts.map(
-                (s) => [s, resolvePlaylistPath(id, c, s)] as const,
-              ),
+              YoutubeDOM.sorts.map((s) => [s, resolvePlaylistPath(id, c, s)] as const),
             ),
           ] as const,
       ),
@@ -33,10 +29,7 @@ export class Channel {
     return channel;
   }
 
-  public async getPlaylistPath(
-    categoryKind: CategoryKind,
-    sortKind: SortKind,
-  ): Promise<string> {
+  public async getPlaylistPath(categoryKind: CategoryKind, sortKind: SortKind): Promise<string> {
     const oldestPlaylistPath = await this.playlistMap[categoryKind]["Oldest"];
     const isValidCategory = oldestPlaylistPath !== "";
     if (isValidCategory) {

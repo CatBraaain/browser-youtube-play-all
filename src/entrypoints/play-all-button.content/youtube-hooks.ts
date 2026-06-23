@@ -1,4 +1,5 @@
 import EventEmitter from "eventemitter3";
+
 import { logger } from "../../logger";
 import { Channel } from "./channel";
 import { fetchChannelId } from "./youtube-api";
@@ -86,61 +87,52 @@ function registerCategoryHooks() {
 
 function registerSortHooks() {
   // sort changed hook
-  ytxEventEmitter.on(
-    YTX_EVENTS.CATEGORY_ENTER,
-    async (currentChannel: Channel) => {
-      const sortChangeObserver = new MutationObserver(async (records) => {
-        const sortButtons = YoutubeDOM.sortButtons;
-        const isSortChanged = records.some(
-          (r) => r.target instanceof Element && sortButtons.includes(r.target),
-        );
-        if (isSortChanged) {
-          ytxEventEmitter.emit(YTX_EVENTS.SORT_CHANGED, currentChannel);
-        }
+  ytxEventEmitter.on(YTX_EVENTS.CATEGORY_ENTER, async (currentChannel: Channel) => {
+    const sortChangeObserver = new MutationObserver(async (records) => {
+      const sortButtons = YoutubeDOM.sortButtons;
+      const isSortChanged = records.some(
+        (r) => r.target instanceof Element && sortButtons.includes(r.target),
+      );
+      if (isSortChanged) {
+        ytxEventEmitter.emit(YTX_EVENTS.SORT_CHANGED, currentChannel);
+      }
+    });
+    sortChangeObserver.observe(document, {
+      subtree: true,
+      childList: false,
+      attributes: true,
+      attributeFilter: ["aria-selected"],
+    });
+    [YTX_EVENTS.PAGE_ENTER, YTX_EVENTS.PAGE_LEAVE].forEach((e) => {
+      ytxEventEmitter.once(e, () => {
+        sortChangeObserver.disconnect();
       });
-      sortChangeObserver.observe(document, {
-        subtree: true,
-        childList: false,
-        attributes: true,
-        attributeFilter: ["aria-selected"],
-      });
-      [YTX_EVENTS.PAGE_ENTER, YTX_EVENTS.PAGE_LEAVE].forEach((e) => {
-        ytxEventEmitter.once(e, () => {
-          sortChangeObserver.disconnect();
-        });
-      });
-    },
-  );
+    });
+  });
 
   // sort rerendered hook
-  ytxEventEmitter.on(
-    YTX_EVENTS.CATEGORY_ENTER,
-    async (currentChannel: Channel) => {
-      const rerendererObserver = new MutationObserver(async (records) => {
-        const sortButtonRelatedSet = new Set(
-          YoutubeDOM.sortButtonLineages.flat(),
-        );
-        const sortButtonRelatedRecords = records.filter(
-          (r) =>
-            r.target instanceof Element && sortButtonRelatedSet.has(r.target),
-        );
-        const isSortButtonRerendered = sortButtonRelatedRecords.length > 0;
-        if (isSortButtonRerendered) {
-          ytxEventEmitter.emit(YTX_EVENTS.SORT_RERENDERED, currentChannel);
-        }
+  ytxEventEmitter.on(YTX_EVENTS.CATEGORY_ENTER, async (currentChannel: Channel) => {
+    const rerendererObserver = new MutationObserver(async (records) => {
+      const sortButtonRelatedSet = new Set(YoutubeDOM.sortButtonLineages.flat());
+      const sortButtonRelatedRecords = records.filter(
+        (r) => r.target instanceof Element && sortButtonRelatedSet.has(r.target),
+      );
+      const isSortButtonRerendered = sortButtonRelatedRecords.length > 0;
+      if (isSortButtonRerendered) {
+        ytxEventEmitter.emit(YTX_EVENTS.SORT_RERENDERED, currentChannel);
+      }
+    });
+    rerendererObserver.observe(document, {
+      subtree: true,
+      childList: true,
+      attributes: false,
+    });
+    [YTX_EVENTS.PAGE_ENTER, YTX_EVENTS.PAGE_LEAVE].forEach((e) => {
+      ytxEventEmitter.once(e, () => {
+        rerendererObserver.disconnect();
       });
-      rerendererObserver.observe(document, {
-        subtree: true,
-        childList: true,
-        attributes: false,
-      });
-      [YTX_EVENTS.PAGE_ENTER, YTX_EVENTS.PAGE_LEAVE].forEach((e) => {
-        ytxEventEmitter.once(e, () => {
-          rerendererObserver.disconnect();
-        });
-      });
-    },
-  );
+    });
+  });
 }
 
 function registerLoggingHooks() {
