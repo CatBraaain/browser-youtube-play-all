@@ -87,10 +87,10 @@ export class YtSearchPage {
   ) {
     switch (navigation) {
       case "soft1":
-        this.topVideoChannelThumbnailButton(channelName).click();
+        await this.topVideoChannelThumbnailButton(channelName).click();
         break;
       case "soft2":
-        this.topVideoChannelNameButton(channelName).click();
+        await this.topVideoChannelNameButton(channelName).click();
         break;
       case "hard": {
         const relUrl = await this.topVideoChannelThumbnailButton(channelName).getAttribute("href");

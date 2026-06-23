@@ -80,14 +80,14 @@ export class ChannelIdFinder {
       this.ytPage.NavigationEndEvent,
     );
     const channelId = lastEventContent?.endpoint.browseEndpoint?.browseId;
-    this.expectChannelIdCorrect(channelId, exists);
+    await this.expectChannelIdCorrect(channelId, exists);
   }
 
   async expectCanonicalLink(exists: boolean) {
     const locator = this.page.locator("[rel='canonical']");
     const channelId =
       (await locator.count()) > 0 ? (await locator.first().getAttribute("href"))! : undefined;
-    this.expectChannelIdCorrect(channelId, exists);
+    await this.expectChannelIdCorrect(channelId, exists);
   }
 
   async expectYtInitialData(exists: boolean) {
@@ -97,14 +97,14 @@ export class ChannelIdFinder {
           .find((e: any) => e.service === "GOOGLE_HELP")
           ?.params.find((e: any) => e.key === "browse_id").value,
     );
-    this.expectChannelIdCorrect(channelId, exists);
+    await this.expectChannelIdCorrect(channelId, exists);
   }
 
   async expectYtCommand(exists: boolean) {
     const channelId = await this.page.evaluate(
       () => (window as any).ytCommand.browseEndpoint?.browseId,
     );
-    this.expectChannelIdCorrect(channelId, exists);
+    await this.expectChannelIdCorrect(channelId, exists);
   }
 
   async expectChannelIdCorrect(channelId: string | undefined, exists: boolean) {
