@@ -27,13 +27,13 @@
     "eventemitter3": "^5.0.4"
   },
   "devDependencies": {
-    "@playwright/test": "^1.56.1",
-    "@types/chrome": "^0.1.24",
-    "concurrently": "^9.2.1",
+    "@playwright/test": "^1.61.0",
+    "@types/chrome": "^0.2.0",
+    "concurrently": "^10.0.3",
     "oxlint-tsgolint": "^0.23.0",
-    "playwright-webextext": "^0.0.4",
-    "typescript": "^6.0.0",
+    "playwright-webextext": "^0.0.5",
+    "typescript": "^6.0.3",
     "vite-plus": "^0.2.1",
-    "wxt": "^0.20.11"
+    "wxt": "^0.20.26"
   }
 }
