@@ -30,7 +30,6 @@
     "@playwright/test": "^1.61.0",
     "@types/chrome": "^0.2.0",
     "concurrently": "^10.0.3",
-    "oxlint-tsgolint": "^0.23.0",
     "playwright-webextext": "^0.0.5",
     "typescript": "^6.0.3",
     "vite-plus": "^0.2.1",
