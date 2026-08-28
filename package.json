@@ -5,7 +5,7 @@
   "description": "Adds \"Play All\" buttons for Videos, Shorts, and Streams on YouTube, with sorting by Latest, Popular, or Oldest.",
   "type": "module",
   "scripts": {
-    "build": "conc \"bun:build:*\"",
+    "build": "bun run --parallel build:*",
     "build:chrome": "wxt build -b chrome",
     "build:firefox": "wxt build -b firefox",
     "check": "bun ci && vp check",
@@ -19,7 +19,7 @@
     "test": "bun run build && bunx playwright test tests/e2e",
     "test-specs": "bun run build && bunx playwright test tests/specs",
     "test-ui-mode": "bun run build && bunx playwright test --ui",
-    "zip": "conc \"bun:zip:*\"",
+    "zip": "bun run --parallel zip:*",
     "zip:chrome": "wxt zip -b chrome",
     "zip:firefox": "wxt zip -b firefox"
   },
@@ -29,7 +29,6 @@
   "devDependencies": {
     "@playwright/test": "^1.61.0",
     "@types/chrome": "^0.2.0",
-    "concurrently": "^10.0.3",
     "playwright-webextext": "^0.0.5",
     "typescript": "^6.0.3",
     "vite-plus": "^0.2.1",
