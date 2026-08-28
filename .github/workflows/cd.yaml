@@ -17,6 +17,10 @@ on:
 
 jobs:
   release:
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, firefox]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -24,7 +28,7 @@ jobs:
           ref: ${{ github.ref_name }}
       - uses: oven-sh/setup-bun@v2
       - run: bun install
-      - run: bun run zip
+      - run: bun run zip:${{ matrix.browser }}
       - name: Publish
         run: |
           if [ "${{ github.event.inputs.dry_run || 'false' }}" = "false" ]; then
@@ -33,15 +37,15 @@ jobs:
             bunx wxt submit --dry-run
           fi
         env:
-          CHROME_ZIP: "dist/chrome.zip"
+          CHROME_ZIP: ${{ matrix.browser == 'chrome' && 'dist/chrome.zip' || '' }}
           CHROME_EXTENSION_ID: "lcgfhpllcjejniehjnhbfhnkdpmkeoce"
           CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
           CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
           CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
           CHROME_PUBLISH_TARGET: "default"
           CHROME_SKIP_SUBMIT_REVIEW: false
-          FIREFOX_ZIP: "dist/firefox.zip"
-          FIREFOX_SOURCES_ZIP: "dist/sources.zip"
+          FIREFOX_ZIP: ${{ matrix.browser == 'firefox' && 'dist/firefox.zip' || '' }}
+          FIREFOX_SOURCES_ZIP: ${{ matrix.browser == 'firefox' && 'dist/sources.zip' || '' }}
           FIREFOX_EXTENSION_ID: "youtube-play-all"
           FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
           FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
