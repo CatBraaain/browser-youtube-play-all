@@ -42,7 +42,12 @@ async function getOldestItemId(
     return null;
   }
 
-  const videoCount = playlistHeader.playlistHeaderRenderer.stats[0].runs[0].text;
+  const videoCount = playlistHeader.playlistHeaderRenderer.stats[0].runs[0].text
+    .match(/\d/g)
+    ?.join("");
+  if (videoCount === undefined) {
+    return null;
+  }
 
   const oldestVideoId = (await fetchYtInitialData(`${playlistUrl}&index=${videoCount}&playnext=1`))
     .currentVideoEndpoint.watchEndpoint.videoId;
