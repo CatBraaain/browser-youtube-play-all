@@ -1,3 +1,10 @@
+## [0.4.3] - 2026-08-28
+
+### 🐛 Bug Fixes
+
+- FetchChannelId not working in mobile due to website update
+- Fix oldest url is not correct in some channel with thousands subscribers
+
 ## [0.4.2] - 2026-04-06
 
 ### 🚀 Features
