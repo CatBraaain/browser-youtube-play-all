@@ -13,7 +13,7 @@ export class EventWatcher {
 
   public async setInitScript(eventName: string) {
     await this.page.addInitScript(
-      ({ eventName, varNames }: { eventName: string; varNames: string[] }) => {
+      ({ eventName, varNames }: { eventName: string; varNames: [string, string] }) => {
         const [flagName, containerName] = varNames;
         (window as any)[flagName] = false;
         window.addEventListener(eventName, (e) => {
@@ -45,7 +45,7 @@ export class EventWatcher {
     return res;
   }
 
-  public getVarNames(eventName: string) {
+  public getVarNames(eventName: string): [string, string] {
     return [`__${eventName}_fired`, `__${eventName}_content`];
   }
 

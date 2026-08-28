@@ -89,7 +89,7 @@ async function fetchYtInitialData(url: string) {
     YoutubeDOM.isMobile
       ? /var ytInitialData\s*=\s*'([\s\S]*?)';/
       : /var ytInitialData\s*=\s*(\{[\s\S]*?\});/,
-  )![1];
+  )![1]!;
   const ytInitialData = JSON.parse(
     YoutubeDOM.isMobile
       ? ytInitialDataString

@@ -84,7 +84,7 @@ youtubeChannels.forEach((channelName) => {
     const res = await fetch(`https://www.youtube.com/${channelName}`);
     const html = await res.text();
     const match = html.match(/<link rel="canonical" href="(.*?)"/i);
-    const canonical = match![1];
+    const canonical = match![1]!;
     const channelId = canonical.split("/").at(-1)!;
     expect(channelId).toEqual(expect.stringMatching(/UC.*/));
   });

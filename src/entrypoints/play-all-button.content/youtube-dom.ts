@@ -49,7 +49,7 @@ export class YoutubeDOM {
       return undefined;
     }
     const sortButtonLineages = YoutubeDOM.sortButtonLineages;
-    const sortButtonHolder = sortButtonLineages[0].findLast((e) =>
+    const sortButtonHolder = sortButtonLineages[0]!.findLast((e) =>
       sortButtonLineages.slice(1).every((lineage) => lineage.includes(e)),
     );
     return sortButtonHolder;
