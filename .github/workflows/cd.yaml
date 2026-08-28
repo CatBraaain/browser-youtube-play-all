@@ -42,7 +42,7 @@ jobs:
           CHROME_SKIP_SUBMIT_REVIEW: false
           FIREFOX_ZIP: "dist/firefox.zip"
           FIREFOX_SOURCES_ZIP: "dist/sources.zip"
-          FIREFOX_EXTENSION_ID: "{f082384d-0ec3-4a0a-a2d1-3261bb1b8d8e}"
+          FIREFOX_EXTENSION_ID: "youtube-play-all"
           FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
           FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
           FIREFOX_CHANNEL: "listed"
