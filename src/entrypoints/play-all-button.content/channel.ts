@@ -29,13 +29,7 @@ export class Channel {
     return channel;
   }
 
-  public async getPlaylistPath(categoryKind: CategoryKind, sortKind: SortKind): Promise<string> {
-    const oldestPlaylistPath = await this.playlistMap[categoryKind]["Oldest"];
-    const isValidCategory = oldestPlaylistPath !== "";
-    if (isValidCategory) {
-      return this.playlistMap[categoryKind][sortKind];
-    } else {
-      return "";
-    }
+  public getPlaylistPath(categoryKind: CategoryKind, sortKind: SortKind): Promise<string> {
+    return this.playlistMap[categoryKind][sortKind];
   }
 }
