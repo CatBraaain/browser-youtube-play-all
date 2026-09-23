@@ -55,7 +55,7 @@ async function maybeRenderButton(channel: Channel) {
   playAllButton.textContent = `Play All (${sortKind})`;
 
   document.querySelector(".play-all-btn")?.remove();
-  YoutubeDOM.sortButtonHolder!.appendChild(playAllButton);
+  sortButtonHolder.appendChild(playAllButton);
 }
 
 async function renderDropdown(channel: Channel) {
