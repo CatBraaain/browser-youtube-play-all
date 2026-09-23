@@ -21,7 +21,9 @@ export class Channel {
           [
             c,
             Object.fromEntries(
-              YoutubeDOM.sorts.map((s) => [s, resolvePlaylistPath(id, c, s)] as const),
+              YoutubeDOM.sorts.map(
+                (s) => [s, resolvePlaylistPath(id, c, s).catch(() => "")] as const,
+              ),
             ),
           ] as const,
       ),
