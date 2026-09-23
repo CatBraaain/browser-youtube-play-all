@@ -2,6 +2,7 @@ import EventEmitter from "eventemitter3";
 
 import { logger } from "../../logger";
 import { Channel } from "./channel";
+import { currentEpoch, isStale } from "./ui-scheduler";
 import { fetchChannelId } from "./youtube-api";
 import { YoutubeDOM } from "./youtube-dom";
 
@@ -62,7 +63,13 @@ function registerNavigationHooks() {
 function registerChannelHooks() {
   let currentChannel: Channel | null = null;
   ytxEventEmitter.on(YTX_EVENTS.PAGE_ENTER, async () => {
+    // A fetch completing after a later navigation advances the epoch
+    // belongs to the previous page and must not emit.
+    const latestEpoch = currentEpoch();
     const channelId = await fetchChannelId(window.location.href);
+    if (isStale(latestEpoch)) {
+      return;
+    }
     const oldChannelId = currentChannel?.id;
     const isChannelIdChanged = channelId !== oldChannelId;
     if (channelId === undefined) {

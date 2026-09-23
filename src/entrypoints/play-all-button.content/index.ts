@@ -1,6 +1,7 @@
 import { defineContentScript } from "#imports";
 
 import type { Channel } from "./channel";
+import { advanceEpoch, isStale, scheduleUiTask } from "./ui-scheduler";
 import { YoutubeDOM } from "./youtube-dom";
 import { registerHooks, YTX_EVENTS, ytxEventEmitter } from "./youtube-hooks";
 
@@ -15,19 +16,31 @@ export default defineContentScript({
 function main() {
   registerHooks();
 
-  ytxEventEmitter.on(YTX_EVENTS.CHANNEL_ENTER, async (channel) => {
-    await renderDropdown(channel);
+  // Invalidate in-flight renders from the previous page while the new
+  // page's channel id is still being fetched.
+  ytxEventEmitter.on(YTX_EVENTS.PAGE_ENTER, () => {
+    advanceEpoch();
   });
-  [YTX_EVENTS.CATEGORY_ENTER, YTX_EVENTS.SORT_CHANGED, YTX_EVENTS.SORT_RERENDERED].forEach((e) => {
+
+  ytxEventEmitter.on(YTX_EVENTS.CHANNEL_ENTER, async (channel) => {
+    await scheduleUiTask((latestEpoch) => renderDropdown(channel, latestEpoch));
+  });
+  [YTX_EVENTS.CATEGORY_ENTER, YTX_EVENTS.SORT_RERENDERED].forEach((e) => {
     ytxEventEmitter.on(e, async (channel) => {
-      await maybeRenderButton(channel);
+      await scheduleUiTask((latestEpoch) => maybeRenderButton(channel, latestEpoch));
     });
+  });
+  ytxEventEmitter.on(YTX_EVENTS.SORT_CHANGED, async (channel) => {
+    // A sort change also advances the epoch: renders still awaiting
+    // their playlist path for the previous sort are no longer valid.
+    advanceEpoch();
+    await scheduleUiTask((latestEpoch) => maybeRenderButton(channel, latestEpoch));
   });
 
   ytxEventEmitter.emit(YTX_EVENTS.PAGE_ENTER);
 }
 
-async function maybeRenderButton(channel: Channel) {
+async function maybeRenderButton(channel: Channel, latestEpoch: number) {
   const sortButtonHolder = YoutubeDOM.sortButtonHolder;
   if (!sortButtonHolder) {
     return;
@@ -51,14 +64,22 @@ async function maybeRenderButton(channel: Channel) {
   playAllButton.classList.add("play-all-btn");
   playAllButton.classList.add(categoryKind.toLowerCase());
   playAllButton.classList.add(sortKind.toLowerCase());
-  playAllButton.href = await channel.getPlaylistPath(categoryKind, sortKind);
-  playAllButton.textContent = `Play All (${sortKind})`;
+  const href = await channel.getPlaylistPath(categoryKind, sortKind);
+  if (isStale(latestEpoch)) {
+    return;
+  }
+  // Omit the href on resolution failures so the error button cannot navigate,
+  // and surface the failure on the button instead of silently hiding it.
+  if (href) {
+    playAllButton.href = href;
+  }
+  playAllButton.textContent = href ? `Play All (${sortKind})` : `Play All (${sortKind}) (error)`;
 
   document.querySelector(".play-all-btn")?.remove();
   sortButtonHolder.appendChild(playAllButton);
 }
 
-async function renderDropdown(channel: Channel) {
+async function renderDropdown(channel: Channel, latestEpoch: number) {
   const container = document.createElement("div");
   container.className = "play-all-btns";
 
@@ -78,6 +99,10 @@ async function renderDropdown(channel: Channel) {
         menu.appendChild(a);
       }
     }
+  }
+
+  if (isStale(latestEpoch)) {
+    return;
   }
 
   container.append(button, menu);
