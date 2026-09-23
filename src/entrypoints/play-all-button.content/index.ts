@@ -40,6 +40,13 @@ async function maybeRenderButton(channel: Channel) {
 
   const sortKind = YoutubeDOM.sortKind ?? "Latest";
 
+  const targetPlayAllButton = document.querySelector(
+    `.play-all-btn.${categoryKind.toLowerCase()}.${sortKind.toLowerCase()}`,
+  );
+  if (targetPlayAllButton) {
+    return;
+  }
+
   const playAllButton = document.createElement("a");
   playAllButton.classList.add("play-all-btn");
   playAllButton.classList.add(categoryKind.toLowerCase());
@@ -47,13 +54,8 @@ async function maybeRenderButton(channel: Channel) {
   playAllButton.href = await channel.getPlaylistPath(categoryKind, sortKind);
   playAllButton.textContent = `Play All (${sortKind})`;
 
-  const targetPlayAllButton = document.querySelector(
-    `.play-all-btn.${categoryKind.toLowerCase()}.${sortKind.toLowerCase()}`,
-  );
-  if (!targetPlayAllButton) {
-    document.querySelector(".play-all-btn")?.remove();
-    YoutubeDOM.sortButtonHolder!.appendChild(playAllButton);
-  }
+  document.querySelector(".play-all-btn")?.remove();
+  YoutubeDOM.sortButtonHolder!.appendChild(playAllButton);
 }
 
 async function renderDropdown(channel: Channel) {
