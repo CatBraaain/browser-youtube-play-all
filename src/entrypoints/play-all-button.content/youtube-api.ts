@@ -8,7 +8,7 @@ export async function fetchChannelId(channelUrl: string) {
       []),
     ...(html.match(/"https:\/\/www.youtube.com\/channel\/(.*?)"/i) ?? []),
   ];
-  const channelId = matches?.at(1);
+  const channelId = matches.at(1);
   return channelId;
 }
 
