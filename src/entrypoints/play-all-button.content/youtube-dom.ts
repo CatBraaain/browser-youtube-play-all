@@ -6,7 +6,9 @@ export class YoutubeDOM {
   public static readonly categories: CategoryKind[] = ["Videos", "Shorts", "Streams"];
 
   public static get categoryKind(): CategoryKind | null {
-    const categorySlug = window.location.pathname.split("/").at(-1)!.split("?")[0];
+    // a trailing slash leaves an empty last segment; use the last non-empty segment
+    const segments = window.location.pathname.split("/").filter(Boolean);
+    const categorySlug = (segments.at(-1) ?? "").split("?")[0];
     const categoryKind = (() => {
       switch (categorySlug) {
         case "videos":
