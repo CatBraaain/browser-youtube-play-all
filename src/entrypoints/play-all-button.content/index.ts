@@ -3,7 +3,7 @@ import { defineContentScript } from "#imports";
 import type { Channel } from "./channel";
 import { advanceEpoch, isStale, scheduleUiTask } from "./ui-scheduler";
 import { YoutubeDOM } from "./youtube-dom";
-import { registerHooks, YTX_EVENTS, ytxEventEmitter } from "./youtube-hooks";
+import { emitPageEnter, registerHooks, YTX_EVENTS, ytxEventEmitter } from "./youtube-hooks";
 
 import "./play-all-button.css";
 
@@ -15,12 +15,6 @@ export default defineContentScript({
 
 function main() {
   registerHooks();
-
-  // Invalidate in-flight renders from the previous page while the new
-  // page's channel id is still being fetched.
-  ytxEventEmitter.on(YTX_EVENTS.PAGE_ENTER, () => {
-    advanceEpoch();
-  });
 
   ytxEventEmitter.on(YTX_EVENTS.CHANNEL_ENTER, async (channel) => {
     await scheduleUiTask((latestEpoch) => renderDropdown(channel, latestEpoch));
@@ -37,7 +31,9 @@ function main() {
     await scheduleUiTask((latestEpoch) => maybeRenderButton(channel, latestEpoch));
   });
 
-  ytxEventEmitter.emit(YTX_EVENTS.PAGE_ENTER);
+  // Invalidate in-flight renders from the previous page while the new
+  // page's channel id is still being fetched.
+  emitPageEnter();
 }
 
 async function maybeRenderButton(channel: Channel, latestEpoch: number) {

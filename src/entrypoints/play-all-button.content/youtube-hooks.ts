@@ -2,7 +2,7 @@ import EventEmitter from "eventemitter3";
 
 import { logger } from "../../logger";
 import { Channel } from "./channel";
-import { currentEpoch, isStale } from "./ui-scheduler";
+import { advanceEpoch, currentEpoch, isStale } from "./ui-scheduler";
 import { fetchChannelId } from "./youtube-api";
 import { YoutubeDOM } from "./youtube-dom";
 
@@ -53,11 +53,16 @@ function registerNavigationHooks() {
   });
 
   window.addEventListener(YTD_EVENTS.NAVIGATION_END, () => {
-    ytxEventEmitter.emit(YTX_EVENTS.PAGE_ENTER);
+    emitPageEnter();
   });
   window.addEventListener(YTM_EVENTS.NAVIGATION_END, () => {
-    ytxEventEmitter.emit(YTX_EVENTS.PAGE_ENTER);
+    emitPageEnter();
   });
+}
+
+export function emitPageEnter() {
+  advanceEpoch();
+  ytxEventEmitter.emit(YTX_EVENTS.PAGE_ENTER);
 }
 
 function registerChannelHooks() {
