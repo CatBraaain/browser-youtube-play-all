@@ -159,6 +159,7 @@ ytxTest(
     expect(firstHref).toBeTruthy();
 
     const search = new YtSearchPage(page, eventWatcher);
+    await search.openSearchForm();
     await page.locator("input.yt-searchbox-input").fill(secondChannel);
     await page.locator("input.yt-searchbox-input").press("Enter");
     await search.topVideoChannelThumbnailButton(secondChannel).click();
@@ -187,6 +188,7 @@ ytxTest("does not show extension UI on a watch page", async ({ page, eventWatche
   await page.goto(`https://www.youtube.com/watch?v=${videoId}`, {
     waitUntil: "domcontentloaded",
   });
-  await expect(page.locator("ytd-watch-flexy")).toBeAttached();
+  // Mobile watch pages use ytm-watch instead of the desktop ytd-watch-flexy
+  await expect(page.locator("ytd-watch-flexy, ytm-watch")).toBeAttached({ timeout: 30_000 });
   await expect(page.locator(".play-all-btn, .play-all-btns")).toHaveCount(0);
 });

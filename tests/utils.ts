@@ -39,10 +39,13 @@ export class YtSearchPage {
   }
 
   public topVideoChannelThumbnailButton(channelName: string | null = null): Locator {
+    const thumb = channelName !== null ? `[href="/${channelName}"]` : `[href*="/@"]`;
     return this.page
       .locator(
+        // Mobile serves two search-result DOM variants; the channel card inside
+        // ytm-compact-channel-renderer has no .media-channel ancestor
         this.ytPage.isMobile
-          ? `.media-channel ${channelName !== null ? `[href="/${channelName}"]` : `[href*="/@"]`}`
+          ? `.media-channel ${thumb}, ytm-compact-channel-renderer ${thumb}`
           : `#channel-thumbnail:not([hidden])${channelName !== null ? `[href="/${channelName}"]` : ""}`,
       )
       .first(); // [href^="/channel/"] or [href^="link:///"]
@@ -55,6 +58,13 @@ export class YtSearchPage {
           (channelName !== null ? `:has([href*="/${channelName}"])` : ""),
       )
       .first();
+  }
+
+  // Mobile keeps the search box hidden behind the header's search button
+  public async openSearchForm(): Promise<void> {
+    if (this.ytPage.isMobile) {
+      await this.page.locator('button[aria-label="Search YouTube"]').click();
+    }
   }
 
   public async search(searchWord: string, navigation: "soft" | "hard"): Promise<void> {
@@ -93,7 +103,10 @@ export class YtSearchPage {
         await this.topVideoChannelNameButton(channelName).click();
         break;
       case "hard": {
-        const relUrl = await this.topVideoChannelThumbnailButton(channelName).getAttribute("href");
+        const channelButton = this.topVideoChannelThumbnailButton(channelName);
+        // Search results may load slowly even after the navigation-end event
+        await channelButton.waitFor({ state: "visible" });
+        const relUrl = await channelButton.getAttribute("href");
         await this.page.goto(`https://www.youtube.com${relUrl}`, {
           waitUntil: "domcontentloaded",
         });
