@@ -1,6 +1,52 @@
 import { type CategoryKind, type SortKind, YoutubeDOM } from "./youtube-dom";
 
+// Test hook: Playwright's page.route cannot see fetches made by this content
+// script on Firefox (Juggler only hooks page-context requests), so e2e tests
+// inject delayed/failed playlist resolutions through the DOM instead. The
+// document element is shared between the page and the content-script sandbox
+// on every engine. Tests set data-ytx-fetch-gate to JSON such as
+// {"delay":["/playlist?list=UULF"]} or {"abort":["/playlist?list=UULF"]} and
+// can await data-ytx-fetch-gate-held to observe a delayed fetch.
+type FetchGate = { delay?: string[]; abort?: string[] };
+
+function gateModeFor(url: string): "delay" | "abort" | null {
+  const raw = document.documentElement.dataset.ytxFetchGate;
+  if (!raw) {
+    return null;
+  }
+  let gate: FetchGate;
+  try {
+    gate = JSON.parse(raw) as FetchGate;
+  } catch {
+    return null;
+  }
+  if (gate.abort?.some((pattern) => url.includes(pattern))) {
+    return "abort";
+  }
+  if (gate.delay?.some((pattern) => url.includes(pattern))) {
+    return "delay";
+  }
+  return null;
+}
+
+async function applyFetchGate(url: string): Promise<void> {
+  for (;;) {
+    const mode = gateModeFor(url);
+    if (mode === "abort") {
+      delete document.documentElement.dataset.ytxFetchGateHeld;
+      throw new Error(`fetch aborted by test gate: ${url}`);
+    }
+    if (mode !== "delay") {
+      delete document.documentElement.dataset.ytxFetchGateHeld;
+      return;
+    }
+    document.documentElement.dataset.ytxFetchGateHeld = url;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+}
+
 export async function fetchChannelId(channelUrl: string) {
+  await applyFetchGate(channelUrl);
   const res = await fetch(channelUrl);
   const html = await res.text();
   const matches = [
@@ -83,6 +129,7 @@ function resolveFilteredPlaylistUrl(
 }
 
 async function fetchYtInitialData(url: string) {
+  await applyFetchGate(url);
   const htmlRes = await fetch(url);
   const html = await htmlRes.text();
   const ytInitialDataString = html.match(

@@ -1,7 +1,13 @@
 import { defineContentScript } from "#imports";
 
 import type { Channel } from "./channel";
-import { advanceEpoch, isStale, scheduleUiTask } from "./ui-scheduler";
+import {
+  advanceUiEpoch,
+  isPageStale,
+  isUiStale,
+  schedulePageTask,
+  scheduleUiTask,
+} from "./ui-scheduler";
 import { YoutubeDOM } from "./youtube-dom";
 import { emitPageEnter, registerHooks, YTX_EVENTS, ytxEventEmitter } from "./youtube-hooks";
 
@@ -17,7 +23,9 @@ function main() {
   registerHooks();
 
   ytxEventEmitter.on(YTX_EVENTS.CHANNEL_ENTER, async (channel) => {
-    await scheduleUiTask((latestEpoch) => renderDropdown(channel, latestEpoch));
+    // The dropdown resolves every category and sort, so it is keyed to the
+    // page epoch: a sort change must not drop it mid-resolution.
+    await schedulePageTask((latestEpoch) => renderDropdown(channel, latestEpoch));
   });
   [YTX_EVENTS.CATEGORY_ENTER, YTX_EVENTS.SORT_RERENDERED].forEach((e) => {
     ytxEventEmitter.on(e, async (channel) => {
@@ -25,9 +33,10 @@ function main() {
     });
   });
   ytxEventEmitter.on(YTX_EVENTS.SORT_CHANGED, async (channel) => {
-    // A sort change also advances the epoch: renders still awaiting
-    // their playlist path for the previous sort are no longer valid.
-    advanceEpoch();
+    // A sort change invalidates UI renders still awaiting their playlist path
+    // for the previous sort. It must not drop the in-flight channel-enter
+    // chain: the channel itself is unchanged by a sort switch.
+    advanceUiEpoch();
     await scheduleUiTask((latestEpoch) => maybeRenderButton(channel, latestEpoch));
   });
 
@@ -61,7 +70,7 @@ async function maybeRenderButton(channel: Channel, latestEpoch: number) {
   playAllButton.classList.add(categoryKind.toLowerCase());
   playAllButton.classList.add(sortKind.toLowerCase());
   const href = await channel.getPlaylistPath(categoryKind, sortKind);
-  if (isStale(latestEpoch)) {
+  if (isUiStale(latestEpoch)) {
     return;
   }
   // Omit the href on resolution failures so the error button cannot navigate,
@@ -97,7 +106,7 @@ async function renderDropdown(channel: Channel, latestEpoch: number) {
     }
   }
 
-  if (isStale(latestEpoch)) {
+  if (isPageStale(latestEpoch)) {
     return;
   }
 

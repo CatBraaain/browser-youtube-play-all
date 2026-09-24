@@ -1,4 +1,4 @@
-import { expect } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 import { YoutubeDOM } from "@/entrypoints/play-all-button.content/youtube-dom";
 
@@ -7,6 +7,28 @@ import { YtChannelPage, YtSearchPage } from "../utils";
 
 const firstChannel = "@Microsoft";
 const secondChannel = "@YouTube";
+
+// Installs the extension's DOM-based fetch gate before any page script runs.
+// page.route cannot observe content-script fetches on Firefox (Juggler only
+// hooks page-context requests), so tests inject delays/aborts through the gate
+// instead. See the fetch gate in youtube-api.ts.
+function installFetchGate(page: Page, gate: { delay?: string[]; abort?: string[] }) {
+  return page.addInitScript((gate) => {
+    const install = () => {
+      document.documentElement.dataset.ytxFetchGate = JSON.stringify(gate);
+    };
+    if (document.documentElement) {
+      install();
+    } else {
+      new MutationObserver((_, observer) => {
+        if (document.documentElement) {
+          install();
+          observer.disconnect();
+        }
+      }).observe(document, { childList: true });
+    }
+  }, gate);
+}
 
 // The dropdown resolves nine playlists, including three network-backed Oldest links.
 ytxTest.setTimeout(120_000);
@@ -53,23 +75,20 @@ ytxTest("follows the selected sort", async ({ page, eventWatcher }) => {
 ytxTest(
   "keeps the last selected sort after a delayed Oldest resolution",
   async ({ page, eventWatcher }) => {
-    let releaseOldest!: () => void;
-    const oldestGate = new Promise<void>((resolve) => {
-      releaseOldest = resolve;
-    });
-    await page.route("**/playlist?list=UULF*", async (route) => {
-      await oldestGate;
-      await route.continue();
-    });
+    await installFetchGate(page, { delay: ["/playlist?list=UULF"] });
+    const releaseGate = () =>
+      page.evaluate(() => delete document.documentElement.dataset.ytxFetchGate);
 
     try {
-      const oldestRequest = page.waitForRequest((request) =>
-        request.url().includes("/playlist?list=UULF"),
-      );
       const channel = new YtChannelPage(firstChannel, page, eventWatcher);
       await channel.navigateToCategory("Videos", "hard", false);
-      await oldestRequest;
       await expect(page.locator(".play-all-btn.latest")).toBeVisible({ timeout: 30_000 });
+      // The Oldest resolution starts with Channel.load; wait until the gate holds it.
+      await expect
+        .poll(() => page.evaluate(() => document.documentElement.dataset.ytxFetchGateHeld), {
+          timeout: 30_000,
+        })
+        .toContain("/playlist?list=UULF");
 
       await channel.navigateToSort("Oldest");
       await channel.navigateToSort("Latest");
@@ -80,18 +99,14 @@ ytxTest(
       );
       await expect(page.locator(".play-all-btn.popular")).toHaveText("Play All (Popular)");
 
-      const oldestResponse = page.waitForResponse(
-        (response) =>
-          response.url().includes("/playlist?list=UULF") && response.url().includes("&index="),
-      );
-      releaseOldest();
-      await oldestResponse;
+      // Release the gate so the delayed Oldest resolution completes.
+      await releaseGate();
       // Allow the content script to consume the completed playlist request before checking the UI.
       await page.waitForTimeout(500);
       await expect(page.locator(".play-all-btn")).toHaveCount(1);
       await expect(page.locator(".play-all-btn")).toHaveText("Play All (Popular)");
     } finally {
-      releaseOldest();
+      await releaseGate();
     }
   },
 );
@@ -101,7 +116,7 @@ ytxTest(
   async ({ page, eventWatcher }) => {
     // Videos + Oldest is the only resolution backed by /playlist?list=UULF... fetches;
     // aborting them injects a resolution failure for that condition alone.
-    await page.route("**/playlist?list=UULF*", (route) => route.abort());
+    await installFetchGate(page, { abort: ["/playlist?list=UULF"] });
 
     const channel = new YtChannelPage(firstChannel, page, eventWatcher);
     await channel.navigateToCategory("Videos", "hard", false);

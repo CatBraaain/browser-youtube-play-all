@@ -2,7 +2,7 @@ import EventEmitter from "eventemitter3";
 
 import { logger } from "../../logger";
 import { Channel } from "./channel";
-import { advanceEpoch, currentEpoch, isStale } from "./ui-scheduler";
+import { advancePageEpoch, currentPageEpoch, isPageStale } from "./ui-scheduler";
 import { fetchChannelId } from "./youtube-api";
 import { YoutubeDOM } from "./youtube-dom";
 
@@ -61,18 +61,20 @@ function registerNavigationHooks() {
 }
 
 export function emitPageEnter() {
-  advanceEpoch();
+  advancePageEpoch();
   ytxEventEmitter.emit(YTX_EVENTS.PAGE_ENTER);
 }
 
 function registerChannelHooks() {
   let currentChannel: Channel | null = null;
   ytxEventEmitter.on(YTX_EVENTS.PAGE_ENTER, async () => {
-    // A fetch completing after a later navigation advances the epoch
-    // belongs to the previous page and must not emit.
-    const latestEpoch = currentEpoch();
+    // A fetch completing after a later page transition belongs to the
+    // previous page and must not emit. Sort changes are intentionally not
+    // part of this check: the channel is unchanged by a sort switch, so the
+    // chain must survive them (only page transitions advance pageEpoch).
+    const latestEpoch = currentPageEpoch();
     const channelId = await fetchChannelId(window.location.href);
-    if (isStale(latestEpoch)) {
+    if (isPageStale(latestEpoch)) {
       return;
     }
     const oldChannelId = currentChannel?.id;
