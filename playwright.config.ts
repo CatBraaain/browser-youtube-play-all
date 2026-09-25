@@ -25,6 +25,8 @@ const DesktopFirefox = {
 };
 
 export default defineConfig({
+  // Play All playlist navigation can take over 30s under load (observed 21-34s)
+  timeout: 90_000,
   retries: 1,
   workers: 2,
   fullyParallel: true,
