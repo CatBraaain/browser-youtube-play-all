@@ -90,13 +90,12 @@ ytxTest(
         })
         .toContain("/playlist?list=UULF");
 
-      await channel.navigateToSort("Oldest");
-      await channel.navigateToSort("Latest");
-      await channel.navigateToSort("Popular");
-      await expect(page.locator(YoutubeDOM.SORT_BUTTON).nth(1)).toHaveAttribute(
-        "aria-selected",
-        "true",
-      );
+      // Select each sort with its aria-selected landed: rapid clicks get
+      // coalesced by YouTube's SPA, which under load can leave the chips'
+      // selection state unset and race the assertions below.
+      await channel.navigateToSort("Oldest", true);
+      await channel.navigateToSort("Latest", true);
+      await channel.navigateToSort("Popular", true);
       await expect(page.locator(".play-all-btn.popular")).toHaveText("Play All (Popular)");
 
       // Release the gate so the delayed Oldest resolution completes.

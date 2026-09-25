@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { type Locator, type Page, expect } from "@playwright/test";
 
 import {
   type CategoryKind,
@@ -196,8 +196,17 @@ export class YtChannelPage {
     }
   }
 
-  public async navigateToSort(sort: SortKind) {
-    await this.page.locator(YoutubeDOM.SORT_BUTTON).nth(YoutubeDOM.sorts.indexOf(sort)).click();
+  public async navigateToSort(sort: SortKind, waitForSelection = false) {
+    const sortButton = this.page
+      .locator(YoutubeDOM.SORT_BUTTON)
+      .nth(YoutubeDOM.sorts.indexOf(sort));
+    await sortButton.click();
+    if (waitForSelection) {
+      // Rapid sort clicks get coalesced by YouTube's SPA into a single
+      // transition, which under load can leave the chips' aria-selected unset.
+      // Waiting for each selection to land keeps the next click from racing it.
+      await expect(sortButton).toHaveAttribute("aria-selected", "true");
+    }
   }
 
   public async getTopVideoIds(n: number = 3): Promise<string[]> {
