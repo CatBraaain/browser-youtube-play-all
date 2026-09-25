@@ -120,21 +120,27 @@ export class ChannelIdFinder {
   }
 }
 
+// Attaches the navigation-event hooks to the given page. Used by the
+// eventWatcher fixture and by tests that restart scenarios on a fresh tab.
+export async function attachEventWatcher(page: Page): Promise<EventWatcher> {
+  const eventWatcher = new EventWatcher(page);
+  for (const eventName of [
+    YTD_EVENTS.NAVIGATION_START,
+    YTD_EVENTS.NAVIGATION_END,
+    YTM_EVENTS.NAVIGATION_START,
+    YTM_EVENTS.NAVIGATION_END,
+  ]) {
+    await eventWatcher.setInitScript(eventName);
+  }
+  return eventWatcher;
+}
+
 export const ytTest = test.extend<{
   eventWatcher: EventWatcher;
   channelIdFinder: ChannelIdFinder;
 }>({
   eventWatcher: async ({ page }, use) => {
-    const eventWatcher = new EventWatcher(page);
-    for (const eventName of [
-      YTD_EVENTS.NAVIGATION_START,
-      YTD_EVENTS.NAVIGATION_END,
-      YTM_EVENTS.NAVIGATION_START,
-      YTM_EVENTS.NAVIGATION_END,
-    ]) {
-      await eventWatcher.setInitScript(eventName);
-    }
-    await use(eventWatcher);
+    await use(await attachEventWatcher(page));
   },
   channelIdFinder: async ({ page, eventWatcher }, use) => {
     const channelIdFinder = new ChannelIdFinder(page, eventWatcher);
