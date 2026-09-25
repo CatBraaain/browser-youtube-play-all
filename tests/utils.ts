@@ -131,7 +131,6 @@ export class YtVideoPage {
     const locator = this.page.locator(
       "#playlist #thumbnail[href*='/watch?'],.YtmCompactMediaItemImage[href*='/watch']",
     );
-    await locator.first().waitFor();
     return await locator.evaluateAll(
       (links, n) =>
         links
@@ -146,15 +145,17 @@ export class YtVideoPage {
     );
   }
 
-  public async getPlaylistSelectedVideoId(): Promise<string> {
+  public async getPlaylistSelectedVideoId(): Promise<string | null> {
     return await this.page
       .locator(
         "#playlist-items[selected] #thumbnail[href*='/watch?'],.ytmPlaylistPanelVideoRendererV2Selected [href*='/watch?']",
       )
-      .first()
-      .evaluate(
-        (link) =>
-          new URL(`https://www.youtube.com${link.getAttribute("href")!}`).searchParams.get("v")!,
+      .evaluateAll((links) =>
+        links.length === 0
+          ? null
+          : new URL(`https://www.youtube.com${links[0]!.getAttribute("href")!}`).searchParams.get(
+              "v",
+            ),
       );
   }
 }

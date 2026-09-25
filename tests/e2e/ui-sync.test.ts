@@ -1,8 +1,7 @@
-import { expect, type Page } from "@playwright/test";
+import { errors, expect, type Page } from "@playwright/test";
 
 import { YoutubeDOM } from "@/entrypoints/play-all-button.content/youtube-dom";
 
-<<<<<<< HEAD
 import { attachEventWatcher, ytxTest, type EventWatcher } from "../fixture";
 import { YtChannelPage, YtSearchPage } from "../utils";
 
@@ -90,6 +89,7 @@ ytxTest(
           timeout: 30_000,
         })
         .toContain("/playlist?list=UULF");
+      await expect(page.locator(".play-all-btns")).toHaveCount(0);
 
       // Select each sort with its aria-selected landed: rapid clicks get
       // coalesced by YouTube's SPA, which under load can leave the chips'
@@ -99,10 +99,9 @@ ytxTest(
       await channel.navigateToSort("Popular", true);
       await expect(page.locator(".play-all-btn.popular")).toHaveText("Play All (Popular)");
 
-      // Release the gate so the delayed Oldest resolution completes.
+      // The dropdown waits for every playlist resolution, even if one resolves empty.
       await releaseGate();
-      // Allow the content script to consume the completed playlist request before checking the UI.
-      await page.waitForTimeout(500);
+      await expect(page.locator(".play-all-btns")).toHaveCount(1, { timeout: 30_000 });
       await expect(page.locator(".play-all-btn")).toHaveCount(1);
       await expect(page.locator(".play-all-btn")).toHaveText("Play All (Popular)");
     } finally {
@@ -155,7 +154,7 @@ ytxTest(
   async ({ page }, testInfo) => {
     // The scenario depends on external YouTube state: search results sometimes
     // come back without the channel card, and no amount of waiting fixes that.
-    // Run each attempt on a fresh tab and restart from scratch until it passes.
+    // Retry only card-less results, starting each attempt on a fresh tab.
     const runScenario = async (scenarioPage: Page, scenarioWatcher: EventWatcher) => {
       const first = new YtChannelPage(firstChannel, scenarioPage, scenarioWatcher);
       await first.navigateToCategory("Videos", "hard", false);
@@ -168,8 +167,14 @@ ytxTest(
       await scenarioPage.locator("input.yt-searchbox-input").press("Enter");
       await expect(scenarioPage).toHaveURL(/\/results\?/);
       const channelButton = search.topVideoChannelThumbnailButton(secondChannel);
-      // Bail out early on a card-less result set; toPass below retries.
-      await channelButton.waitFor({ state: "visible", timeout: 20_000 });
+      try {
+        await channelButton.waitFor({ state: "visible", timeout: 20_000 });
+      } catch (error) {
+        if (error instanceof errors.TimeoutError && (await channelButton.count()) === 0) {
+          return false;
+        }
+        throw error;
+      }
       await channelButton.click();
       await expect(scenarioPage).toHaveURL(/youtube\.com\/@YouTube\/?$/i);
       const second = new YtChannelPage(secondChannel, scenarioPage, scenarioWatcher);
@@ -183,24 +188,22 @@ ytxTest(
       const dropdown = scenarioPage.locator(".play-all-btns");
       await expect(dropdown).toHaveCount(1, { timeout: 30_000 });
       await expect(dropdown.getByText("Videos (Latest)")).not.toHaveAttribute("href", firstHref!);
+      return true;
     };
 
-    try {
-      await expect(async () => {
-        const retryPage = await page.context().newPage();
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const retryPage = await page.context().newPage();
+      try {
         const retryWatcher = await attachEventWatcher(retryPage);
-        try {
-          await runScenario(retryPage, retryWatcher);
-        } finally {
-          await retryPage.close();
-        }
-      }).toPass({ timeout: 90_000 });
-    } catch {
-      testInfo.skip(
-        true,
-        "YouTube search results never included the channel card; not an extension defect",
-      );
+        if (await runScenario(retryPage, retryWatcher)) return;
+      } finally {
+        await retryPage.close();
+      }
     }
+    testInfo.skip(
+      true,
+      "YouTube search results never included the channel card; not an extension defect",
+    );
   },
 );
 

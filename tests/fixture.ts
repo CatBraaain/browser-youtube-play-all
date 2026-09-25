@@ -1,7 +1,7 @@
 import path from "node:path";
 
 import type { Page } from "@playwright/test";
-import { chromium, expect, firefox, test } from "@playwright/test";
+import { chromium, errors, expect, firefox, test } from "@playwright/test";
 import { withExtension } from "playwright-webextext";
 
 import { YTD_EVENTS, YTM_EVENTS } from "@/entrypoints/play-all-button.content/youtube-hooks";
@@ -28,9 +28,11 @@ export class EventWatcher {
   public async expect(expectation: { eventName: string; fired: boolean; timeout?: number }) {
     const { eventName, fired, timeout = 5000 } = expectation;
     if (fired) {
-      await expect(this.waitForFired(eventName, timeout)).resolves.not.toThrow();
+      await this.waitForFired(eventName, timeout);
     } else {
-      await expect(this.waitForFired(eventName, timeout)).rejects.toThrow("Timeout");
+      await expect(this.waitForFired(eventName, timeout)).rejects.toBeInstanceOf(
+        errors.TimeoutError,
+      );
     }
   }
 
@@ -149,11 +151,18 @@ export const ytTest = test.extend<{
 });
 
 export const ytxTest = ytTest.extend({
-  context: async ({ browserName }, use) => {
+  context: async (
+    { browserName, viewport, userAgent, isMobile, hasTouch, deviceScaleFactor },
+    use,
+  ) => {
+    const deviceOptions = { viewport, userAgent, isMobile, hasTouch, deviceScaleFactor };
     switch (browserName) {
       case "chromium": {
         const chromeExtensionPath = path.join(import.meta.dirname, "../dist/chrome-mv3");
         const context = await chromium.launchPersistentContext("", {
+          ...deviceOptions,
+          // Extensions only load in headed Chromium; headless drops --load-extension.
+          headless: false,
           args: [
             `--disable-extensions-except=${chromeExtensionPath}`,
             `--load-extension=${chromeExtensionPath}`,
@@ -168,6 +177,7 @@ export const ytxTest = ytTest.extend({
         const firefoxExtensionPath = path.join(import.meta.dirname, "../dist/firefox-mv2");
         const firefoxWithExt = withExtension(firefox, firefoxExtensionPath);
         const context = await firefoxWithExt.launchPersistentContext("", {
+          ...deviceOptions,
           firefoxUserPrefs: {
             "media.autoplay.blocking_policy": 2, // altearnative to --mute-audio
           },
