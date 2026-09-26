@@ -79,7 +79,13 @@ export class YtSearchPage {
             waitUntil: "domcontentloaded",
           });
         }
-        await this.page.locator("input.yt-searchbox-input").fill(searchWord);
+        // fill() fires one bulk input event, which makes YouTube auto-highlight a
+        // suggestion (aria-activedescendant) once the listbox appears; Enter then
+        // submits that suggestion instead of the typed query. Typing key-by-key
+        // leaves the listbox unhighlighted, so Enter submits the query as-is.
+        await this.page.locator("input.yt-searchbox-input").pressSequentially(searchWord, {
+          delay: 80,
+        });
         await this.page.locator("input.yt-searchbox-input").press("Enter");
         break;
       case "hard":
