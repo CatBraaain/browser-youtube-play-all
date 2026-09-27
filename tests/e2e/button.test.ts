@@ -5,7 +5,7 @@ import { YoutubeDOM } from "@/entrypoints/play-all-button.content/youtube-dom";
 import { attachEventWatcher, ytxTest, type EventWatcher } from "../fixture";
 import { YtChannelPage, YtSearchPage } from "../utils";
 
-const channel = "@Microsoft";
+const channel = "@Apple";
 const searchNavigationModes: ("soft" | "hard")[] = ["soft", "hard"];
 const channelNavigationModes: ("soft1" | "soft2" | "hard")[] = ["soft1", "soft2", "hard"];
 const categoryNavigationModes: ("soft" | "hard")[] = ["soft", "hard"];
@@ -85,7 +85,9 @@ searchNavigationModes.forEach((searchNavigationMode) => {
             const ytChannelPage = new YtChannelPage(channel, scenarioPage, scenarioWatcher);
             for (const category of YoutubeDOM.categories) {
               await ytChannelPage.navigateToCategory(category, categoryNavigationMode);
-              if (category === "Streams") continue; // TODO: temporary workaround for Youtube's bug on streams tab
+              await expect(
+                scenarioPage.locator(`.play-all-btn.${category.toLowerCase()}`),
+              ).toBeVisible({ timeout: 30_000 });
               for (const sort of YoutubeDOM.sorts) {
                 await ytChannelPage.navigateToSort(sort, true);
                 const button = scenarioPage.locator(
