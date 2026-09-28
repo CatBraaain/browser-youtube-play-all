@@ -132,17 +132,37 @@ async function fetchYtInitialData(url: string) {
   await applyFetchGate(url);
   const htmlRes = await fetch(url);
   const html = await htmlRes.text();
-  const ytInitialDataString = html.match(
-    YoutubeDOM.isMobile
-      ? /var ytInitialData\s*=\s*'([\s\S]*?)';/
-      : /var ytInitialData\s*=\s*(\{[\s\S]*?\});/,
-  )![1]!;
-  const ytInitialData = JSON.parse(
-    YoutubeDOM.isMobile
-      ? ytInitialDataString
+  const ytInitialData = parseYtInitialData(html);
+  if (ytInitialData === undefined) {
+    throw new Error(`ytInitialData not found in response for ${url}`);
+  }
+  return ytInitialData;
+}
+
+// YouTube serves the same ytInitialData JSON in two script layouts chosen per
+// session: a `var ytInitialData = …` assignment, or a dedicated
+// <script id="yt-initial-data"> element (the newer template). Mobile
+// responses additionally wrap the JSON in a single-quoted JS string with
+// \\xXX escapes. Parse both layouts so a template switch does not read as a
+// resolution failure.
+function parseYtInitialData(html: string) {
+  const elementJson = html.match(
+    /<script[^>]*\bid="yt-initial-data"[^>]*>([\s\S]*?)<\/script>/,
+  )?.[1];
+  const varJson = elementJson
+    ? undefined
+    : YoutubeDOM.isMobile
+      ? html.match(/var ytInitialData\s*=\s*'([\s\S]*?)';/)?.[1]
+      : html.match(/var ytInitialData\s*=\s*(\{[\s\S]*?\});/)?.[1];
+  const json = elementJson ?? varJson;
+  if (json === undefined) {
+    return undefined;
+  }
+  return JSON.parse(
+    !elementJson && YoutubeDOM.isMobile
+      ? json
           .replace(/\\\\\\x22/g, '\\\\\\"')
           .replace(/\\x([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
-      : ytInitialDataString,
+      : json,
   );
-  return ytInitialData;
 }
