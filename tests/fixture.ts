@@ -11,6 +11,11 @@ import { YtPage } from "./utils";
 export class EventWatcher {
   constructor(private page: Page) {}
 
+  // The navigation-end event of this watcher's page, resolved per platform.
+  public get navigationEndEvent(): string {
+    return new YtPage(this.page, this).NavigationEndEvent;
+  }
+
   public async setInitScript(eventName: string) {
     await this.page.addInitScript(
       ({ eventName, varNames }: { eventName: string; varNames: [string, string] }) => {

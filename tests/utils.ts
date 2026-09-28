@@ -9,6 +9,10 @@ import { YTD_EVENTS, YTM_EVENTS } from "@/entrypoints/play-all-button.content/yo
 
 import type { EventWatcher } from "./fixture";
 
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export class YtPage {
   constructor(
     private page: Page,
@@ -49,6 +53,28 @@ export class YtSearchPage {
           : `#channel-thumbnail:not([hidden])${channelName !== null ? `[href="/${channelName}"]` : ""}`,
       )
       .first(); // [href^="/channel/"] or [href^="link:///"]
+  }
+
+  // YouTube sometimes swallows clicks on SPA anchors: it preventDefault()s the
+  // anchor's navigation but never starts the SPA navigation (observed on Firefox
+  // right after search results render; no /youtubei/v1/browse request follows).
+  // Retry the click until the browser actually lands on the channel page.
+  public async clickChannelThumbnailButton(channelName: string | null = null): Promise<void> {
+    const button = this.topVideoChannelThumbnailButton(channelName);
+    // Search-result cards link channels either by handle (/@name) or by
+    // legacy channel id (/channel/UC...), depending on the result.
+    const channelUrl =
+      channelName !== null
+        ? new RegExp(`youtube\\.com/${escapeRegExp(channelName)}/?$`, "i")
+        : /youtube\.com\/(@|channel\/)[^/?]*\/?$/i;
+    await expect(async () => {
+      // Already landed on a previous attempt: clicking again would fail because
+      // the anchor no longer exists on the channel page.
+      if (!channelUrl.test(this.page.url())) {
+        await button.click();
+      }
+      await expect(this.page).toHaveURL(channelUrl);
+    }).toPass({ timeout: 30_000 });
   }
 
   public topVideoChannelNameButton(channelName: string | null = null): Locator {
@@ -103,7 +129,7 @@ export class YtSearchPage {
   ) {
     switch (navigation) {
       case "soft1":
-        await this.topVideoChannelThumbnailButton(channelName).click();
+        await this.clickChannelThumbnailButton(channelName);
         break;
       case "soft2":
         await this.topVideoChannelNameButton(channelName).click();

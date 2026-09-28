@@ -157,7 +157,9 @@ ytxTest(
     // Retry only card-less results, starting each attempt on a fresh tab.
     const runScenario = async (scenarioPage: Page, scenarioWatcher: EventWatcher) => {
       const first = new YtChannelPage(firstChannel, scenarioPage, scenarioWatcher);
-      await first.navigateToCategory("Videos", "hard", false);
+      // wait = true consumes the initial load's navigation-end, so the waitForFired
+      // below waits for the search transition's end instead of that stale flag.
+      await first.navigateToCategory("Videos", "hard");
       const firstHref = await scenarioPage.locator(".play-all-btn.latest").getAttribute("href");
       expect(firstHref).toBeTruthy();
 
@@ -166,6 +168,9 @@ ytxTest(
       await scenarioPage.locator("input.yt-searchbox-input").fill(secondChannel);
       await scenarioPage.locator("input.yt-searchbox-input").press("Enter");
       await expect(scenarioPage).toHaveURL(/\/results\?/);
+      // A visible card does not mean the search transition finished; YouTube can
+      // still swallow clicks until yt-navigate-finish (see YT-SPEC.md).
+      await scenarioWatcher.waitForFired(scenarioWatcher.navigationEndEvent);
       const channelButton = search.topVideoChannelThumbnailButton(secondChannel);
       try {
         await channelButton.waitFor({ state: "visible", timeout: 20_000 });
@@ -175,8 +180,7 @@ ytxTest(
         }
         throw error;
       }
-      await channelButton.click();
-      await expect(scenarioPage).toHaveURL(/youtube\.com\/@YouTube\/?$/i);
+      await search.clickChannelThumbnailButton(secondChannel);
       const second = new YtChannelPage(secondChannel, scenarioPage, scenarioWatcher);
       await second.navigateToCategory("Videos", "soft", false);
       await expect(scenarioPage).toHaveURL(/youtube\.com\/@YouTube\/videos\/?$/i);
