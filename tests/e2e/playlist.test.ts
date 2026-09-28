@@ -1,4 +1,4 @@
-import { expect } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 import { YoutubeDOM } from "@/entrypoints/play-all-button.content/youtube-dom";
 
@@ -18,55 +18,76 @@ YoutubeDOM.categories.forEach((category) => {
     ytxTest(`Playlist: ${category} - ${sort}`, async ({ page, eventWatcher }) => {
       const ytChannelPage = new YtChannelPage(channel, page, eventWatcher);
       await ytChannelPage.navigateToCategory(category, "hard");
+      await expect(page.locator(`.play-all-btn.${category.toLowerCase()}`)).toBeVisible({
+        timeout: 30_000,
+      });
+      // The sort chips' aria-selected and the button href flip as soon as the
+      // chip is clicked, but the grid keeps showing the previous sort's videos
+      // until YouTube's browse response lands. Capture the current top video
+      // so the read below can wait out that swap instead of matching the
+      // destination playlist against the previous sort's list.
+      let previousFirstId: string | undefined;
+      if (sort !== "Latest") {
+        await expect
+          .poll(async () => (previousFirstId = (await ytChannelPage.getTopVideoIds(1))[0]), {
+            timeout: 30_000,
+          })
+          .toBeTruthy();
+      }
       await ytChannelPage.navigateToSort(sort, true);
 
-      const n = sort !== "Oldest" ? checkVideoCount : 1;
-      await expect(
-        page.locator(`.play-all-btn.${category.toLowerCase()}.${sort.toLowerCase()}`),
-      ).toHaveAttribute(
+      const n = sort === "Oldest" ? 1 : checkVideoCount;
+      const button = page.locator(`.play-all-btn.${category.toLowerCase()}.${sort.toLowerCase()}`);
+      await expect(button).toHaveAttribute(
         "href",
         sort === "Oldest"
           ? /^\/watch\?v=[\w-]{11}&list=UL01234567890$/
           : new RegExp(`^/playlist\\?list=${playlistPrefixes[category][sort]}[\\w-]+&playnext=1$`),
         { timeout: 30_000 },
       );
-      const playlistUrl = await ytChannelPage.getPlayAllUrl(category, sort);
-      const playlistPage = await page.context().newPage();
-      try {
-        await playlistPage.goto(playlistUrl, { waitUntil: "domcontentloaded" });
-        const ytVideoPage = new YtVideoPage(playlistPage);
-        const oldestVideoId = new URL(playlistUrl).searchParams.get("v");
+      const expectedUrl = new URL((await button.getAttribute("href"))!, page.url());
+      let channelIds: string[] = [];
+      await expect
+        .poll(
+          async () => {
+            channelIds = await ytChannelPage.getTopVideoIds(n);
+            return channelIds[0] === previousFirstId ? [] : channelIds;
+          },
+          { timeout: 30_000 },
+        )
+        .toEqual(Array.from({ length: n }, () => expect.stringMatching(/^[\w-]{11}$/)));
 
+      let openedPage: Page | undefined;
+      page.on("popup", (popup) => {
+        openedPage = popup;
+      });
+      try {
+        await button.click();
+        await expect
+          .poll(() => new URL((openedPage ?? page).url()).searchParams.get("list"), {
+            timeout: 30_000,
+          })
+          .toBe(expectedUrl.searchParams.get("list"));
+        const playlistPage = openedPage ?? page;
+        const destinationUrl = new URL(playlistPage.url());
+        expect(destinationUrl.hostname).toMatch(/^(www|m)\.youtube\.com$/);
+        expect(destinationUrl.pathname).toMatch(/^\/(playlist|watch)$/);
+        if (sort === "Oldest") {
+          expect(destinationUrl.searchParams.get("v")).toBe(channelIds[0]);
+        }
+
+        const ytVideoPage = new YtVideoPage(playlistPage);
         await expect
           .poll(
-            async () => {
-              const [channelIds, playlistIds] = await Promise.all([
-                ytChannelPage.getTopVideoIds(n),
-                sort === "Oldest"
-                  ? ytVideoPage.getPlaylistSelectedVideoId().then((id) => [id])
-                  : ytVideoPage.getPlaylistVideoIds(n),
-              ]);
-              return {
-                channelCount: channelIds.length,
-                playlistCount: playlistIds.length,
-                idsAreValid: [...channelIds, ...playlistIds].every(
-                  (id) => typeof id === "string" && /^[\w-]{11}$/.test(id),
-                ),
-                orderMatches: playlistIds.every((id, index) => id === channelIds[index]),
-                oldestUrlMatches: sort !== "Oldest" || playlistIds[0] === oldestVideoId,
-              };
-            },
-            { timeout: 30_000 },
+            () =>
+              sort === "Oldest"
+                ? ytVideoPage.getPlaylistSelectedVideoId().then((id) => [id])
+                : ytVideoPage.getPlaylistVideoIds(n),
+            { timeout: 60_000 },
           )
-          .toEqual({
-            channelCount: n,
-            playlistCount: n,
-            idsAreValid: true,
-            orderMatches: true,
-            oldestUrlMatches: true,
-          });
+          .toEqual(channelIds);
       } finally {
-        await playlistPage.close();
+        await openedPage?.close();
       }
     });
   });

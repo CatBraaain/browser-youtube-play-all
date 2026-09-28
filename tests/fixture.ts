@@ -36,7 +36,7 @@ export class EventWatcher {
     }
   }
 
-  public async waitForFired(eventName: string, timeout: number = 10000) {
+  public async waitForFired(eventName: string, timeout: number = 30000) {
     const [flagName, _] = this.getVarNames(eventName);
     const res = await this.page.waitForFunction(
       (flagName) => (window as any)[flagName] === true,

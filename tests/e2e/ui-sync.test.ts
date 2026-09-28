@@ -188,6 +188,10 @@ ytxTest(
       const dropdown = scenarioPage.locator(".play-all-btns");
       await expect(dropdown).toHaveCount(1, { timeout: 30_000 });
       await expect(dropdown.getByText("Videos (Latest)")).not.toHaveAttribute("href", firstHref!);
+
+      await expect(button).toHaveAttribute("href", /^\/playlist\?list=UULF[\w-]+&playnext=1$/, {
+        timeout: 30_000,
+      });
       return true;
     };
 
