@@ -41,6 +41,15 @@ export class EventWatcher {
     }
   }
 
+  // Waits until the init-script flag for `eventName` is set, then resets it.
+  // Because the flag is reset only after a successful wait:
+  // - a stale, unconsumed firing makes the next waitForFired return immediately
+  //   instead of waiting for the next transition;
+  // - to wait for transition N's end event, transition N-1's end event must
+  //   have been consumed first. Helpers ensure this by waiting after every
+  //   navigation step (e.g. `YtSearchPage.search`). Navigating with
+  //   `wait = false` (`YtChannelPage.navigateToCategory`) leaves the flag set;
+  //   a later waitForFired then cannot distinguish the two transitions.
   public async waitForFired(eventName: string, timeout: number = 30000) {
     const [flagName, _] = this.getVarNames(eventName);
     const res = await this.page.waitForFunction(
