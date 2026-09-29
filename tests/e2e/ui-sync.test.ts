@@ -91,12 +91,12 @@ ytxTest(
         .toContain("/playlist?list=UULF");
       await expect(page.locator(".play-all-btns")).toHaveCount(0);
 
-      // Select each sort with its aria-selected landed: rapid clicks get
-      // coalesced by YouTube's SPA, which under load can leave the chips'
-      // selection state unset and race the assertions below.
-      await channel.navigateToSort("Oldest", true);
-      await channel.navigateToSort("Latest", true);
-      await channel.navigateToSort("Popular", true);
+      // Each sort click waits for the grid swap to settle (navigateToSort),
+      // so one transition completes before the next click and cannot race
+      // the assertions below.
+      await channel.navigateToSort("Oldest");
+      await channel.navigateToSort("Latest");
+      await channel.navigateToSort("Popular");
       await expect(page.locator(".play-all-btn.popular")).toHaveText("Play All (Popular)");
 
       // The dropdown waits for every playlist resolution, even if one resolves empty.
@@ -132,9 +132,22 @@ ytxTest(
     await expect(errorButton).toHaveText("Play All (Oldest) (error)", { timeout: 30_000 });
     await expect(errorButton).not.toHaveAttribute("href");
 
-    // Clicking the error button must not navigate.
+    // Clicking the error button once must not navigate.
+    await page.evaluate(() => {
+      (window as any).__errorButtonClicks = 0;
+      document.addEventListener(
+        "click",
+        (event) => {
+          if ((event.target as Element).closest(".play-all-btn.oldest")) {
+            (window as any).__errorButtonClicks++;
+          }
+        },
+        { capture: true },
+      );
+    });
     const urlBeforeClick = page.url();
     await errorButton.click();
+    expect(await page.evaluate(() => (window as any).__errorButtonClicks)).toBe(1);
     await expect(page).toHaveURL(urlBeforeClick);
 
     // The failure does not propagate to other conditions: Popular keeps its normal button.

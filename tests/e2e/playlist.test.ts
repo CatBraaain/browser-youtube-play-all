@@ -34,7 +34,7 @@ YoutubeDOM.categories.forEach((category) => {
           })
           .toBeTruthy();
       }
-      await ytChannelPage.navigateToSort(sort, true);
+      await ytChannelPage.navigateToSort(sort);
 
       const n = sort === "Oldest" ? 1 : checkVideoCount;
       const button = page.locator(`.play-all-btn.${category.toLowerCase()}.${sort.toLowerCase()}`);

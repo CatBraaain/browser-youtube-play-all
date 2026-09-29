@@ -33,3 +33,20 @@ extension maps them in `src/entrypoints/play-all-button.content/youtube-hooks.ts
 | ------- | --------------------- | -------------------- |
 | Desktop | `yt-navigate-start`   | `yt-navigate-finish` |
 | Mobile  | `state-navigatestart` | `state-navigateend`  |
+
+## Sort changes are not navigations
+
+Clicking a sort chip (Latest / Popular / Oldest) does not go through the SPA
+router. No `yt-navigate-start`/`yt-navigate-finish` (desktop) or
+`state-navigatestart`/`state-navigateend` (mobile) fires, and the URL keeps its
+current query. The page refreshes in place instead:
+
+| Step | What happens                                                                                                                                                                                                                                                     |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | The chip's `aria-selected` flips within ~100 ms (an already-selected chip can flip off and back on, on mobile)                                                                                                                                                   |
+| 2    | The browse response lands a few hundred ms later and the page re-renders: the video grid swaps to the new sort's videos by DOM replacement, and on desktop the chip bar is rebuilt in the same pass, detaching nodes anchored inside it — including extension UI |
+| 3    | Re-clicking the already-selected chip still swaps the grid; it is not a no-op                                                                                                                                                                                    |
+
+Observed 2026-09-29 with muted Chromium probes on desktop and mobile. An
+element resolved before step 2 can be detached mid-interaction; the test-side
+sync rules for this live in `AGENTS.md`.

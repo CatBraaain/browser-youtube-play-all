@@ -13,6 +13,10 @@ function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// Links that appear in channel video grids across categories and platforms.
+const VIDEO_GRID = "ytd-browse[role='main'] #primary #contents,ytm-browse .modern-tabs";
+const VIDEO_LINKS = 'a[href*="/watch?"],a[href*="/shorts/"],a[href*="/live/"]';
+
 export class YtPage {
   constructor(
     private page: Page,
@@ -232,17 +236,86 @@ export class YtChannelPage {
     }
   }
 
-  public async navigateToSort(sort: SortKind, waitForSelection = false) {
+  // A sort click is not a SPA navigation: no navigation-end fires and the URL
+  // stays unchanged, so there is no event to wait for (see YT-SPEC.md). The
+  // observable end of the transition is the video grid swapping to the new
+  // sort's videos, which on desktop coincides with the chip-bar rebuild that
+  // detaches nodes anchored inside it. Waiting for that swap keeps callers
+  // from interacting with nodes resolved before the rebuild.
+  public async navigateToSort(sort: SortKind) {
     const sortButton = this.page
       .locator(YoutubeDOM.SORT_BUTTON)
       .nth(YoutubeDOM.sorts.indexOf(sort));
+    await this.armGridSwapWatch();
     await sortButton.click();
-    if (waitForSelection) {
-      // Rapid sort clicks get coalesced by YouTube's SPA into a single
-      // transition, which under load can leave the chips' aria-selected unset.
-      // Waiting for each selection to land keeps the next click from racing it.
-      await expect(sortButton).toHaveAttribute("aria-selected", "true");
-    }
+    await this.waitForGridSwap();
+  }
+
+  // Snapshot the first video node before the click; an unrelated link insertion
+  // must not count as the new sort's grid. Re-clicking the selected chip also
+  // replaces that node, even if its href remains the same (YT-SPEC.md).
+  private async armGridSwapWatch() {
+    await this.page.evaluate(
+      ({ grid, links }) => {
+        const firstVideo = Array.from(document.querySelectorAll(grid))
+          .map((root) => root.querySelector(links))
+          .find((link) => link !== null);
+        if (!firstVideo) throw new Error("Cannot observe the channel video grid before sorting");
+
+        const w = window as any;
+        if (w.__gridSwapWatch) {
+          w.__gridSwapWatch.previousFirstVideo = firstVideo;
+          w.__gridSwapWatch.lastMutation = performance.now();
+          w.__gridSwapWatch.sawMutation = false;
+          return;
+        }
+        const state = {
+          previousFirstVideo: firstVideo,
+          lastMutation: performance.now(),
+          sawMutation: false,
+        };
+        w.__gridSwapWatch = state;
+        const isGridRecord = (record: MutationRecord) => {
+          const changed = [...record.addedNodes, ...record.removedNodes].filter(
+            (node): node is Element => node instanceof Element,
+          );
+          const touchesGrid =
+            (record.target instanceof Element && record.target.closest(grid) !== null) ||
+            changed.some((node) => node.matches(grid) || node.querySelector(grid) !== null);
+          return (
+            touchesGrid &&
+            changed.some((node) => node.matches(links) || node.querySelector(links) !== null)
+          );
+        };
+        new MutationObserver((records) => {
+          if (records.some(isGridRecord)) {
+            state.sawMutation = true;
+            state.lastMutation = performance.now();
+          }
+        }).observe(document, { subtree: true, childList: true });
+      },
+      { grid: VIDEO_GRID, links: VIDEO_LINKS },
+    );
+  }
+
+  private async waitForGridSwap(quietMs = 800) {
+    await this.page.waitForFunction(
+      ({ grid, links, quietMs }) => {
+        const state = (window as any).__gridSwapWatch;
+        const currentFirstVideo = Array.from(document.querySelectorAll(grid))
+          .map((root) => root.querySelector(links))
+          .find((link) => link !== null);
+        return (
+          state.sawMutation &&
+          !state.previousFirstVideo.isConnected &&
+          currentFirstVideo !== undefined &&
+          currentFirstVideo !== state.previousFirstVideo &&
+          performance.now() - state.lastMutation >= quietMs
+        );
+      },
+      { grid: VIDEO_GRID, links: VIDEO_LINKS, quietMs },
+      { timeout: 30_000 },
+    );
   }
 
   public async getTopVideoIds(n: number = 3): Promise<string[]> {

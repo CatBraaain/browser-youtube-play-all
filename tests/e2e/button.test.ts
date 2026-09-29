@@ -35,7 +35,9 @@ searchNavigationModes.forEach((searchNavigationMode) => {
             channelNavigationMode === "soft2" && isMobile,
             "soft navigation via channel name is not supported on mobile",
           );
-          ytxTest.setTimeout(40_000);
+          // Each sort click waits out the grid swap (navigateToSort), which adds
+          // ~2 s per sort x 9 sorts; Firefox journeys run close to this budget.
+          ytxTest.setTimeout(150_000);
 
           // Only an absent search-result card is external nondeterminism.
           const searchDeadline = Date.now() + 45_000;
@@ -89,7 +91,7 @@ searchNavigationModes.forEach((searchNavigationMode) => {
                 scenarioPage.locator(`.play-all-btn.${category.toLowerCase()}`),
               ).toBeVisible({ timeout: 30_000 });
               for (const sort of YoutubeDOM.sorts) {
-                await ytChannelPage.navigateToSort(sort, true);
+                await ytChannelPage.navigateToSort(sort);
                 const button = scenarioPage.locator(
                   `.play-all-btn.${category.toLowerCase()}.${sort.toLowerCase()}`,
                 );
