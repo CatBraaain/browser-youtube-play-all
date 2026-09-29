@@ -93,6 +93,16 @@ export class YtSearchPage {
     }
   }
 
+  // Typing key-by-key leaves the search listbox unhighlighted. fill() fires one
+  // bulk input event, which makes YouTube auto-highlight a suggestion
+  // (aria-activedescendant) once the listbox appears; Enter then submits that
+  // suggestion instead of the typed query.
+  public async submitQuery(searchWord: string): Promise<void> {
+    const searchBox = this.page.locator("input.yt-searchbox-input");
+    await searchBox.pressSequentially(searchWord, { delay: 80 });
+    await searchBox.press("Enter");
+  }
+
   public async search(searchWord: string, navigation: "soft" | "hard"): Promise<void> {
     switch (navigation) {
       case "soft":
@@ -105,14 +115,7 @@ export class YtSearchPage {
             waitUntil: "domcontentloaded",
           });
         }
-        // fill() fires one bulk input event, which makes YouTube auto-highlight a
-        // suggestion (aria-activedescendant) once the listbox appears; Enter then
-        // submits that suggestion instead of the typed query. Typing key-by-key
-        // leaves the listbox unhighlighted, so Enter submits the query as-is.
-        await this.page.locator("input.yt-searchbox-input").pressSequentially(searchWord, {
-          delay: 80,
-        });
-        await this.page.locator("input.yt-searchbox-input").press("Enter");
+        await this.submitQuery(searchWord);
         break;
       case "hard":
         await this.page.goto(`https://www.youtube.com/results?search_query=${searchWord}`, {

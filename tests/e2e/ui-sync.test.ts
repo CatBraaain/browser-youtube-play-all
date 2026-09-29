@@ -165,8 +165,7 @@ ytxTest(
 
       const search = new YtSearchPage(scenarioPage, scenarioWatcher);
       await search.openSearchForm();
-      await scenarioPage.locator("input.yt-searchbox-input").fill(secondChannel);
-      await scenarioPage.locator("input.yt-searchbox-input").press("Enter");
+      await search.submitQuery(secondChannel);
       await expect(scenarioPage).toHaveURL(/\/results\?/);
       // A visible card does not mean the search transition finished; YouTube can
       // still swallow clicks until yt-navigate-finish (see YT-SPEC.md).
@@ -180,7 +179,9 @@ ytxTest(
         }
         throw error;
       }
-      await search.clickChannelThumbnailButton(secondChannel);
+      // soft1 also consumes the channel transition's navigation-end; the tab
+      // click below must run outside the swallowed-click window (YT-SPEC.md).
+      await search.navigateToChannel(secondChannel, "soft1");
       const second = new YtChannelPage(secondChannel, scenarioPage, scenarioWatcher);
       await second.navigateToCategory("Videos", "soft", false);
       await expect(scenarioPage).toHaveURL(/youtube\.com\/@YouTube\/videos\/?$/i);
