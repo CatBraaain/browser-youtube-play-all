@@ -158,7 +158,7 @@ export class YtSearchPage {
     return this.page
       .locator(
         "#channel-info #channel-name" +
-          (channelName !== null ? `:has([href*="/${channelName}"])` : ""),
+          (channelName !== null ? `:has([href="/${channelName}"])` : ""),
       )
       .first();
   }
