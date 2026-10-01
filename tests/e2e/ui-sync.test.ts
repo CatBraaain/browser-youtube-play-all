@@ -170,19 +170,22 @@ ytxTest(
     // Retry only card-less results, starting each attempt on a fresh tab.
     const runScenario = async (scenarioPage: Page, scenarioWatcher: EventWatcher) => {
       const first = new YtChannelPage(firstChannel, scenarioPage, scenarioWatcher);
-      // wait = true consumes the initial load's navigation-end, so the waitForFired
-      // below waits for the search transition's end instead of that stale flag.
+      // wait = true completes the initial load's route transition (scoped
+      // navigation wait), so the UI below observes a settled route.
       await first.navigateToCategory("Videos", "hard");
       const firstHref = await scenarioPage.locator(".play-all-btn.latest").getAttribute("href");
       expect(firstHref).toBeTruthy();
 
       const search = new YtSearchPage(scenarioPage, scenarioWatcher);
       await search.openSearchForm();
+      // Arm the baseline before submitting so only the search transition's
+      // navigation-end satisfies the wait below, not an earlier firing.
+      const searchSince = await scenarioWatcher.captureNavigationBaseline();
       await search.submitQuery(secondChannel);
       await expect(scenarioPage).toHaveURL(/\/results\?/);
       // A visible card does not mean the search transition finished; YouTube can
       // still swallow clicks until yt-navigate-finish (see YT-SPEC.md).
-      await scenarioWatcher.waitForFired(scenarioWatcher.navigationEndEvent);
+      await scenarioWatcher.waitForNavigationEnd({ since: searchSince });
       const channelButton = search.topVideoChannelThumbnailButton(secondChannel);
       try {
         await channelButton.waitFor({ state: "visible", timeout: 20_000 });
@@ -192,8 +195,8 @@ ytxTest(
         }
         throw error;
       }
-      // soft1 also consumes the channel transition's navigation-end; the tab
-      // click below must run outside the swallowed-click window (YT-SPEC.md).
+      // soft1 also completes the channel transition's navigation-end wait; the
+      // tab click below must run outside the swallowed-click window (YT-SPEC.md).
       await search.navigateToChannel(secondChannel, "soft1");
       const second = new YtChannelPage(secondChannel, scenarioPage, scenarioWatcher);
       await second.navigateToCategory("Videos", "soft", false);
