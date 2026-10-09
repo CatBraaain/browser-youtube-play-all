@@ -1,0 +1,3 @@
+# The spec's test-case tables are hand-aligned; keep prettier off them.
+SPEC.md
+SPEC.ja.md

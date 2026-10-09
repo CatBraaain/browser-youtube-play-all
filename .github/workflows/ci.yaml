@@ -18,3 +18,11 @@ jobs:
       - run: bun run setup
       - run: bun run check
       - run: bun run test
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 30

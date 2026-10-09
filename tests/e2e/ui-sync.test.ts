@@ -104,6 +104,10 @@ ytxTest(
       await expect(page.locator(".play-all-btns")).toHaveCount(1, { timeout: 30_000 });
       await expect(page.locator(".play-all-btn")).toHaveCount(1);
       await expect(page.locator(".play-all-btn")).toHaveText("Play All (Popular)");
+      await expect(page.locator(YoutubeDOM.SORT_BUTTON).nth(1)).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
     } finally {
       await releaseGate();
     }
@@ -149,6 +153,10 @@ ytxTest(
     await errorButton.click();
     expect(await page.evaluate(() => (window as any).__errorButtonClicks)).toBe(1);
     await expect(page).toHaveURL(urlBeforeClick);
+    await expect(page.locator(YoutubeDOM.SORT_BUTTON).nth(2)).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
 
     // The failure does not propagate to other conditions: Popular keeps its normal button.
     await channel.navigateToSort("Popular");
@@ -202,7 +210,11 @@ ytxTest(
       await second.navigateToCategory("Videos", "soft", false);
       await expect(scenarioPage).toHaveURL(/youtube\.com\/@YouTube\/videos\/?$/i);
 
-      const button = scenarioPage.locator(".play-all-btn");
+      const button = scenarioPage.locator(".play-all-btn.videos.latest");
+      await expect(scenarioPage.locator(YoutubeDOM.SORT_BUTTON).first()).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
       await expect(button).toHaveCount(1);
       await expect(button).toHaveText("Play All (Latest)");
       await expect(button).not.toHaveAttribute("href", firstHref!);

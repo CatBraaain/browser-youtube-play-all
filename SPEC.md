@@ -28,11 +28,11 @@
 
 Each case below applies to every category C ∈ {Videos, Shorts, Streams}, covering all nine combinations.
 
-| Condition                                | Operation                     | Expected result                                                                                                                                    |
-| ---------------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A channel's C page with Latest selected  | Activate "Play All (Latest)"  | The first three videos in the playlist panel at the destination match the first three videos on the channel's C / Latest page, in the same order.  |
-| A channel's C page with Popular selected | Activate "Play All (Popular)" | The first three videos in the playlist panel at the destination match the first three videos on the channel's C / Popular page, in the same order. |
-| A channel's C page with Oldest selected  | Activate "Play All (Oldest)"  | The selected video in the playlist panel at the destination matches the first video on the channel's C / Oldest page.                              |
+| Condition                                | Operation                     | Expected result                                                                                                                                                                                                                                                                                                          |
+| ---------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A channel's C page with Latest selected  | Activate "Play All (Latest)"  | The first three playable videos in the playlist panel at the destination match the first three videos on the channel's C / Latest page, in the same order. Panel rows that YouTube itself marks as unplayable, such as private videos, are excluded from this comparison; rows without that marking are never excluded.  |
+| A channel's C page with Popular selected | Activate "Play All (Popular)" | The first three playable videos in the playlist panel at the destination match the first three videos on the channel's C / Popular page, in the same order. Panel rows that YouTube itself marks as unplayable, such as private videos, are excluded from this comparison; rows without that marking are never excluded. |
+| A channel's C page with Oldest selected  | Activate "Play All (Oldest)"  | The selected video in the playlist panel at the destination matches the first video on the channel's C / Oldest page.                                                                                                                                                                                                    |
 
 ## Oldest playlist
 
@@ -47,3 +47,24 @@ Each case below applies to every category C ∈ {Videos, Shorts, Streams}, cover
 | Oldest resolution failure      | Videos / Oldest alone cannot be resolved | Select Oldest                     | The button shows "Play All (Oldest) (error)" instead of a working playlist link.                               |
 | Error button does not navigate | "Play All (Oldest) (error)" is shown     | Activate the button               | The viewer stays on the same page.                                                                             |
 | Other sorts stay usable        | Videos / Oldest alone cannot be resolved | Select another sort from the menu | Other available menu choices remain usable, and selecting Popular shows a working "Play All (Popular)" button. |
+
+## Review
+
+E2E tests split into coverage tests and review tests. Review tests are tagged `@review` in their title and live in `tests/e2e/review.test.ts`; coverage tests carry no `@review` tag. Recordings and review material come from Playwright's built-in trace and HTML report, not from a separate capture pipeline.
+
+A review unit is a `test.step()` step named as an operation, pairing one intention with one confirmation, and its assertions are ordinary `expect()`. Review journeys interact like a person: typed text uses `pressSequentially`, and clicks use `click({ steps: 15 })`.
+
+| Test name | Project |
+| --- | --- |
+| `Review: desktop buttons @review` | `chrome-desktop-e2e` |
+| `Review: desktop playlists @review` | `chrome-desktop-e2e` |
+| `Review: mobile buttons @review` | `chrome-mobile-e2e` |
+| `Review: mobile playlists @review` | `chrome-mobile-e2e` |
+
+Review uses Chrome desktop and Chrome mobile. Mobile retains the normal project's Pixel 5 portrait viewport.
+
+### Running and viewing a review
+
+`bun run review:test` runs only the `@review` tests with tracing on, one worker, on Chrome desktop and Chrome mobile. Coverage runs (`bun run test`) neither execute review tests nor keep their traces, and failed attempts keep their traces in every run (`trace: "retain-on-failure"`).
+
+Open `bun run review:open` (the Playwright HTML report) after a review run, and filter it to the review tests with the search word `@review`: `http://localhost:9323/#?q=%40review`. Opening a test shows its steps and its trace; the trace viewer plays the journey and shows the page state at every step. The owner judges the observed behavior from the trace and report; assertion status stays with the runner's pass/fail, not with how the recording looks.

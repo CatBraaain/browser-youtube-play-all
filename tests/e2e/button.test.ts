@@ -2,7 +2,7 @@ import { errors, expect, type Page } from "@playwright/test";
 
 import { YoutubeDOM } from "@/entrypoints/play-all-button.content/youtube-dom";
 
-import { attachEventWatcher, ytxTest, type EventWatcher } from "../fixture";
+import { attachEventWatcher, JOURNEY_TAG, ytxTest, type EventWatcher } from "../fixture";
 import { YtChannelPage, YtSearchPage } from "../utils";
 
 const channel = "@Apple";
@@ -29,7 +29,7 @@ searchNavigationModes.forEach((searchNavigationMode) => {
       if (isSoftHardMixed) return;
 
       ytxTest(
-        `Button: ${channelNavigationMode} - ${categoryNavigationMode} nav`,
+        `Button: ${channelNavigationMode} - ${categoryNavigationMode} nav ${JOURNEY_TAG}`,
         async ({ page, isMobile }, testInfo) => {
           ytxTest.skip(
             channelNavigationMode === "soft2" && isMobile,
@@ -78,7 +78,6 @@ searchNavigationModes.forEach((searchNavigationMode) => {
               }
               await ytSearchPage.navigateToChannel(channel, channelNavigationMode);
               nav = { page: tab, watcher };
-            const scenarioPage = nav.page;
             }
             const scenarioPage = nav.page;
             const scenarioWatcher = nav.watcher;
@@ -103,6 +102,35 @@ searchNavigationModes.forEach((searchNavigationMode) => {
                       );
                 await expect(button).toHaveAttribute("href", expectedHref, { timeout: 30_000 });
                 await expect(button).not.toContainText("(error)");
+              }
+              if (category === "Shorts") {
+                const selectedButton = scenarioPage.locator(".play-all-btn.shorts.oldest");
+                await expect(selectedButton).toBeVisible({ timeout: 30_000 });
+                const oldestVideoId = new URL(
+                  (await selectedButton.getAttribute("href"))!,
+                  scenarioPage.url(),
+                ).searchParams.get("v");
+                await expect
+                  .poll(() => ytChannelPage.getTopVideoIds(1), { timeout: 30_000 })
+                  .toEqual([oldestVideoId]);
+                const videoList = isMobile
+                  ? "ytm-browse .modern-tabs"
+                  : "ytd-browse[role='main'] #primary #contents";
+                await expect(
+                  scenarioPage
+                    .locator(`${videoList} a[href='/shorts/${oldestVideoId}']:visible`)
+                    .first(),
+                ).toBeVisible({ timeout: 30_000 });
+                await expect(
+                  scenarioPage.locator(`${videoList} [class*='skeleton' i]:visible`),
+                ).toHaveCount(0, { timeout: 30_000 });
+                await expect(scenarioPage.locator(YoutubeDOM.SORT_BUTTON).nth(2)).toHaveAttribute(
+                  "aria-selected",
+                  "true",
+                );
+                await expect(scenarioPage.locator(".play-all-btn")).toHaveCount(1);
+                await expect(selectedButton).toHaveText("Play All (Oldest)");
+                await expect(selectedButton).toBeVisible();
               }
             }
           } finally {

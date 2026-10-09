@@ -278,6 +278,9 @@ export async function attachEventWatcher(page: Page): Promise<EventWatcher> {
   return eventWatcher;
 }
 
+// Button journeys retain their tag for Playwright filtering.
+export const JOURNEY_TAG = "@journey";
+
 export const ytTest = test.extend<{
   eventWatcher: EventWatcher;
   channelIdFinder: ChannelIdFinder;
@@ -291,12 +294,22 @@ export const ytTest = test.extend<{
   },
 });
 
+// Recordings and review material come from the built-in trace fixture
+// (config `use.trace`): coverage runs retain failed attempts' traces only,
+// review runs pass --trace on. No custom tracing fixture here: a manual
+// context.tracing.start would collide with the built-in one.
 export const ytxTest = ytTest.extend({
   context: async (
     { browserName, viewport, userAgent, isMobile, hasTouch, deviceScaleFactor },
     use,
   ) => {
-    const deviceOptions = { viewport, userAgent, isMobile, hasTouch, deviceScaleFactor };
+    const deviceOptions = {
+      viewport,
+      userAgent,
+      isMobile,
+      hasTouch,
+      deviceScaleFactor,
+    };
     switch (browserName) {
       case "chromium": {
         const chromeExtensionPath = path.join(import.meta.dirname, "../dist/chrome-mv3");

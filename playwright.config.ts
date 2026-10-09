@@ -30,6 +30,10 @@ export default defineConfig({
   retries: 1,
   workers: 2,
   fullyParallel: true,
+  // Recordings and review material come from the built-in trace: review tests
+  // run with --trace on, coverage runs keep failed attempts' traces only.
+  use: { trace: "retain-on-failure" },
+  reporter: [["list"], ["html", { open: "never" }]],
   projects: [
     ...[DesktopChrome, MobileChrome, DesktopFirefox].map(({ name, device }) => ({
       name: `${name}-spec`,

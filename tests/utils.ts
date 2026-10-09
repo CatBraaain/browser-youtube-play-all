@@ -145,13 +145,19 @@ export class YtSearchPage {
   // Retry the click until the browser actually lands on the channel page, but
   // never re-click once a transition has started (its navigation-start fires
   // or the URL begins to move): then wait for the landing instead.
-  public async clickChannelThumbnailButton(channelName: string | null = null): Promise<void> {
+  public async clickChannelThumbnailButton(
+    channelName: string | null = null,
+    options: { click?: (locator: Locator) => Promise<void> } = {},
+  ): Promise<void> {
+    const since = await this.eventWatcher.captureNavigationBaseline(this.ytPage.NavigationEndEvent);
     const button = this.topVideoChannelThumbnailButton(channelName);
     const channelUrl =
       channelName !== null
         ? new RegExp(`youtube\\.com/${escapeRegExp(channelName)}/?$`, "i")
         : /youtube\.com\/(@|channel\/)[^/?]*\/?$/i;
-    await this.clickUntilLanded(button, channelUrl);
+    await this.clickUntilLanded(button, channelUrl, options);
+    if (options.click)
+      await this.eventWatcher.waitForNavigationEnd({ since, expectedUrl: channelUrl });
   }
 
   public topVideoChannelNameButton(channelName: string | null = null): Locator {
@@ -176,7 +182,7 @@ export class YtSearchPage {
   // suggestion instead of the typed query.
   public async submitQuery(searchWord: string): Promise<void> {
     const searchBox = this.page.locator("input.yt-searchbox-input");
-    await searchBox.pressSequentially(searchWord, { delay: 80 });
+    await searchBox.pressSequentially(searchWord, { delay: 120 });
     await searchBox.press("Enter");
   }
 
@@ -268,14 +274,19 @@ export class YtSearchPage {
   // start signal appears (navigation-start event, URL movement, or a document
   // replacement) the anchor is never clicked again — the wait for the landing
   // takes over, so a slow in-flight transition is never re-clicked.
-  private async clickUntilLanded(button: Locator, expectedUrl: RegExp): Promise<void> {
+  private async clickUntilLanded(
+    button: Locator,
+    expectedUrl: RegExp,
+    options: { click?: (locator: Locator) => Promise<void> } = {},
+  ): Promise<void> {
     const since = await this.eventWatcher.captureNavigationBaseline(
       this.ytPage.NavigationStartEvent,
     );
     for (let attempt = 0; attempt < 6; attempt++) {
       if (expectedUrl.test(this.page.url())) return;
       const urlBefore = this.page.url();
-      await button.click();
+      if (options.click) await options.click(button);
+      else await button.click();
       if (await this.waitForTransitionStart(since, urlBefore, SWALLOWED_CLICK_START_TIMEOUT_MS)) {
         await expect(this.page).toHaveURL(expectedUrl, { timeout: 30_000 });
         return;
@@ -306,21 +317,37 @@ export class YtVideoPage {
     return this.page.locator("#upload-info [href]").first();
   }
 
-  public async getPlaylistVideoIds(n: number = 3): Promise<string[]> {
+  public async getPlaylistVideoIds(n: number = 3, exclude: string[] = []): Promise<string[]> {
     const locator = this.page.locator(
       "#playlist #thumbnail[href*='/watch?'],.YtmCompactMediaItemImage[href*='/watch']",
     );
     return await locator.evaluateAll(
-      (links, n) =>
-        links
-          .slice(0, n)
-          .map(
-            (link) =>
-              new URL(`https://www.youtube.com${link.getAttribute("href")!}`).searchParams.get(
-                "v",
-              )!,
-          ),
-      n,
+      (
+        links,
+        {
+          n,
+          exclude,
+        }: {
+          n: number;
+          exclude: string[];
+        },
+      ) => {
+        // Rows YouTube itself marks unplayable (see the review tests) are
+        // skipped before the first-n cut; with an empty exclusion list this
+        // is identical to slicing the first n links.
+        const excluded = new Set(exclude);
+        const picked: string[] = [];
+        for (const link of links) {
+          if (picked.length >= n) break;
+          const id = new URL(
+            `https://www.youtube.com${link.getAttribute("href")!}`,
+          ).searchParams.get("v")!;
+          if (excluded.has(id)) continue;
+          picked.push(id);
+        }
+        return picked;
+      },
+      { n, exclude },
     );
   }
 
@@ -354,6 +381,7 @@ export class YtChannelPage {
     category: CategoryKind,
     navigation: "soft" | "hard",
     wait = true,
+    options: { click?: (locator: Locator) => Promise<void> } = {},
   ) {
     // Match by path so the pattern holds on www and m hosts alike. Channel
     // tabs expose no href (YT-SPEC.md); their identity is the endpoint URL in
@@ -387,7 +415,7 @@ export class YtChannelPage {
       }
       return;
     } else {
-      await this.clickCategoryTab(category, expectedUrl);
+      await this.clickCategoryTab(category, expectedUrl, options.click);
     }
     if (wait) {
       await this.eventWatcher.waitForNavigationEnd({ since, expectedUrl });
@@ -398,7 +426,11 @@ export class YtChannelPage {
   // href (YT-SPEC.md); their identity is the endpoint URL in the page's tab
   // data model (see resolveCategoryTabIndex). Resolve the target tab from
   // that model and click it directly — never walk arbitrary candidate tabs.
-  private async clickCategoryTab(category: CategoryKind, expectedUrl: RegExp): Promise<void> {
+  private async clickCategoryTab(
+    category: CategoryKind,
+    expectedUrl: RegExp,
+    click?: (locator: Locator) => Promise<void>,
+  ): Promise<void> {
     const tabIndex = await this.resolveCategoryTabIndex(expectedUrl);
     const tabs = this.page.locator("yt-tab-shape");
     for (let attempt = 0; ; attempt++) {
@@ -406,7 +438,8 @@ export class YtChannelPage {
         this.ytPage.NavigationStartEvent,
       );
       const urlBefore = this.page.url();
-      await tabs.nth(tabIndex).click({ timeout: 5_000 });
+      if (click) await click(tabs.nth(tabIndex));
+      else await tabs.nth(tabIndex).click({ timeout: 5_000 });
       // Retry only a provably swallowed click: no navigation-start, no URL
       // movement, no document replacement within the start window. A slow
       // transition that did start is never re-clicked.
@@ -525,7 +558,10 @@ export class YtChannelPage {
   // The response is observed with standard Playwright network events, so the
   // gate holds regardless of render/response ordering (the mobile interleave
   // question in YT-SPEC.md): identity and applied content, not timestamps.
-  public async navigateToSort(sort: SortKind, options: { timeout?: number } = {}) {
+  public async navigateToSort(
+    sort: SortKind,
+    options: { timeout?: number; click?: (locator: Locator) => Promise<void> } = {},
+  ) {
     const { timeout = 30_000 } = options;
     // One overall budget: every stage below derives its own deadline from the
     // same timeout, so the whole operation is bounded by it rather than by
@@ -578,7 +614,9 @@ export class YtChannelPage {
       // Armed before the click so the click's own response is never missed.
       responseTimer = setTimeout(() => resolveResponse(null), remaining());
       this.page.on("response", responseListener);
-      await this.page.locator(YoutubeDOM.SORT_BUTTON).nth(index).click({ timeout: remaining() });
+      if (options.click) await options.click(this.page.locator(YoutubeDOM.SORT_BUTTON).nth(index));
+      else
+        await this.page.locator(YoutubeDOM.SORT_BUTTON).nth(index).click({ timeout: remaining() });
       const response = await responsePromise;
       if (response === null) {
         throw new errors.TimeoutError(
@@ -746,6 +784,24 @@ export class YtChannelPage {
           return [...new Set(videoIds)].slice(0, n);
         }, n);
     }
+  }
+
+  /** Visible title texts of the grid's first n videos (test aid). */
+  public async getTopVideoTitles(n: number = 3): Promise<string[]> {
+    return await this.page
+      .locator(
+        "ytd-browse[role='main'] #primary #contents > ytd-rich-item-renderer,ytm-browse .modern-tabs ytm-video-with-context-renderer",
+      )
+      .evaluateAll((rows, n) => {
+        const titles: string[] = [];
+        for (const row of rows) {
+          const heading = row.querySelector("h3, [role='heading']");
+          const title = (heading?.textContent ?? "").trim();
+          if (title) titles.push(title);
+          if (titles.length === n) break;
+        }
+        return titles;
+      }, n);
   }
 
   public async getPlayAllUrl(category: CategoryKind, sort: SortKind): Promise<string> {
