@@ -65,8 +65,8 @@ E2Eテストは、網羅性を確認するテストとレビューのための�
 
 ### レビューの実行と閲覧
 
-`bun run test` は網羅性とレビューの両方のテストを実行する。`bun run review:test` は `tests/review/` のテストだけをワーカー1でChrome desktopとChrome mobileに実行する部分実行である。どちらの実行でも、レビューのtraceは成功試行を含めて常に保持する。レビュー以外のテストは失敗試行のtraceだけを保持する (`trace: "retain-on-failure"`)。
+`bun run test` は網羅性とレビューの両方のテストを実行する。`bun run test:review` は `tests/review/` のテストだけをワーカー1でChrome desktopとChrome mobileに実行する部分実行である。どちらの実行でも、レビューのtraceは成功試行を含めて常に保持する。レビュー以外のテストは失敗試行のtraceだけを保持する (`trace: "retain-on-failure"`)。
 
-両方の実行結果は同じPlaywright HTML reportに保存され、直近の実行結果で上書きされる。どちらの実行後も再テストせずに閲覧でき、閲覧のための `bun run review:test` は任意である。
+両方の実行結果は同じPlaywright HTML reportに保存され、直近の実行結果で上書きされる。どちらの実行後も再テストせずに閲覧でき、閲覧のための `bun run test:review` は任意である。
 
-`bun run review:open` は `--port 0` でreportサーバーを起動する。起動時に表示されたURLを開き、report内でテスト名からレビューテストを選ぶ。テストを開くとステップとtraceが表示され、traceビューアで操作の再生と各ステップ時点のページ状態を確認できる。Ctrl+Cでサーバーを停止する。所有者はtraceとreportで観測された振る舞いを判断する。アサーションの合否は録画の見た目ではなく、ランナーのpass/failに従う。
+`bun run review` は `--port 0` でreportサーバーを起動する。起動時に表示されたURLを開き、report内でテスト名からレビューテストを選ぶ。テストを開くとステップとtraceが表示され、traceビューアで操作の再生と各ステップ時点のページ状態を確認できる。Ctrl+Cでサーバーを停止する。所有者はtraceとreportで観測された振る舞いを判断する。アサーションの合否は録画の見た目ではなく、ランナーのpass/failに従う。

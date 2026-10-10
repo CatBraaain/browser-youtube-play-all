@@ -65,8 +65,8 @@ Review uses Chrome desktop and Chrome mobile. Mobile retains the normal project'
 
 ### Running and viewing a review
 
-`bun run test` runs both coverage and review tests. `bun run review:test` is a partial run of only the tests in `tests/review/`, with one worker, on Chrome desktop and Chrome mobile. In both runs, review traces are always retained, including successful attempts; non-review tests retain traces only for failed attempts (`trace: "retain-on-failure"`).
+`bun run test` runs both coverage and review tests. `bun run test:review` is a partial run of only the tests in `tests/review/`, with one worker, on Chrome desktop and Chrome mobile. In both runs, review traces are always retained, including successful attempts; non-review tests retain traces only for failed attempts (`trace: "retain-on-failure"`).
 
-Both runs save their results to the same Playwright HTML report, overwritten by the most recent run. The report can be viewed after either run without rerunning tests; `bun run review:test` is optional for viewing.
+Both runs save their results to the same Playwright HTML report, overwritten by the most recent run. The report can be viewed after either run without rerunning tests; `bun run test:review` is optional for viewing.
 
-`bun run review:open` starts the report server with `--port 0`. Open the URL shown at startup and select a review test by its name in the report. Opening a test shows its steps and its trace; the trace viewer plays the journey and shows the page state at every step. Stop the server with Ctrl+C. The owner judges the observed behavior from the trace and report; assertion status stays with the runner's pass/fail, not with how the recording looks.
+`bun run review` starts the report server with `--port 0`. Open the URL shown at startup and select a review test by its name in the report. Opening a test shows its steps and its trace; the trace viewer plays the journey and shows the page state at every step. Stop the server with Ctrl+C. The owner judges the observed behavior from the trace and report; assertion status stays with the runner's pass/fail, not with how the recording looks.
