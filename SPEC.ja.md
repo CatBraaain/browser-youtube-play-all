@@ -50,21 +50,23 @@
 
 ## レビュー
 
-E2Eテストは、網羅性を確認するテストとレビューのためのテストに分かれる。レビューテストはタイトルに `@review` を埋め込み、`tests/e2e/review.test.ts` に置く。網羅性のテストは `@review` を持たない。録画とレビュー材料は、独立した撮影パイプラインではなくPlaywright内蔵のtraceとHTML reportで行う。
+E2Eテストは、網羅性を確認するテストとレビューのためのテストに分かれる。レビューテストは `tests/review/review.test.ts` に置き、網羅性のテストは `tests/e2e/` に置く。録画とレビュー材料は、独立した撮影パイプラインではなくPlaywright内蔵のtraceとHTML reportで行う。
 
-レビューの単位は操作文を名前にする `test.step()` ステップで、1ステップを意図1つと確認1組に対応させ、アサーションは通常の `expect()` で書く。レビューの操作は人間らしくする。文字入力は `pressSequentially`、クリックは `click({ steps: 15 })` を使う。
+レビューの単位は操作文を名前にする `test.step()` ステップで、1ステップを意図1つと確認1組に対応させ、アサーションは通常の `expect()` で書く。主要なlocatorには `.describe("name")` で名前を付ける。レビューの操作は人間らしくする。文字入力は `pressSequentially(text, { delay: 120 })`、クリックは `click({ steps: 15 })` を使う。
 
 | テスト名 | プロジェクト |
 | --- | --- |
-| `Review: desktop buttons @review` | `chrome-desktop-e2e` |
-| `Review: desktop playlists @review` | `chrome-desktop-e2e` |
-| `Review: mobile buttons @review` | `chrome-mobile-e2e` |
-| `Review: mobile playlists @review` | `chrome-mobile-e2e` |
+| `Review: desktop buttons` | `chrome-desktop-e2e` |
+| `Review: desktop playlists` | `chrome-desktop-e2e` |
+| `Review: mobile buttons` | `chrome-mobile-e2e` |
+| `Review: mobile playlists` | `chrome-mobile-e2e` |
 
 レビューではChrome desktopとChrome mobileを使う。モバイルは通常プロジェクトのPixel 5縦向きviewportを維持する。
 
 ### レビューの実行と閲覧
 
-`bun run review:test` は `@review` のテストだけをtrace有効・ワーカー1でChrome desktopとChrome mobileに実行する。網羅性の実行 (`bun run test`) はレビューテストを実行せず、そのtraceを保持しない。失敗試行のtraceはどの実行でも保持する (`trace: "retain-on-failure"`)。
+`bun run test` は網羅性とレビューの両方のテストを実行する。`bun run review:test` は `tests/review/` のテストだけをワーカー1でChrome desktopとChrome mobileに実行する部分実行である。どちらの実行でも、レビューのtraceは成功試行を含めて常に保持する。レビュー以外のテストは失敗試行のtraceだけを保持する (`trace: "retain-on-failure"`)。
 
-レビュー実行後に `bun run review:open`（Playwright HTML report）を開き、検索ワード `@review` でレビューテストだけを残す: `http://localhost:9323/#?q=%40review`。テストを開くとステップとtraceが表示され、traceビューアで操作の再生と各ステップ時点のページ状態を確認できる。所有者はtraceとreportで観測された振る舞いを判断する。アサーションの合否は録画の見た目ではなく、ランナーのpass/failに従う。
+両方の実行結果は同じPlaywright HTML reportに保存され、直近の実行結果で上書きされる。どちらの実行後も再テストせずに閲覧でき、閲覧のための `bun run review:test` は任意である。
+
+`bun run review:open` は `--port 0` でreportサーバーを起動する。起動時に表示されたURLを開き、report内でテスト名からレビューテストを選ぶ。テストを開くとステップとtraceが表示され、traceビューアで操作の再生と各ステップ時点のページ状態を確認できる。Ctrl+Cでサーバーを停止する。所有者はtraceとreportで観測された振る舞いを判断する。アサーションの合否は録画の見た目ではなく、ランナーのpass/failに従う。

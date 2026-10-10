@@ -30,8 +30,6 @@ export default defineConfig({
   retries: 1,
   workers: 2,
   fullyParallel: true,
-  // Recordings and review material come from the built-in trace: review tests
-  // run with --trace on, coverage runs keep failed attempts' traces only.
   use: { trace: "retain-on-failure" },
   reporter: [["list"], ["html", { open: "never" }]],
   projects: [
@@ -43,7 +41,8 @@ export default defineConfig({
     ...[DesktopChrome, MobileChrome, DesktopFirefox].map(({ name, device }) => ({
       name: `${name}-e2e`,
       use: device,
-      testDir: path.join(import.meta.dirname, "tests/e2e"),
+      testDir: path.join(import.meta.dirname, "tests"),
+      testMatch: ["e2e/**/*.test.ts", "review/**/*.test.ts"],
     })),
   ],
 });

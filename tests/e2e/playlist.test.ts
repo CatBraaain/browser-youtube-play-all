@@ -18,7 +18,11 @@ YoutubeDOM.categories.forEach((category) => {
     ytxTest(`Playlist: ${category} - ${sort}`, async ({ page, eventWatcher }) => {
       const ytChannelPage = new YtChannelPage(channel, page, eventWatcher);
       await ytChannelPage.navigateToCategory(category, "hard");
-      await expect(page.locator(`.play-all-btn.${category.toLowerCase()}`)).toBeVisible({
+      await expect(
+        page
+          .locator(`.play-all-btn.${category.toLowerCase()}`)
+          .describe("Category Play All button"),
+      ).toBeVisible({
         timeout: 30_000,
       });
       // The sort chips' aria-selected and the button href flip as soon as the
@@ -37,7 +41,9 @@ YoutubeDOM.categories.forEach((category) => {
       await ytChannelPage.navigateToSort(sort);
 
       const n = sort === "Oldest" ? 1 : checkVideoCount;
-      const button = page.locator(`.play-all-btn.${category.toLowerCase()}.${sort.toLowerCase()}`);
+      const button = page
+        .locator(`.play-all-btn.${category.toLowerCase()}.${sort.toLowerCase()}`)
+        .describe("Sorted Play All button");
       await expect(button).toHaveAttribute(
         "href",
         sort === "Oldest"

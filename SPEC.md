@@ -50,21 +50,23 @@ Each case below applies to every category C ∈ {Videos, Shorts, Streams}, cover
 
 ## Review
 
-E2E tests split into coverage tests and review tests. Review tests are tagged `@review` in their title and live in `tests/e2e/review.test.ts`; coverage tests carry no `@review` tag. Recordings and review material come from Playwright's built-in trace and HTML report, not from a separate capture pipeline.
+E2E tests split into coverage tests and review tests. Review tests live in `tests/review/review.test.ts`; coverage tests live in `tests/e2e/`. Recordings and review material come from Playwright's built-in trace and HTML report, not from a separate capture pipeline.
 
-A review unit is a `test.step()` step named as an operation, pairing one intention with one confirmation, and its assertions are ordinary `expect()`. Review journeys interact like a person: typed text uses `pressSequentially`, and clicks use `click({ steps: 15 })`.
+A review unit is a `test.step()` step named as an operation, pairing one intention with one confirmation, and its assertions are ordinary `expect()`. Major locators are named with `.describe("name")`. Review journeys interact like a person: typed text uses `pressSequentially(text, { delay: 120 })`, and clicks use `click({ steps: 15 })`.
 
 | Test name | Project |
 | --- | --- |
-| `Review: desktop buttons @review` | `chrome-desktop-e2e` |
-| `Review: desktop playlists @review` | `chrome-desktop-e2e` |
-| `Review: mobile buttons @review` | `chrome-mobile-e2e` |
-| `Review: mobile playlists @review` | `chrome-mobile-e2e` |
+| `Review: desktop buttons` | `chrome-desktop-e2e` |
+| `Review: desktop playlists` | `chrome-desktop-e2e` |
+| `Review: mobile buttons` | `chrome-mobile-e2e` |
+| `Review: mobile playlists` | `chrome-mobile-e2e` |
 
 Review uses Chrome desktop and Chrome mobile. Mobile retains the normal project's Pixel 5 portrait viewport.
 
 ### Running and viewing a review
 
-`bun run review:test` runs only the `@review` tests with tracing on, one worker, on Chrome desktop and Chrome mobile. Coverage runs (`bun run test`) neither execute review tests nor keep their traces, and failed attempts keep their traces in every run (`trace: "retain-on-failure"`).
+`bun run test` runs both coverage and review tests. `bun run review:test` is a partial run of only the tests in `tests/review/`, with one worker, on Chrome desktop and Chrome mobile. In both runs, review traces are always retained, including successful attempts; non-review tests retain traces only for failed attempts (`trace: "retain-on-failure"`).
 
-Open `bun run review:open` (the Playwright HTML report) after a review run, and filter it to the review tests with the search word `@review`: `http://localhost:9323/#?q=%40review`. Opening a test shows its steps and its trace; the trace viewer plays the journey and shows the page state at every step. The owner judges the observed behavior from the trace and report; assertion status stays with the runner's pass/fail, not with how the recording looks.
+Both runs save their results to the same Playwright HTML report, overwritten by the most recent run. The report can be viewed after either run without rerunning tests; `bun run review:test` is optional for viewing.
+
+`bun run review:open` starts the report server with `--port 0`. Open the URL shown at startup and select a review test by its name in the report. Opening a test shows its steps and its trace; the trace viewer plays the journey and shows the page state at every step. Stop the server with Ctrl+C. The owner judges the observed behavior from the trace and report; assertion status stays with the runner's pass/fail, not with how the recording looks.

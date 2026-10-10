@@ -136,7 +136,8 @@ export class YtSearchPage {
           ? `.media-channel ${thumb}, ytm-compact-channel-renderer ${thumb}`
           : `#channel-thumbnail:not([hidden])${channelName !== null ? `[href="/${channelName}"]` : ""}`,
       )
-      .first(); // [href^="/channel/"] or [href^="link:///"]
+      .first()
+      .describe("Search result channel thumbnail"); // [href^="/channel/"] or [href^="link:///"]
   }
 
   // YouTube sometimes swallows clicks on SPA anchors: it preventDefault()s the
@@ -166,13 +167,17 @@ export class YtSearchPage {
         "#channel-info #channel-name" +
           (channelName !== null ? `:has([href="/${channelName}"])` : ""),
       )
-      .first();
+      .first()
+      .describe("Search result channel name");
   }
 
   // Mobile keeps the search box hidden behind the header's search button
   public async openSearchForm(): Promise<void> {
     if (this.ytPage.isMobile) {
-      await this.page.locator('button[aria-label="Search YouTube"]').click();
+      await this.page
+        .locator('button[aria-label="Search YouTube"]')
+        .describe("Open YouTube search")
+        .click();
     }
   }
 
@@ -181,7 +186,9 @@ export class YtSearchPage {
   // (aria-activedescendant) once the listbox appears; Enter then submits that
   // suggestion instead of the typed query.
   public async submitQuery(searchWord: string): Promise<void> {
-    const searchBox = this.page.locator("input.yt-searchbox-input");
+    const searchBox = this.page
+      .locator("input.yt-searchbox-input")
+      .describe("YouTube search input");
     await searchBox.pressSequentially(searchWord, { delay: 120 });
     await searchBox.press("Enter");
   }
@@ -311,16 +318,16 @@ export class YtVideoPage {
   constructor(private page: Page) {}
 
   public get channelThumbnailButton(): Locator {
-    return this.page.locator("#owner [href]").first();
+    return this.page.locator("#owner [href]").first().describe("Video owner channel thumbnail");
   }
   public get channelNameButton(): Locator {
-    return this.page.locator("#upload-info [href]").first();
+    return this.page.locator("#upload-info [href]").first().describe("Video owner channel name");
   }
 
   public async getPlaylistVideoIds(n: number = 3, exclude: string[] = []): Promise<string[]> {
-    const locator = this.page.locator(
-      "#playlist #thumbnail[href*='/watch?'],.YtmCompactMediaItemImage[href*='/watch']",
-    );
+    const locator = this.page
+      .locator("#playlist #thumbnail[href*='/watch?'],.YtmCompactMediaItemImage[href*='/watch']")
+      .describe("Playlist video thumbnails");
     return await locator.evaluateAll(
       (
         links,
@@ -356,6 +363,7 @@ export class YtVideoPage {
       .locator(
         "#playlist-items[selected] #thumbnail[href*='/watch?'],.ytmPlaylistPanelVideoRendererV2Selected [href*='/watch?']",
       )
+      .describe("Selected playlist video")
       .evaluateAll((links) =>
         links.length === 0
           ? null
@@ -438,8 +446,8 @@ export class YtChannelPage {
         this.ytPage.NavigationStartEvent,
       );
       const urlBefore = this.page.url();
-      if (click) await click(tabs.nth(tabIndex));
-      else await tabs.nth(tabIndex).click({ timeout: 5_000 });
+      if (click) await click(tabs.nth(tabIndex).describe(`Channel ${category} tab`));
+      else await tabs.nth(tabIndex).describe(`Channel ${category} tab`).click({ timeout: 5_000 });
       // Retry only a provably swallowed click: no navigation-start, no URL
       // movement, no document replacement within the start window. A slow
       // transition that did start is never re-clicked.
@@ -614,9 +622,19 @@ export class YtChannelPage {
       // Armed before the click so the click's own response is never missed.
       responseTimer = setTimeout(() => resolveResponse(null), remaining());
       this.page.on("response", responseListener);
-      if (options.click) await options.click(this.page.locator(YoutubeDOM.SORT_BUTTON).nth(index));
+      if (options.click)
+        await options.click(
+          this.page
+            .locator(YoutubeDOM.SORT_BUTTON)
+            .nth(index)
+            .describe(`Channel ${sort} sort chip`),
+        );
       else
-        await this.page.locator(YoutubeDOM.SORT_BUTTON).nth(index).click({ timeout: remaining() });
+        await this.page
+          .locator(YoutubeDOM.SORT_BUTTON)
+          .nth(index)
+          .describe(`Channel ${sort} sort chip`)
+          .click({ timeout: remaining() });
       const response = await responsePromise;
       if (response === null) {
         throw new errors.TimeoutError(
@@ -765,6 +783,7 @@ export class YtChannelPage {
         .locator(
           "ytd-browse[role='main'] #primary #contents [href*='/shorts'],ytm-browse .modern-tabs [href*='/shorts']",
         )
+        .describe("Channel Shorts grid video links")
         .evaluateAll((links, n) => {
           const videoIds = links.map((link) => link.getAttribute("href")!.split("/").at(-1)!);
           return [...new Set(videoIds)].slice(0, n);
@@ -774,6 +793,7 @@ export class YtChannelPage {
         .locator(
           "ytd-browse[role='main'] #primary #contents [href*='/watch'],ytm-browse .modern-tabs [href*='/watch']",
         )
+        .describe("Channel video grid watch links")
         .evaluateAll((links, n) => {
           const videoIds = links.map(
             (link) =>
@@ -792,6 +812,7 @@ export class YtChannelPage {
       .locator(
         "ytd-browse[role='main'] #primary #contents > ytd-rich-item-renderer,ytm-browse .modern-tabs ytm-video-with-context-renderer",
       )
+      .describe("Channel video grid items")
       .evaluateAll((rows, n) => {
         const titles: string[] = [];
         for (const row of rows) {
@@ -807,6 +828,7 @@ export class YtChannelPage {
   public async getPlayAllUrl(category: CategoryKind, sort: SortKind): Promise<string> {
     const href = await this.page
       .locator(`.play-all-btn.${category.toLowerCase()}.${sort.toLowerCase()}`)
+      .describe(`Play All ${category} ${sort} button`)
       .getAttribute("href");
     return `https://www.youtube.com${href}`;
   }

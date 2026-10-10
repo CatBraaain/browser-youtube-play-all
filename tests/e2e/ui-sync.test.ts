@@ -39,20 +39,20 @@ ytxTest(
     const channel = new YtChannelPage(firstChannel, page, eventWatcher);
     await channel.navigateToCategory("Videos", "hard", false);
 
-    const playAllButton = page.locator(".play-all-btn");
-    const dropdown = page.locator(".play-all-btns");
-    const menu = dropdown.locator(":scope > div");
+    const playAllButton = page.locator(".play-all-btn").describe("Play All button");
+    const dropdown = page.locator(".play-all-btns").describe("Play All dropdown");
+    const menu = dropdown.locator(":scope > div").describe("Play All menu");
     await expect(playAllButton).toHaveCount(1, { timeout: 30_000 });
     await expect(playAllButton).toHaveText("Play All (Latest)");
     await expect(dropdown).toHaveCount(1, { timeout: 30_000 });
-    await expect(dropdown.locator("button")).toBeVisible();
+    await expect(dropdown.locator("button").describe("Play All menu toggle")).toBeVisible();
     await expect(menu).toBeHidden();
 
-    await dropdown.locator("button").click();
+    await dropdown.locator("button").describe("Play All menu toggle").click();
     await expect(menu).toBeVisible();
-    await dropdown.locator("button").click();
+    await dropdown.locator("button").describe("Play All menu toggle").click();
     await expect(menu).toBeHidden();
-    await dropdown.locator("button").click();
+    await dropdown.locator("button").describe("Play All menu toggle").click();
     await expect(menu).toBeVisible();
     await page.mouse.click(1, 1);
     await expect(menu).toBeHidden();
@@ -62,14 +62,19 @@ ytxTest(
 ytxTest("follows the selected sort", async ({ page, eventWatcher }) => {
   const channel = new YtChannelPage(firstChannel, page, eventWatcher);
   await channel.navigateToCategory("Videos", "hard", false);
-  await expect(page.locator(".play-all-btn.latest")).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator(".play-all-btn.latest").describe("Play All Latest button")).toBeVisible(
+    {
+      timeout: 30_000,
+    },
+  );
 
   await channel.navigateToSort("Popular");
-  await expect(page.locator(YoutubeDOM.SORT_BUTTON).nth(1)).toHaveAttribute(
-    "aria-selected",
-    "true",
-  );
-  await expect(page.locator(".play-all-btn.popular")).toHaveText("Play All (Popular)");
+  await expect(
+    page.locator(YoutubeDOM.SORT_BUTTON).nth(1).describe("Popular sort chip"),
+  ).toHaveAttribute("aria-selected", "true");
+  await expect(
+    page.locator(".play-all-btn.popular").describe("Play All Popular button"),
+  ).toHaveText("Play All (Popular)");
 });
 
 ytxTest(
@@ -82,14 +87,16 @@ ytxTest(
     try {
       const channel = new YtChannelPage(firstChannel, page, eventWatcher);
       await channel.navigateToCategory("Videos", "hard", false);
-      await expect(page.locator(".play-all-btn.latest")).toBeVisible({ timeout: 30_000 });
+      await expect(
+        page.locator(".play-all-btn.latest").describe("Play All Latest button"),
+      ).toBeVisible({ timeout: 30_000 });
       // The Oldest resolution starts with Channel.load; wait until the gate holds it.
       await expect
         .poll(() => page.evaluate(() => document.documentElement.dataset.ytxFetchGateHeld), {
           timeout: 30_000,
         })
         .toContain("/playlist?list=UULF");
-      await expect(page.locator(".play-all-btns")).toHaveCount(0);
+      await expect(page.locator(".play-all-btns").describe("Play All dropdown")).toHaveCount(0);
 
       // Each sort click waits for the grid swap to settle (navigateToSort),
       // so one transition completes before the next click and cannot race
@@ -97,17 +104,22 @@ ytxTest(
       await channel.navigateToSort("Oldest");
       await channel.navigateToSort("Latest");
       await channel.navigateToSort("Popular");
-      await expect(page.locator(".play-all-btn.popular")).toHaveText("Play All (Popular)");
+      await expect(
+        page.locator(".play-all-btn.popular").describe("Play All Popular button"),
+      ).toHaveText("Play All (Popular)");
 
       // The dropdown waits for every playlist resolution, even if one resolves empty.
       await releaseGate();
-      await expect(page.locator(".play-all-btns")).toHaveCount(1, { timeout: 30_000 });
-      await expect(page.locator(".play-all-btn")).toHaveCount(1);
-      await expect(page.locator(".play-all-btn")).toHaveText("Play All (Popular)");
-      await expect(page.locator(YoutubeDOM.SORT_BUTTON).nth(1)).toHaveAttribute(
-        "aria-selected",
-        "true",
+      await expect(page.locator(".play-all-btns").describe("Play All dropdown")).toHaveCount(1, {
+        timeout: 30_000,
+      });
+      await expect(page.locator(".play-all-btn").describe("Play All button")).toHaveCount(1);
+      await expect(page.locator(".play-all-btn").describe("Play All button")).toHaveText(
+        "Play All (Popular)",
       );
+      await expect(
+        page.locator(YoutubeDOM.SORT_BUTTON).nth(1).describe("Popular sort chip"),
+      ).toHaveAttribute("aria-selected", "true");
     } finally {
       await releaseGate();
     }
@@ -123,16 +135,20 @@ ytxTest(
 
     const channel = new YtChannelPage(firstChannel, page, eventWatcher);
     await channel.navigateToCategory("Videos", "hard", false);
-    await expect(page.locator(".play-all-btn.latest")).toBeVisible({ timeout: 30_000 });
+    await expect(
+      page.locator(".play-all-btn.latest").describe("Play All Latest button"),
+    ).toBeVisible({ timeout: 30_000 });
 
     // The failure does not propagate to the dropdown: it still renders, including
     // entries for conditions other than the failed one.
-    const dropdown = page.locator(".play-all-btns");
+    const dropdown = page.locator(".play-all-btns").describe("Play All dropdown");
     await expect(dropdown).toHaveCount(1, { timeout: 30_000 });
-    await expect(dropdown.getByText("Videos (Latest)", { exact: true })).toHaveCount(1);
+    await expect(
+      dropdown.getByText("Videos (Latest)", { exact: true }).describe("Videos Latest menu item"),
+    ).toHaveCount(1);
 
     await channel.navigateToSort("Oldest");
-    const errorButton = page.locator(".play-all-btn.oldest");
+    const errorButton = page.locator(".play-all-btn.oldest").describe("Play All Oldest button");
     await expect(errorButton).toHaveText("Play All (Oldest) (error)", { timeout: 30_000 });
     await expect(errorButton).not.toHaveAttribute("href");
 
@@ -153,20 +169,20 @@ ytxTest(
     await errorButton.click();
     expect(await page.evaluate(() => (window as any).__errorButtonClicks)).toBe(1);
     await expect(page).toHaveURL(urlBeforeClick);
-    await expect(page.locator(YoutubeDOM.SORT_BUTTON).nth(2)).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
+    await expect(
+      page.locator(YoutubeDOM.SORT_BUTTON).nth(2).describe("Oldest sort chip"),
+    ).toHaveAttribute("aria-selected", "true");
 
     // The failure does not propagate to other conditions: Popular keeps its normal button.
     await channel.navigateToSort("Popular");
-    await expect(page.locator(".play-all-btn.popular")).toHaveText("Play All (Popular)", {
+    await expect(
+      page.locator(".play-all-btn.popular").describe("Play All Popular button"),
+    ).toHaveText("Play All (Popular)", {
       timeout: 30_000,
     });
-    await expect(page.locator(".play-all-btn.popular")).toHaveAttribute(
-      "href",
-      /playlist\?list=UULP/,
-    );
+    await expect(
+      page.locator(".play-all-btn.popular").describe("Play All Popular button"),
+    ).toHaveAttribute("href", /playlist\?list=UULP/);
   },
 );
 
@@ -181,7 +197,10 @@ ytxTest(
       // wait = true completes the initial load's route transition (scoped
       // navigation wait), so the UI below observes a settled route.
       await first.navigateToCategory("Videos", "hard");
-      const firstHref = await scenarioPage.locator(".play-all-btn.latest").getAttribute("href");
+      const firstHref = await scenarioPage
+        .locator(".play-all-btn.latest")
+        .describe("Play All Latest button")
+        .getAttribute("href");
       expect(firstHref).toBeTruthy();
 
       const search = new YtSearchPage(scenarioPage, scenarioWatcher);
@@ -210,17 +229,20 @@ ytxTest(
       await second.navigateToCategory("Videos", "soft", false);
       await expect(scenarioPage).toHaveURL(/youtube\.com\/@YouTube\/videos\/?$/i);
 
-      const button = scenarioPage.locator(".play-all-btn.videos.latest");
-      await expect(scenarioPage.locator(YoutubeDOM.SORT_BUTTON).first()).toHaveAttribute(
-        "aria-selected",
-        "true",
-      );
+      const button = scenarioPage
+        .locator(".play-all-btn.videos.latest")
+        .describe("Videos Latest Play All button");
+      await expect(
+        scenarioPage.locator(YoutubeDOM.SORT_BUTTON).first().describe("Latest sort chip"),
+      ).toHaveAttribute("aria-selected", "true");
       await expect(button).toHaveCount(1);
       await expect(button).toHaveText("Play All (Latest)");
       await expect(button).not.toHaveAttribute("href", firstHref!);
-      const dropdown = scenarioPage.locator(".play-all-btns");
+      const dropdown = scenarioPage.locator(".play-all-btns").describe("Play All dropdown");
       await expect(dropdown).toHaveCount(1, { timeout: 30_000 });
-      await expect(dropdown.getByText("Videos (Latest)")).not.toHaveAttribute("href", firstHref!);
+      await expect(
+        dropdown.getByText("Videos (Latest)").describe("Videos Latest menu item"),
+      ).not.toHaveAttribute("href", firstHref!);
 
       await expect(button).toHaveAttribute("href", /^\/playlist\?list=UULF[\w-]+&playnext=1$/, {
         timeout: 30_000,
@@ -247,7 +269,9 @@ ytxTest(
 ytxTest("does not show extension UI on a watch page", async ({ page, eventWatcher }) => {
   const channel = new YtChannelPage(firstChannel, page, eventWatcher);
   await channel.navigateToCategory("Videos", "hard", false);
-  await expect(page.locator(".play-all-btn.latest")).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator(".play-all-btn.latest").describe("Play All Latest button")).toBeVisible(
+    { timeout: 30_000 },
+  );
   const [videoId] = await channel.getTopVideoIds(1);
   expect(videoId).toBeTruthy();
 
@@ -256,5 +280,7 @@ ytxTest("does not show extension UI on a watch page", async ({ page, eventWatche
   });
   // Mobile watch pages use ytm-watch instead of the desktop ytd-watch-flexy
   await expect(page.locator("ytd-watch-flexy, ytm-watch")).toBeAttached({ timeout: 30_000 });
-  await expect(page.locator(".play-all-btn, .play-all-btns")).toHaveCount(0);
+  await expect(page.locator(".play-all-btn, .play-all-btns").describe("Play All UI")).toHaveCount(
+    0,
+  );
 });

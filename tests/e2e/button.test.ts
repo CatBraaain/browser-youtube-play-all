@@ -82,18 +82,23 @@ searchNavigationModes.forEach((searchNavigationMode) => {
             const scenarioPage = nav.page;
             const scenarioWatcher = nav.watcher;
 
-            await scenarioPage.locator(".play-all-btns").waitFor({ timeout: 30_000 });
+            await scenarioPage
+              .locator(".play-all-btns")
+              .describe("Play All button group")
+              .waitFor({ timeout: 30_000 });
             const ytChannelPage = new YtChannelPage(channel, scenarioPage, scenarioWatcher);
             for (const category of YoutubeDOM.categories) {
               await ytChannelPage.navigateToCategory(category, categoryNavigationMode);
               await expect(
-                scenarioPage.locator(`.play-all-btn.${category.toLowerCase()}`),
+                scenarioPage
+                  .locator(`.play-all-btn.${category.toLowerCase()}`)
+                  .describe(`Play All ${category} button`),
               ).toBeVisible({ timeout: 30_000 });
               for (const sort of YoutubeDOM.sorts) {
                 await ytChannelPage.navigateToSort(sort);
-                const button = scenarioPage.locator(
-                  `.play-all-btn.${category.toLowerCase()}.${sort.toLowerCase()}`,
-                );
+                const button = scenarioPage
+                  .locator(`.play-all-btn.${category.toLowerCase()}.${sort.toLowerCase()}`)
+                  .describe(`Play All ${category} ${sort} button`);
                 const expectedHref =
                   sort === "Oldest"
                     ? /^\/watch\?v=[\w-]{11}&list=UL01234567890$/
@@ -104,7 +109,9 @@ searchNavigationModes.forEach((searchNavigationMode) => {
                 await expect(button).not.toContainText("(error)");
               }
               if (category === "Shorts") {
-                const selectedButton = scenarioPage.locator(".play-all-btn.shorts.oldest");
+                const selectedButton = scenarioPage
+                  .locator(".play-all-btn.shorts.oldest")
+                  .describe("Oldest Shorts Play All button");
                 await expect(selectedButton).toBeVisible({ timeout: 30_000 });
                 const oldestVideoId = new URL(
                   (await selectedButton.getAttribute("href"))!,
@@ -119,16 +126,20 @@ searchNavigationModes.forEach((searchNavigationMode) => {
                 await expect(
                   scenarioPage
                     .locator(`${videoList} a[href='/shorts/${oldestVideoId}']:visible`)
-                    .first(),
+                    .first()
+                    .describe("Oldest Shorts video"),
                 ).toBeVisible({ timeout: 30_000 });
                 await expect(
-                  scenarioPage.locator(`${videoList} [class*='skeleton' i]:visible`),
+                  scenarioPage
+                    .locator(`${videoList} [class*='skeleton' i]:visible`)
+                    .describe("Shorts loading placeholders"),
                 ).toHaveCount(0, { timeout: 30_000 });
-                await expect(scenarioPage.locator(YoutubeDOM.SORT_BUTTON).nth(2)).toHaveAttribute(
-                  "aria-selected",
-                  "true",
-                );
-                await expect(scenarioPage.locator(".play-all-btn")).toHaveCount(1);
+                await expect(
+                  scenarioPage.locator(YoutubeDOM.SORT_BUTTON).nth(2).describe("Oldest sort chip"),
+                ).toHaveAttribute("aria-selected", "true");
+                await expect(
+                  scenarioPage.locator(".play-all-btn").describe("Play All buttons"),
+                ).toHaveCount(1);
                 await expect(selectedButton).toHaveText("Play All (Oldest)");
                 await expect(selectedButton).toBeVisible();
               }
