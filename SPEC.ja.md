@@ -54,14 +54,12 @@ E2Eテストは、網羅性を確認するテストとレビューのための�
 
 レビューの単位は操作文を名前にする `test.step()` ステップで、1ステップを意図1つと確認1組に対応させ、アサーションは通常の `expect()` で書く。主要なlocatorには `.describe("name")` で名前を付ける。レビューの操作は人間らしくする。文字入力は `pressSequentially(text, { delay: 120 })`、クリックは `click({ steps: 15 })` を使う。
 
-| テスト名 | プロジェクト |
+| テスト名 | 操作シナリオ |
 | --- | --- |
-| `Review: desktop buttons` | `chrome-desktop-e2e` |
-| `Review: desktop playlists` | `chrome-desktop-e2e` |
-| `Review: mobile buttons` | `chrome-mobile-e2e` |
-| `Review: mobile playlists` | `chrome-mobile-e2e` |
+| `Review: buttons` | 各カテゴリ・並び順のPlay Allボタンを確認する。 |
+| `Review: playlists` | 各カテゴリ・並び順でPlay Allを操作し、再生先のプレイリストを検証する。 |
 
-レビューではChrome desktopとChrome mobileを使う。モバイルは通常プロジェクトのPixel 5縦向きviewportを維持する。
+両シナリオは、選択した各E2Eプロジェクトのブラウザ・デバイスで1回ずつ実行する。モバイルは通常プロジェクトのPixel 5縦向きviewportを維持する。
 
 ### レビューの実行と閲覧
 

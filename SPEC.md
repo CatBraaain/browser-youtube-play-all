@@ -54,14 +54,12 @@ E2E tests split into coverage tests and review tests. Review tests live in `test
 
 A review unit is a `test.step()` step named as an operation, pairing one intention with one confirmation, and its assertions are ordinary `expect()`. Major locators are named with `.describe("name")`. Review journeys interact like a person: typed text uses `pressSequentially(text, { delay: 120 })`, and clicks use `click({ steps: 15 })`.
 
-| Test name | Project |
+| Test name | Journey |
 | --- | --- |
-| `Review: desktop buttons` | `chrome-desktop-e2e` |
-| `Review: desktop playlists` | `chrome-desktop-e2e` |
-| `Review: mobile buttons` | `chrome-mobile-e2e` |
-| `Review: mobile playlists` | `chrome-mobile-e2e` |
+| `Review: buttons` | Check Play All buttons across categories and sorts. |
+| `Review: playlists` | Activate Play All across categories and sorts and verify the resulting playlist. |
 
-Review uses Chrome desktop and Chrome mobile. Mobile retains the normal project's Pixel 5 portrait viewport.
+Both journeys run once per selected E2E project, using that project's browser and device. Mobile retains the normal project's Pixel 5 portrait viewport.
 
 ### Running and viewing a review
 
