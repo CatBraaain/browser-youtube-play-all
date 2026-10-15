@@ -273,16 +273,9 @@ export class ChannelIdFinder {
 // viewer. A <style> element is part of the DOM and therefore captured. The
 // rules are read from the same built file the manifest loads, and the double
 // application of identical rules does not change rendering.
-//
-// The trace renderer also decorates the action target with an inline outline
-// and translucent background. That is useful on most targets, but while a
-// Play All button is the target it obscures the very styles under review, so
-// it is suppressed there (author !important rules beat inline styles).
-// Decorations on other targets and the click-position dot stay untouched.
 const TRACE_TARGET_SUPPRESSION = `
 [__playwright_target__].play-all-btn {
   outline: none !important;
-  background-color: transparent !important;
 }
 `;
 

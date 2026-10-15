@@ -1,5 +1,5 @@
 .play-all-btn {
-  background-color: #8000ff;
+  background-color: #8000ff !important;
   color: #f1f1f1;
 
   height: 32px;
@@ -23,7 +23,7 @@
 
 .play-all-btn:hover,
 .play-all-btn:focus {
-  background-color: #9b33ff;
+  background-color: #9b33ff !important;
 }
 
 .play-all-btns {

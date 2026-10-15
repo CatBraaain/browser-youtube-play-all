@@ -67,4 +67,6 @@ Both journeys run once per selected E2E project, using that project's browser an
 
 Both runs save their results to the same Playwright HTML report, overwritten by the most recent run. The report can be viewed after either run without rerunning tests; `bun run test:review` is optional for viewing.
 
+The extension's normal, hover and focus background colors for Play All buttons take priority over ordinary inline background colors. In trace snapshots, Play All buttons keep these colors and suppress the viewer's target outline. Other targets' highlights and click-position markers remain visible.
+
 `bun run review` starts the report server with `--port 0`. Open the URL shown at startup and select a review test by its name in the report. Opening a test shows its steps and its trace; the trace viewer plays the journey and shows the page state at every step. Stop the server with Ctrl+C. The owner judges the observed behavior from the trace and report; assertion status stays with the runner's pass/fail, not with how the recording looks.
