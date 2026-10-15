@@ -1,6 +1,7 @@
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import type { Page } from "@playwright/test";
+import type { BrowserContext, Page } from "@playwright/test";
 import { chromium, errors, expect, firefox, test } from "@playwright/test";
 import { withExtension } from "playwright-webextext";
 
@@ -265,6 +266,31 @@ export class ChannelIdFinder {
   }
 }
 
+// Re-injects the extension's content-script CSS as a <style> element into
+// every document. The browser applies the manifest-declared CSS outside the
+// DOM, so Playwright trace DOM snapshots (which serialize only the page DOM)
+// cannot record it and the Play All buttons replay unstyled in the trace
+// viewer. A <style> element is part of the DOM and therefore captured. The
+// rules are read from the same built file the manifest loads, and the double
+// application of identical rules does not change rendering.
+async function injectExtensionStyles(context: BrowserContext, cssPath: string) {
+  const css = await readFile(cssPath, "utf8");
+  await context.addInitScript((cssText: string) => {
+    const inject = () => {
+      const style = document.createElement("style");
+      style.textContent = cssText;
+      (document.head ?? document.documentElement).appendChild(style);
+    };
+    // The init script runs before the document element exists; inject once the
+    // DOM is ready.
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", inject, { once: true });
+    } else {
+      inject();
+    }
+  }, css);
+}
+
 // Attaches the navigation-event hooks to the given page. Used by the
 // eventWatcher fixture and by tests that restart scenarios on a fresh tab.
 export async function attachEventWatcher(page: Page): Promise<EventWatcher> {
@@ -319,6 +345,10 @@ export const ytxTest = ytTest.extend({
             "--mute-audio",
           ],
         });
+        await injectExtensionStyles(
+          context,
+          path.join(chromeExtensionPath, "content-scripts/play-all-button.css"),
+        );
         await use(context);
         await context.close();
         break;
@@ -332,6 +362,10 @@ export const ytxTest = ytTest.extend({
             "media.autoplay.blocking_policy": 2, // altearnative to --mute-audio
           },
         });
+        await injectExtensionStyles(
+          context,
+          path.join(firefoxExtensionPath, "content-scripts/play-all-button.css"),
+        );
         await use(context);
         await context.close();
         break;
