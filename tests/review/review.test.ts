@@ -71,21 +71,25 @@ ytxTest("Review: buttons", async ({ page, eventWatcher }) => {
   );
   const channelPage = new YtChannelPage(channel, page, eventWatcher);
   const playAllButton = page.locator(".play-all-btn").describe("Play All button");
+  const [firstSort] = YoutubeDOM.sorts;
   for (const category of YoutubeDOM.categories) {
-    await ytxTest.step(`Open ${category}`, async () => {
-      await channelPage.navigateToCategory(category, "soft", true, { click: humanClick });
-      // Assert the category-specific button first: the previous category's
-      // button can still be attached right after navigation-end, so a bare
-      // count could confirm the stale node (YT-SPEC.md).
-      const categoryButton = page
-        .locator(`.play-all-btn.${category.toLowerCase()}`)
-        .describe(`${category} Play All button`);
-      await expect(categoryButton).toBeVisible({ timeout: 30_000 });
-      await expect(playAllButton).toHaveCount(1, { timeout: 30_000 });
-      await expect(playAllButton).toBeVisible();
-    });
     for (const sort of YoutubeDOM.sorts) {
       await ytxTest.step(`Sort ${category} by ${sort}`, async () => {
+        // The category soft-opens inside its first sort cell so the report's
+        // action list keeps exactly the nine category x sort cells; the checks
+        // the removed "Open category" steps carried stay nested here.
+        if (sort === firstSort) {
+          await channelPage.navigateToCategory(category, "soft", true, { click: humanClick });
+          // Assert the category-specific button first: the previous category's
+          // button can still be attached right after navigation-end, so a bare
+          // count could confirm the stale node (YT-SPEC.md).
+          const categoryButton = page
+            .locator(`.play-all-btn.${category.toLowerCase()}`)
+            .describe(`${category} Play All button`);
+          await expect(categoryButton).toBeVisible({ timeout: 30_000 });
+          await expect(playAllButton).toHaveCount(1, { timeout: 30_000 });
+          await expect(playAllButton).toBeVisible();
+        }
         await channelPage.navigateToSort(sort, { click: humanClick });
         const button = page
           .locator(`.play-all-btn.${category.toLowerCase()}.${sort.toLowerCase()}`)
