@@ -58,10 +58,11 @@ async function maybeRenderButton(channel: Channel, latestEpoch: number) {
 
   const sortKind = YoutubeDOM.sortKind ?? "Latest";
 
-  const targetPlayAllButton = document.querySelector(
+  const targetPlayAllButton = document.querySelector<HTMLElement>(
     `.play-all-btn.${categoryKind.toLowerCase()}.${sortKind.toLowerCase()}`,
   );
   if (targetPlayAllButton) {
+    equalizeLeadingGap(targetPlayAllButton);
     return;
   }
 
@@ -82,6 +83,31 @@ async function maybeRenderButton(channel: Channel, latestEpoch: number) {
 
   document.querySelector(".play-all-btn")?.remove();
   sortButtonHolder.appendChild(playAllButton);
+  equalizeLeadingGap(playAllButton);
+}
+
+// The chip row's own spacing (YouTube's chip wrapper margins) stacks with the
+// button's static CSS margin, so the gap before the button can be wider than
+// the chip-to-chip gaps. Converge the button's leading gap onto the measured
+// chip gap with one corrective step; the call is idempotent (a converged gap
+// adds zero). On an unmeasurable row (chips missing, hidden, or mid-rerender)
+// the static CSS margin is kept.
+function equalizeLeadingGap(button: HTMLElement) {
+  const chips = YoutubeDOM.sortButtons;
+  if (chips.length !== 3) {
+    return;
+  }
+  const rects = [...chips, button].map((e) => e.getBoundingClientRect());
+  if (rects.some((r) => r.width === 0)) {
+    return;
+  }
+  const chipGap = rects[1]!.left - rects[0]!.right;
+  const leadingGap = rects[3]!.left - rects[2]!.right;
+  const marginLeft = parseFloat(getComputedStyle(button).marginLeft);
+  if (!Number.isFinite(marginLeft)) {
+    return;
+  }
+  button.style.marginLeft = `${marginLeft + chipGap - leadingGap}px`;
 }
 
 async function renderDropdown(channel: Channel, latestEpoch: number) {
