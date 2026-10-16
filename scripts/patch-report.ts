@@ -35,13 +35,16 @@ if (css.includes(marker)) {
 } else {
   const stripCss = `
 /* ${marker}: added by scripts/patch-report.ts */
-.attachments-tab{display:flex;flex-wrap:wrap;gap:16px 4px;align-content:flex-start}
+.attachments-tab{display:flex;flex-wrap:wrap;gap:0 4px;align-content:flex-start;justify-content:center}
 .attachments-tab>.attachments-section{display:none}
-.attachment-item{display:flex;flex-direction:column;align-items:center;width:calc(50% - 2px);margin:0}
+.attachment-item{display:flex;flex-direction:column;align-items:center;width:auto;max-width:calc(50% - 2px);margin:0}
 .attachment-item>div:first-child{min-height:0;max-width:100%}
 .attachment-item>div:last-child{display:none}
-.attachments-tab>[data-review-pair-label]{flex-basis:100%;height:20px;line-height:20px;text-align:center;font-weight:600;overflow:hidden;white-space:nowrap}
-.attachment-item img{display:block;width:100%;height:auto;max-height:75vh;object-fit:contain;max-width:none}
+.attachments-tab>[data-review-pair-label]{flex-basis:100%;height:20px;line-height:20px;margin:16px 0;text-align:center;font-weight:600;overflow:hidden;white-space:nowrap}
+/* Each pair's two images keep a shared visible height (45vh, matching the
+   wide-image pairs that size by width) so tall and wide screenshots look
+   alike; items shrink to the image width and center as a pair. */
+.attachment-item img{display:block;width:auto;height:45vh;max-width:100%;object-fit:contain}
 `;
 
   writeFileSync(target, css + stripCss);
