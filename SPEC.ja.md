@@ -56,14 +56,15 @@ E2Eテストは、網羅性を確認するテストとレビューのための�
 
 | テスト名 | 操作シナリオ |
 | --- | --- |
-| `Review: buttons` | 各カテゴリ・並び順のPlay Allボタンを確認する。 |
-| `Review: playlists` | 各カテゴリ・並び順でPlay Allを操作し、再生先のプレイリストを検証する。 |
+| `Review` | 各カテゴリ・並び順のPlay Allボタンと、その再生先プレイリストを確認する。 |
 
-両シナリオは、選択した各E2Eプロジェクトのブラウザ・デバイスで1回ずつ実行する。モバイルは通常プロジェクトのPixel 5縦向きviewportを維持する。
+シナリオは、選択した各E2Eプロジェクトのブラウザ・デバイスで1回ずつ実行する。モバイルは通常プロジェクトのPixel 5縦向きviewportを維持する。
+
+各セルはクリック順に2枚のviewportスクリーンショットをテスト結果に添付する。チャンネルページ上のPlay Allボタン、次にプレイリストの再生先である。HTML reportはテストattachmentをその添付順に並べる。
 
 ### レビューの実行と閲覧
 
-`bun run test` は網羅性とレビューの両方のテストを実行する。`bun run test:review` は `tests/review/` のテストだけをワーカー1でChrome desktopとChrome mobileに実行する部分実行である。どちらの実行でも、レビューのtraceは成功試行を含めて常に保持する。レビュー以外のテストは失敗試行のtraceだけを保持する (`trace: "retain-on-failure"`)。
+`bun run test` は網羅性とレビューの両方のテストを実行する。`bun run test:review` は `tests/review/` のテストだけをワーカー1でChrome desktopとChrome mobileに実行する部分実行である。どちらの実行でも、レビューのtraceは成功試行を含めて常に保持する。レビュー以外のテストは失敗試行のtraceだけを保持する (`trace: "retain-on-failure"`)。レビューの実行は、trace viewerのAttachmentsタブを横並びの幅広のスクリーンショット帯にし、下ペインの高さをウィンドウ高の約5割に初期化してAttachmentsタブを初期選択にするreportパッチ (`scripts/patch-report.ts`) で終わる。
 
 両方の実行結果は同じPlaywright HTML reportに保存され、直近の実行結果で上書きされる。どちらの実行後も再テストせずに閲覧でき、閲覧のための `bun run test:review` は任意である。
 

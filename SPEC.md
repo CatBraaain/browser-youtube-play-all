@@ -56,14 +56,15 @@ A review unit is a `test.step()` step named as an operation, pairing one intenti
 
 | Test name | Journey |
 | --- | --- |
-| `Review: buttons` | Check Play All buttons across categories and sorts. |
-| `Review: playlists` | Activate Play All across categories and sorts and verify the resulting playlist. |
+| `Review` | Check Play All buttons across categories and sorts and verify each button's playlist destination. |
 
-Both journeys run once per selected E2E project, using that project's browser and device. Mobile retains the normal project's Pixel 5 portrait viewport.
+The journey runs once per selected E2E project, using that project's browser and device. Mobile retains the normal project's Pixel 5 portrait viewport.
+
+Each cell attaches two viewport screenshots to the test result in click order: the Play All button on the channel page, then the playlist destination. The HTML report lists test attachments in that attach order.
 
 ### Running and viewing a review
 
-`bun run test` runs both coverage and review tests. `bun run test:review` is a partial run of only the tests in `tests/review/`, with one worker, on Chrome desktop and Chrome mobile. In both runs, review traces are always retained, including successful attempts; non-review tests retain traces only for failed attempts (`trace: "retain-on-failure"`).
+`bun run test` runs both coverage and review tests. `bun run test:review` is a partial run of only the tests in `tests/review/`, with one worker, on Chrome desktop and Chrome mobile. In both runs, review traces are always retained, including successful attempts; non-review tests retain traces only for failed attempts (`trace: "retain-on-failure"`). The review run ends with a report patch (`scripts/patch-report.ts`) that renders the trace viewer's Attachments tab as a wide horizontal strip of screenshots and seeds the height of the bottom pane at 50% of the viewport with the Attachments tab initially selected.
 
 Both runs save their results to the same Playwright HTML report, overwritten by the most recent run. The report can be viewed after either run without rerunning tests; `bun run test:review` is optional for viewing.
 

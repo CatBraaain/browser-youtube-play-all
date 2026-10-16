@@ -12,6 +12,7 @@
     "dev": "bun run dev:chrome",
     "dev:chrome": "wxt -b chrome",
     "dev:firefox": "wxt -b firefox",
+    "patch:report": "bun scripts/patch-report.ts",
     "publish": "bun run zip && wxt submit",
     "publish-init": "wxt submit init",
     "publish-refresh-token-init": "bunx chrome-webstore-upload-keys",
@@ -20,7 +21,7 @@
     "test": "bun run build && xvfb-run --auto-servernum bunx playwright test tests/e2e tests/review",
     "test-specs": "bun run build && xvfb-run --auto-servernum bunx playwright test tests/specs",
     "test-ui-mode": "bun run build && bunx playwright test --ui",
-    "test:review": "bun run build && xvfb-run --auto-servernum --server-args=\"-screen 0 1600x900x24\" bunx playwright test tests/review/ --workers=1 --project=chrome-desktop-e2e --project=chrome-mobile-e2e",
+    "test:review": "bun run build && xvfb-run --auto-servernum --server-args=\"-screen 0 1600x900x24\" bunx playwright test tests/review/ --workers=1 --project=chrome-desktop-e2e --project=chrome-mobile-e2e && bun run patch:report",
     "zip": "bun run --parallel zip:*",
     "zip:chrome": "wxt zip -b chrome",
     "zip:firefox": "wxt zip -b firefox"
