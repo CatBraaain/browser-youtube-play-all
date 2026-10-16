@@ -45,6 +45,12 @@ if (css.includes(marker)) {
    wide-image pairs that size by width) so tall and wide screenshots look
    alike; items shrink to the image width and center as a pair. */
 .attachment-item img{display:block;width:auto;height:45vh;max-width:100%;object-fit:contain}
+/* The film strip under the timeline grows by 50px when the async video
+   thumbnail generation adds its lane after the trace opens; that growth
+   changes the split pane's measured height and, combined with the 90%
+   bottom-pane seed, moves the pane boundary. Fix it at two lanes (one
+   screencast page + one video, this project's review shape). */
+.film-strip-lanes{height:100px}
 `;
 
   writeFileSync(target, css + stripCss);
