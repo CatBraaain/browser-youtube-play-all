@@ -35,21 +35,23 @@ if (css.includes(marker)) {
 } else {
   const stripCss = `
 /* ${marker}: added by scripts/patch-report.ts */
-.attachments-tab{display:flex;flex-direction:row;align-items:stretch;gap:4px;overflow-x:auto;overflow-y:hidden}
+.attachments-tab{display:flex;flex-wrap:wrap;gap:16px 4px;align-content:flex-start}
 .attachments-tab>.attachments-section{display:none}
-.attachment-item{flex:none;display:flex;flex-direction:column-reverse;margin:0}
-.attachment-item>div:first-child{flex:0 0 auto;min-height:0;height:calc(100% - 20px);display:flex}
-.attachment-item>div:last-child{flex:0 0 auto;height:20px;line-height:20px;font-weight:600;overflow:hidden;white-space:nowrap}
-.attachment-item img{min-height:0;height:100%;width:auto;max-width:none;max-height:none}
+.attachment-item{display:flex;flex-direction:column;align-items:center;width:calc(50% - 2px);margin:0}
+.attachment-item>div:first-child{min-height:0;max-width:100%}
+.attachment-item>div:last-child{display:none}
+.attachments-tab>[data-review-pair-label]{flex-basis:100%;height:20px;line-height:20px;text-align:center;font-weight:600;overflow:hidden;white-space:nowrap}
+.attachment-item img{display:block;width:100%;height:auto;max-height:75vh;object-fit:contain;max-width:none}
 `;
 
   writeFileSync(target, css + stripCss);
   console.log(`patch:report: patched ${path.basename(target)}`);
 }
 
-// 2. Seed the bottom pane height (propertiesSidebar.vertical:size) at 50% of
-// the viewport. The setting lives in localStorage per origin, and report URLs
-// use a random port, so without a seed every run starts at the Playwright
+// 2. Seed the bottom pane height (propertiesSidebar.vertical:size) near its
+// maximum (90% of the viewport) so the screenshots grid gets as much vertical
+// space as possible. The setting lives in localStorage per origin, and report
+// URLs use a random port, so without a seed every run starts at the Playwright
 // default. Only written when unset: manual resizer drags win.
 const reportIndex = path.join(reportDir, "index.html");
 const seedScript = `
@@ -59,7 +61,7 @@ const seedScript = `
   try {
     var key = "propertiesSidebar.vertical:size";
     if (!localStorage.getItem(key)) {
-      var initial = Math.round(window.innerHeight * 0.5 * window.devicePixelRatio);
+      var initial = Math.round(window.innerHeight * 0.9 * window.devicePixelRatio);
       localStorage.setItem(key, String(initial));
     }
     var tabKey = "propertiesTab";
@@ -81,28 +83,34 @@ if (html.includes(marker)) {
   console.log("patch:report: seeded pane height and initial tab into index.html");
 }
 
-// 3. Match each attachment item's box to its screenshot's aspect ratio. Flex
-// computes the item's width from the image's intrinsic pixel size, and
-// device-pixel-ratio-scaled screenshots are several times wider than they
-// render, so without this the row keeps large gaps between images. An
-// explicit aspect ratio on the item (whose height is the pane height)
-// collapses the box to the rendered size.
+// 3. Show each pair's category and sort as a heading centered across the
+// pair (for example, `Videos - Latest`). The heading is an inserted element
+// spanning both screenshots, applied via MutationObserver because the trace
+// viewer re-renders the tab on selection changes. The destination item's
+// attachment name row stays hidden.
 const traceIndex = path.join(traceDir, "index.html");
-const fitScript = `
+const labelScript = `
 <script>
 // ${marker}: added by scripts/patch-report.ts
 (function () {
-  function fit() {
+  function label() {
     document.querySelectorAll(".attachments-tab .attachment-item").forEach(function (item) {
-      var img = item.querySelector("img");
-      if (img && img.naturalWidth) {
-        var ratio = img.naturalWidth + " / " + img.naturalHeight;
-        if (item.style.aspectRatio !== ratio) item.style.aspectRatio = ratio;
-      }
+      var name = item.querySelector("a") ? item.querySelector("a").textContent : "";
+      if (!/-button$/.test(name)) return;
+      var previous = item.previousElementSibling;
+      if (previous && previous.hasAttribute("data-review-pair-label")) return;
+      var label = document.createElement("div");
+      label.setAttribute("data-review-pair-label", "");
+      label.textContent = name
+        .replace(/-button$/, "")
+        .split("-")
+        .map(function (part) { return part.charAt(0).toUpperCase() + part.slice(1); })
+        .join(" - ");
+      item.parentNode.insertBefore(label, item);
     });
   }
-  new MutationObserver(fit).observe(document.body, { childList: true, subtree: true });
-  setInterval(fit, 1000);
+  new MutationObserver(label).observe(document.body, { childList: true, subtree: true });
+  label();
 })();
 </script>`;
 
@@ -113,6 +121,6 @@ if (traceHtml.includes(marker)) {
   console.error("patch:report: trace/index.html has no </body> to inject into");
   process.exit(1);
 } else {
-  writeFileSync(traceIndex, traceHtml.replace("</body>", `${fitScript}</body>`));
-  console.log("patch:report: seeded item aspect ratio into trace/index.html");
+  writeFileSync(traceIndex, traceHtml.replace("</body>", `${labelScript}</body>`));
+  console.log("patch:report: seeded pair labels into trace/index.html");
 }
