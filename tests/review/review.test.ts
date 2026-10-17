@@ -99,6 +99,42 @@ ytxTest("Review", async ({ context, page, eventWatcher }) => {
   await ytxTest.step("Search for the channel and open it", () =>
     openChannelBySearch(page, eventWatcher),
   );
+
+  // The header dropdown mounts into yt-flexible-actions-view-model, which
+  // exists on the channel Home tab (observed on desktop and mobile), so it is
+  // exercised where it renders without entering any category tab. It appears
+  // only after all nine playlist hrefs resolve, including three
+  // network-backed Oldest links.
+  await ytxTest.step("Expand the header Play All dropdown on Home", async () => {
+    const dropdown = page.locator(".play-all-btns").describe("Play All dropdown");
+    const menu = dropdown.locator(":scope > div").describe("Play All menu");
+    const toggle = dropdown.locator("button").describe("Play All menu toggle");
+    await expect(dropdown).toHaveCount(1, { timeout: 30_000 });
+    await expect(menu).toBeHidden();
+    // The expanded menu can grow past the viewport, so anchor the scroll on
+    // the toggle button instead: scroll it to 2px below the fixed masthead,
+    // whose subtree would otherwise intercept the toggle's clicks, and
+    // capture both shots at that page position.
+    await humanClick(toggle);
+    await expect(menu).toBeVisible();
+    const buttonTop = (await toggle.boundingBox())!.y;
+    const mastheadBottom = await page.evaluate(
+      () => document.querySelector("ytd-masthead")!.getBoundingClientRect().bottom,
+    );
+    await page.evaluate((delta) => window.scrollBy({ top: delta }), buttonTop - mastheadBottom - 2);
+    await expect
+      .poll(async () => (await toggle.boundingBox())!.y, { timeout: 5_000 })
+      .toBeLessThanOrEqual(mastheadBottom + 4);
+    await humanClick(toggle);
+    await expect(menu).toBeHidden();
+    await attachScreenshot(page, "dropdown-collapsed");
+    await humanClick(toggle);
+    // Requiring a visible menu item keeps the expanded capture from showing
+    // an empty menu when every playlist resolution failed.
+    await expect(menu.locator("a").first().describe("first menu item")).toBeVisible();
+    await attachScreenshot(page, "dropdown-expanded");
+  });
+
   const channelPage = new YtChannelPage(channel, page, eventWatcher);
   for (const category of YoutubeDOM.categories) {
     for (const sort of YoutubeDOM.sorts) {
