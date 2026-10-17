@@ -108,12 +108,21 @@ const labelScript = `
   function label() {
     document.querySelectorAll(".attachments-tab .attachment-item").forEach(function (item) {
       var name = item.querySelector("a") ? item.querySelector("a").textContent : "";
-      if (!/-button$/.test(name)) return;
+      // Dropdown captures have no category-and-sort pair; group them under
+      // their own headings instead ("Members …" covers the members channel).
+      // Only the first capture of each group takes the heading, so the two
+      // shots of a dropdown stay side by side in the two-column grid.
+      var heading = /^members-dropdown-collapsed$/.test(name)
+        ? "Members Play All Buttons Dropdown"
+        : /^dropdown-collapsed$/.test(name)
+          ? "Play All Buttons Dropdown"
+          : null;
+      if (!heading && !/-button$/.test(name)) return;
       var previous = item.previousElementSibling;
       if (previous && previous.hasAttribute("data-review-pair-label")) return;
       var label = document.createElement("div");
       label.setAttribute("data-review-pair-label", "");
-      label.textContent = name
+      label.textContent = heading || name
         .replace(/-button$/, "")
         .split("-")
         .map(function (part) { return part.charAt(0).toUpperCase() + part.slice(1); })

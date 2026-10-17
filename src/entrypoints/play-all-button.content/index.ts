@@ -8,6 +8,7 @@ import {
   schedulePageTask,
   scheduleUiTask,
 } from "./ui-scheduler";
+import { MEMBERS_KINDS, MEMBERS_SORTS } from "./youtube-api";
 import { YoutubeDOM } from "./youtube-dom";
 import { emitPageEnter, registerHooks, YTX_EVENTS, ytxEventEmitter } from "./youtube-hooks";
 
@@ -115,7 +116,9 @@ async function renderDropdown(channel: Channel, latestEpoch: number) {
   container.className = "play-all-btns";
 
   const button = document.createElement("button");
-  button.textContent = "Play All Buttons ▼";
+  const toggleLabel = document.createElement("span");
+  toggleLabel.textContent = "Play All Buttons ▼";
+  button.appendChild(toggleLabel);
 
   const menu = document.createElement("div");
   menu.className = "hidden";
@@ -127,6 +130,21 @@ async function renderDropdown(channel: Channel, latestEpoch: number) {
         const a = document.createElement("a");
         a.href = href;
         a.textContent = `${categoryKind} (${sortKind})`;
+        menu.appendChild(a);
+      }
+    }
+  }
+
+  // Members-only entries resolve last and are appended after the category
+  // links: they exist only on channels with membership perks, and a failed
+  // resolution (a channel without them) simply appends nothing.
+  for (const membersKind of MEMBERS_KINDS) {
+    for (const sortKind of MEMBERS_SORTS) {
+      const href = await channel.getMembersPlaylistPath(membersKind, sortKind);
+      if (href) {
+        const a = document.createElement("a");
+        a.href = href;
+        a.textContent = `Members ${membersKind.toLowerCase()} (${sortKind})`;
         menu.appendChild(a);
       }
     }
@@ -146,6 +164,22 @@ async function renderDropdown(channel: Channel, latestEpoch: number) {
       e.stopPropagation();
       isOpen = !isOpen;
       menu.classList.toggle("hidden", !isOpen);
+      if (isOpen) {
+        // Keep the open menu inside the viewport: the header sits well below
+        // the top of the page, so a full-height menu would render its lower
+        // rows off-screen and unclickable. A small minimum keeps the menu
+        // scrollable even in that edge case.
+        const available = window.innerHeight - button.getBoundingClientRect().bottom - 8;
+        menu.style.maxHeight = `${Math.max(available, 160)}px`;
+        // Align the toggle label's left edge with the menu items' text left
+        // edge: shift the menu left by its item padding, so the characters
+        // line up rather than the menu border. The mobile toggle spans the
+        // full header width, so its centered label starts far to the right
+        // of the button edge the menu otherwise hangs from.
+        const itemPaddingLeft =
+          parseFloat(getComputedStyle(menu.querySelector("a")).paddingLeft) || 0;
+        menu.style.left = `${toggleLabel.getBoundingClientRect().left - container.getBoundingClientRect().left - itemPaddingLeft}px`;
+      }
     });
     menu.addEventListener("click", (e) => {
       e.stopPropagation();

@@ -12,6 +12,7 @@ import { YtChannelPage, YtSearchPage, YtVideoPage } from "../utils";
 ytxTest.use({ trace: "on" });
 
 const channel = "@Apple";
+const membersChannel = "@NASASpaceflight";
 
 // YouTube's mobile playlist queues can interleave rows the channel grid never
 // shows, e.g. a "[Private video]" placeholder. Only rows that YouTube itself
@@ -52,7 +53,7 @@ function expectedHref(category: CategoryKind, sort: SortKind): RegExp {
 // positions instead of teleporting to the target's center.
 const humanClick = (locator: Locator) => locator.click({ steps: 15 });
 
-async function openChannelBySearch(page: Page, eventWatcher: EventWatcher) {
+async function openChannelBySearch(page: Page, eventWatcher: EventWatcher, channel: string) {
   const search = new YtSearchPage(page, eventWatcher);
   // The soft search opens the search UI and types the query key-by-key
   // (pressSequentially inside submitQuery).
@@ -70,6 +71,25 @@ async function attachScreenshot(page: Page, name: string) {
   const path = ytxTest.info().outputPath(`${name}.png`);
   await page.screenshot({ path });
   await ytxTest.info().attach(name, { path, contentType: "image/png" });
+}
+
+// The expanded menu can grow past the viewport, so anchor the scroll on
+// the toggle button instead: scroll it to 2px below the fixed masthead,
+// whose subtree would otherwise intercept the toggle's clicks, and
+// capture screenshots at that page position.
+async function anchorToggleBelowMasthead(page: Page, toggle: Locator) {
+  const buttonTop = (await toggle.boundingBox())!.y;
+  // Desktop web names its fixed header ytd-masthead; mobile web instead
+  // mounts a plain <header> (mobile topbar) that scrolls away, so on
+  // mobile the toggle anchors near the very top of the viewport.
+  const mastheadBottom = await page.evaluate(() => {
+    const masthead = document.querySelector("ytd-masthead") ?? document.querySelector("header");
+    return masthead ? masthead.getBoundingClientRect().bottom : 0;
+  });
+  await page.evaluate((delta) => window.scrollBy({ top: delta }), buttonTop - mastheadBottom - 2);
+  await expect
+    .poll(async () => (await toggle.boundingBox())!.y, { timeout: 5_000 })
+    .toBeLessThanOrEqual(mastheadBottom + 4);
 }
 
 ytxTest("Review", async ({ context, page, eventWatcher }) => {
@@ -97,7 +117,7 @@ ytxTest("Review", async ({ context, page, eventWatcher }) => {
   });
 
   await ytxTest.step("Search for the channel and open it", () =>
-    openChannelBySearch(page, eventWatcher),
+    openChannelBySearch(page, eventWatcher, channel),
   );
 
   // The header dropdown mounts into yt-flexible-actions-view-model, which
@@ -117,14 +137,7 @@ ytxTest("Review", async ({ context, page, eventWatcher }) => {
     // capture both shots at that page position.
     await humanClick(toggle);
     await expect(menu).toBeVisible();
-    const buttonTop = (await toggle.boundingBox())!.y;
-    const mastheadBottom = await page.evaluate(
-      () => document.querySelector("ytd-masthead")!.getBoundingClientRect().bottom,
-    );
-    await page.evaluate((delta) => window.scrollBy({ top: delta }), buttonTop - mastheadBottom - 2);
-    await expect
-      .poll(async () => (await toggle.boundingBox())!.y, { timeout: 5_000 })
-      .toBeLessThanOrEqual(mastheadBottom + 4);
+    await anchorToggleBelowMasthead(page, toggle);
     await humanClick(toggle);
     await expect(menu).toBeHidden();
     await attachScreenshot(page, "dropdown-collapsed");
@@ -265,4 +278,49 @@ ytxTest("Review", async ({ context, page, eventWatcher }) => {
       });
     }
   }
+
+  // The members entries mount only on channels with membership perks, so
+  // after @Apple's cells the dropdown is re-exercised on such a channel:
+  // it must list both members-only kinds with Latest and Oldest, pointing
+  // at that channel's UUMF / UUMV playlists.
+  await ytxTest.step("Expand the members channel's Play All dropdown on Home", async () => {
+    // A second search inside the journey is flaky on mobile: the results
+    // card's channel thumbnail click can be swallowed until the test times
+    // out, which makes the whole run flaky and its report show the failed
+    // first attempt. Land directly on the channel's Home instead.
+    await page.goto(`https://www.youtube.com/${membersChannel}`);
+    const dropdown = page.locator(".play-all-btns").describe("Play All dropdown");
+    const menu = dropdown.locator(":scope > div").describe("Play All menu");
+    const toggle = dropdown.locator("button").describe("Play All menu toggle");
+    await expect(dropdown).toHaveCount(1, { timeout: 30_000 });
+    await expect(menu).toBeHidden();
+    await humanClick(toggle);
+    await expect(menu).toBeVisible();
+    await anchorToggleBelowMasthead(page, toggle);
+    // Re-open with the toggle anchored: the menu's max height is computed
+    // from the toggle's position at open time, so the first opening kept
+    // the pre-scroll height and clipped the members entries.
+    await humanClick(toggle);
+    await expect(menu).toBeHidden();
+    await attachScreenshot(page, "members-dropdown-collapsed");
+    await humanClick(toggle);
+    for (const [kind, prefix] of [
+      ["videos", "UUMF"],
+      ["streams", "UUMV"],
+    ] as const) {
+      for (const sort of ["Latest", "Oldest"]) {
+        const item = menu
+          .getByText(`Members ${kind} (${sort})`, { exact: true })
+          .describe(`Members ${kind} (${sort}) menu item`);
+        await expect(item).toBeVisible({ timeout: 30_000 });
+        await expect(item).toHaveAttribute("href", new RegExp(`list=${prefix}[\\w-]+`));
+      }
+    }
+    // The 13-item menu fits the viewport with the toggle anchored at the
+    // masthead, so the members entries are in the shot without scrolling
+    // inside the menu.
+    await attachScreenshot(page, "members-dropdown-expanded");
+    await humanClick(toggle);
+    await expect(menu).toBeHidden();
+  });
 });

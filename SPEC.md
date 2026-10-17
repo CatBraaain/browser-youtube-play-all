@@ -6,6 +6,7 @@
 | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | All cases                                            | Desktop and mobile.                                                                                 |
 | Cases on a channel's Videos, Shorts, or Streams page | Direct category-page load (hard navigation) and navigation without a page reload (soft navigation). |
+| Members-only cases                                   | Any channel page (via the Play All menu), loaded directly or by soft navigation.                    |
 
 ## Button and menu
 
@@ -40,6 +41,17 @@ Each case below applies to every category C ∈ {Videos, Shorts, Streams}, cover
 | ---------------------------- | -------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Shared oldest-first playlist | Oldest is selected on a category | Activate "Play All (Oldest)" | The destination is a single playlist containing uploads from all categories in oldest-first order. That category's oldest video is selected. If another category has an older upload, the selected video is not the first item in the playlist panel. |
 
+## Members-only destinations
+
+The Play All menu also lists members-only entries for channels with membership perks. Members-only playlists exist only for videos (UUMF) and live streams (UUMV); they have no Popular sort and no reverse-order playlist, and they are not listed for channels without membership perks.
+
+| Case                          | Condition                             | Operation                               | Expected result                                                                                                                                                                                                                                                                                        |
+| ----------------------------- | ------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Menu entries with membership  | A channel with membership perks       | Open the Play All menu                  | The menu lists members-only videos and live-streams entries, each with Latest and Oldest. Latest links point at that channel's UUMF / UUMV playlist, and Oldest links start playback at the playlist's oldest item.                                                                                      |
+| Menu entries without membership | A channel without membership perks | Open the Play All menu                  | No members-only entry is listed.                                                                                                                                                                                                                                                                       |
+| Latest destination            | The menu lists a members-only entry   | Activate a members-only Latest entry    | The destination is that channel's members-only playlist, and its playlist panel lists the same video ids in the same order as the members-only playlist page. Rows are not filtered by playability: members-only rows are unplayable to signed-out viewers, and the comparison still holds.              |
+| Oldest destination            | The menu lists a members-only entry   | Activate a members-only Oldest entry    | The playlist panel's selected row is the members-only playlist's oldest item — the last row of the members-only playlist page.                                                                                                                                                                          |
+
 ## Failure
 
 | Case                           | Condition                                | Operation                         | Expected result                                                                                                |
@@ -56,7 +68,7 @@ A review unit is a `test.step()` step named as an operation, pairing one intenti
 
 | Test name | Journey |
 | --- | --- |
-| `Review` | Check Play All buttons across categories and sorts and verify each button's playlist destination. |
+| `Review` | Check Play All buttons across categories and sorts and verify each button's playlist destination, and check the members channel's dropdown lists its members-only entries. |
 
 The journey runs once per selected E2E project, using that project's browser and device. Mobile retains the normal project's Pixel 5 portrait viewport.
 

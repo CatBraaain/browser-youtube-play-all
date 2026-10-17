@@ -64,41 +64,88 @@ export async function resolvePlaylistPath(
   sortKind: SortKind,
 ): Promise<string> {
   if (sortKind === "Oldest") {
-    const videoId = await getOldestItemId(channelId, categoryKind);
-    if (videoId === null) {
+    const playlistUrl = new URL(
+      resolveFilteredPlaylistUrl(channelId, categoryKind, "Latest"),
+      window.location.href,
+    ).toString();
+    const oldest = await getOldestItem(playlistUrl);
+    if (oldest === null) {
       return "";
     }
-    return videoId ? `/watch?v=${videoId}&list=UL01234567890` : "";
+    return `/watch?v=${oldest.videoId}&list=UL01234567890`;
   } else {
     return `${resolveFilteredPlaylistUrl(channelId, categoryKind, sortKind)}&playnext=1`;
   }
 }
 
-async function getOldestItemId(
-  channelId: string,
-  categoryKind: CategoryKind,
-): Promise<string | null> {
-  const playlistUrl = new URL(
-    `${resolveFilteredPlaylistUrl(channelId, categoryKind, "Latest")}`,
-    window.location.href,
-  ).toString();
+export type MembersKind = "Videos" | "Streams";
+export type MembersSortKind = "Latest" | "Oldest";
 
+export const MEMBERS_KINDS: MembersKind[] = ["Videos", "Streams"];
+export const MEMBERS_SORTS: MembersSortKind[] = ["Latest", "Oldest"];
+
+// Members-only playlists have no Popular variant and no reverse-order (UL)
+// playlist, so Oldest resolves the oldest member and starts playback at it.
+export async function resolveMembersPlaylistPath(
+  channelId: string,
+  membersKind: MembersKind,
+  sortKind: MembersSortKind,
+): Promise<string> {
+  const playlistUrl = resolveMembersPlaylistUrl(channelId, membersKind);
+  // The playlist fetches resolve the path against the document location:
+  // the content-script sandbox on Firefox does not resolve relative fetch
+  // URLs (the same reason getOldestItem fetches an absolute URL).
+  const fetchUrl = new URL(playlistUrl, window.location.href).toString();
+  if (sortKind === "Latest") {
+    const header = (await fetchYtInitialData(fetchUrl)).header;
+    return header === undefined ? "" : `${playlistUrl}&playnext=1`;
+  }
+  const oldest = await getOldestItem(fetchUrl);
+  if (oldest === null) {
+    return "";
+  }
+  return `/watch?v=${oldest.videoId}&list=${membersPlaylistId(channelId, membersKind)}&index=${oldest.index}`;
+}
+
+function membersPlaylistId(channelId: string, membersKind: MembersKind): string {
+  return `${membersKind === "Videos" ? "UUMF" : "UUMV"}${channelId.slice(2)}`;
+}
+
+function resolveMembersPlaylistUrl(channelId: string, membersKind: MembersKind): string {
+  return `/playlist?list=${membersPlaylistId(channelId, membersKind)}`;
+}
+
+// Resolves the oldest item of a playlist: the item count comes from the
+// playlist header, and the item at that index is the oldest one. Returns the
+// item's playlist index too, so reverse-order destinations can link to it.
+async function getOldestItem(
+  playlistUrl: string,
+): Promise<{ videoId: string; index: number } | null> {
   const playlistHeader = (await fetchYtInitialData(playlistUrl)).header;
   if (playlistHeader === undefined) {
     return null;
   }
 
-  const videoCount = playlistHeader.playlistHeaderRenderer.stats[0].runs[0].text
-    .match(/\d/g)
-    ?.join("");
-  if (videoCount === undefined) {
+  const index = playlistHeader.playlistHeaderRenderer.stats[0].runs[0].text.match(/\d/g)?.join("");
+  if (index === undefined) {
     return null;
   }
 
-  const oldestVideoId = (await fetchYtInitialData(`${playlistUrl}&index=${videoCount}&playnext=1`))
-    .currentVideoEndpoint.watchEndpoint.videoId;
+  const oldestData = await fetchYtInitialData(`${playlistUrl}&index=${index}&playnext=1`);
+  const currentVideoEndpoint = oldestData.currentVideoEndpoint;
+  // The watch URL moved into commandMetadata: currentVideoEndpoint used to
+  // embed watchEndpoint.videoId directly, now it only carries a URL such as
+  // "/watch?v=…&list=…&index=…". Support both layouts.
+  const videoId =
+    currentVideoEndpoint?.watchEndpoint?.videoId ??
+    currentVideoEndpoint?.commandMetadata?.webCommandMetadata?.url
+      ?.match(/[?&]v=([a-zA-Z0-9_-]{11})/)
+      ?.at(1);
+  if (videoId === undefined || videoId === null) {
+    return null;
+  }
 
-  return oldestVideoId;
+  return { videoId, index: Number(index) };
 }
 
 function resolveFilteredPlaylistUrl(

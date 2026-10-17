@@ -58,8 +58,15 @@
     background-color: #282828;
     border-radius: 8px;
     min-width: 160px;
+    /* Size to the widest label so entries like "Members streams (Oldest)"
+       stay on one line instead of folding into two. */
+    width: max-content;
     z-index: 1000;
     overflow: hidden;
+    /* The category and members-only links together can exceed the viewport
+       height, so the menu scrolls. Its max height is set in pixels when the
+       menu opens, to fit between the toggle and the viewport's bottom edge. */
+    overflow-y: auto;
 
     a {
       display: block;
@@ -67,6 +74,7 @@
       color: #f1f1f1;
       text-decoration: none;
       font-size: 1.4rem;
+      white-space: nowrap;
     }
     a:hover {
       background-color: #323232;
