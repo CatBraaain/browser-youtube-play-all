@@ -1,9 +1,10 @@
 // Post-processes the generated Playwright HTML report:
 // 1. The trace viewer's Attachments tab renders the review screenshots as a
 //    wide horizontal strip.
-// 2. The height of the bottom pane (where the Attachments tab lives) is seeded
-//    at 70% of the viewport, and the Attachments tab is seeded as the
-//    initially selected tab.
+// 2. The Attachments tab is seeded as the initially selected tab. The bottom
+//    pane height is deliberately NOT seeded: a near-maximum seed keeps the
+//    snapshot pane squeezed to ~10px, and every browser zoom change re-computes
+//    the pane boundary, which read as the whole UI vibrating.
 // Playwright regenerates the whole report on every run, so "test:review" runs
 // this script right after the test run (see "patch:report" in package.json).
 // The patch keys off the existing ".attachments-tab" class; when a Playwright
@@ -47,32 +48,34 @@ if (css.includes(marker)) {
 .attachment-item img{display:block;width:auto;height:45vh;max-width:100%;object-fit:contain}
 /* The film strip under the timeline grows by 50px when the async video
    thumbnail generation adds its lane after the trace opens; that growth
-   changes the split pane's measured height and, combined with the 90%
-   bottom-pane seed, moves the pane boundary. Fix it at two lanes (one
-   screencast page + one video, this project's review shape). */
+   changes the split pane's measured height and moves the pane boundary.
+   Fix it at two lanes (one screencast page + one video, this project's
+   review shape). */
 .film-strip-lanes{height:100px}
+/* Start the Attachments pane at full height without a height seed: a fixed
+   small snapshot pane plus flex-grow on the sidebar keeps the bottom pane at
+   "everything else", which stays stable across browser zoom changes. A near-
+   maximum seed squeezed the snapshot pane to ~10px and re-moved the pane
+   boundary on every zoom change, reading as the whole UI vibrating. */
+.split-view.vertical>.split-view-main{flex:none;height:72px}
+.split-view.vertical>.split-view-sidebar{flex-grow:1}
 `;
 
   writeFileSync(target, css + stripCss);
   console.log(`patch:report: patched ${path.basename(target)}`);
 }
 
-// 2. Seed the bottom pane height (propertiesSidebar.vertical:size) near its
-// maximum (90% of the viewport) so the screenshots grid gets as much vertical
-// space as possible. The setting lives in localStorage per origin, and report
-// URLs use a random port, so without a seed every run starts at the Playwright
-// default. Only written when unset: manual resizer drags win.
+// 2. Seed the Attachments tab as the initially selected tab. The bottom pane
+//    height is deliberately left at the Playwright default: a 90% seed keeps
+//    the snapshot pane squeezed to ~10px, and every browser zoom change
+//    re-computes the pane boundary (`size = saved size / devicePixelRatio`),
+//    which squeezed the pane away entirely and read as the whole UI vibrating.
 const reportIndex = path.join(reportDir, "index.html");
 const seedScript = `
 <script>
 // ${marker}: added by scripts/patch-report.ts
 (function () {
   try {
-    var key = "propertiesSidebar.vertical:size";
-    if (!localStorage.getItem(key)) {
-      var initial = Math.round(window.innerHeight * 0.9 * window.devicePixelRatio);
-      localStorage.setItem(key, String(initial));
-    }
     var tabKey = "propertiesTab";
     if (!localStorage.getItem(tabKey)) {
       localStorage.setItem(tabKey, JSON.stringify("attachments"));
@@ -89,7 +92,7 @@ if (html.includes(marker)) {
   process.exit(1);
 } else {
   writeFileSync(reportIndex, html.replace("<head>", `<head>${seedScript}`));
-  console.log("patch:report: seeded pane height and initial tab into index.html");
+  console.log("patch:report: seeded initial tab into index.html");
 }
 
 // 3. Show each pair's category and sort as a heading centered across the

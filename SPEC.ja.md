@@ -64,7 +64,7 @@ E2Eテストは、網羅性を確認するテストとレビューのための�
 
 ### レビューの実行と閲覧
 
-`bun run test` は網羅性とレビューの両方のテストを実行する。`bun run test:review` は `tests/review/` のテストだけをワーカー1でChrome desktopとChrome mobileに実行する部分実行である。どちらの実行でも、レビューのtraceは成功試行を含めて常に保持する。レビュー以外のテストは失敗試行のtraceだけを保持する (`trace: "retain-on-failure"`)。レビューの実行は、trace viewerのAttachmentsタブを、buttonとdestinationのペアをカテゴリと並び順の見出し（例: `Videos - Latest`）の下に縦に積む2列のグリッドにし、下ペインの高さを最大近くに初期化してAttachmentsタブを初期選択にするreportパッチ (`scripts/patch-report.ts`) で終わる。パッチはtrace viewerのfilm stripの高さも固定し、動画サムネイルの非同期生成でtimelineが伸びてtraceを開いた後にペイン境界が動くことを防ぐ。
+`bun run test` は網羅性とレビューの両方のテストを実行する。`bun run test:review` は `tests/review/` のテストだけをワーカー1でChrome desktopとChrome mobileに実行する部分実行である。どちらの実行でも、レビューのtraceは成功試行を含めて常に保持する。レビュー以外のテストは失敗試行のtraceだけを保持する (`trace: "retain-on-failure"`)。レビューの実行は、trace viewerのAttachmentsタブを、buttonとdestinationのペアをカテゴリと並び順の見出し（例: `Videos - Latest`）の下に縦に積む2列のグリッドにし、Attachmentsタブを初期選択にするreportパッチ (`scripts/patch-report.ts`) で終わる。パッチはsnapshotペインを小さな固定高さにし、Attachmentsペインが最初から最大の高さになるようにする。ペイン高さは初期化しない。最大近くのseedはsnapshotペインをほぼ潰し続け、ブラウザズームのたびにペイン境界が動くためである。パッチはtrace viewerのfilm stripの高さも固定し、動画サムネイルの非同期生成でtimelineが伸びてtraceを開いた後にペイン境界が動くことを防ぐ。
 
 両方の実行結果は同じPlaywright HTML reportに保存され、直近の実行結果で上書きされる。どちらの実行後も再テストせずに閲覧でき、閲覧のための `bun run test:review` は任意である。
 
