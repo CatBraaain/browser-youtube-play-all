@@ -3,7 +3,7 @@ import EventEmitter from "eventemitter3";
 import { logger } from "../../logger";
 import { Channel } from "./channel";
 import { advancePageEpoch, currentPageEpoch, isPageStale } from "./ui-scheduler";
-import { fetchChannelId } from "./youtube-api";
+import { fetchChannelPageState } from "./youtube-api";
 import { YoutubeDOM } from "./youtube-dom";
 
 export const YTD_EVENTS = {
@@ -73,10 +73,13 @@ function registerChannelHooks() {
     // part of this check: the channel is unchanged by a sort switch, so the
     // chain must survive them (only page transitions advance pageEpoch).
     const latestEpoch = currentPageEpoch();
-    const channelId = await fetchChannelId(window.location.href);
+    const { channelId, sortLabels } = await fetchChannelPageState(window.location.href);
     if (isPageStale(latestEpoch)) {
       return;
     }
+    // The chip bar's canonical labels feed the sort resolution before any
+    // CHANNEL_ENTER consumer reads it (YT-SPEC.md "Sort dropdown UI").
+    YoutubeDOM.learnSortLabels(sortLabels);
     const oldChannelId = currentChannel?.id;
     const isChannelIdChanged = channelId !== oldChannelId;
     if (channelId === undefined) {
@@ -100,20 +103,24 @@ function registerCategoryHooks() {
 }
 
 function registerSortHooks() {
-  // sort changed hook
+  // sort changed hook: fires when the resolved sort actually changes. This
+  // covers classic chip selections and dropdown-UI sort picks (the dropdown
+  // chip's label swap rewrites no aria-selected of its own), and ignores the
+  // audience filter chips that also flip aria-selected on membership
+  // channels (YT-SPEC.md "Sort dropdown UI").
   ytxEventEmitter.on(YTX_EVENTS.CATEGORY_ENTER, async (currentChannel: Channel) => {
-    const sortChangeObserver = new MutationObserver(async (records) => {
-      const sortButtons = YoutubeDOM.sortButtons;
-      const isSortChanged = records.some(
-        (r) => r.target instanceof Element && sortButtons.includes(r.target),
-      );
-      if (isSortChanged) {
+    let resolvedSort = YoutubeDOM.sortKind;
+    const sortChangeObserver = new MutationObserver(() => {
+      const sort = YoutubeDOM.sortKind;
+      if (sort !== null && sort !== resolvedSort) {
+        resolvedSort = sort;
         ytxEventEmitter.emit(YTX_EVENTS.SORT_CHANGED, currentChannel);
       }
     });
     sortChangeObserver.observe(document, {
       subtree: true,
-      childList: false,
+      childList: true,
+      characterData: true,
       attributes: true,
       attributeFilter: ["aria-selected"],
     });

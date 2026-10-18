@@ -86,6 +86,43 @@ Play All ボタンは別経路で解決され、グリッドより遅れるこ�
 では未観測）。トリガーは不明である。このようなセッションは、置換だけを待つ
 のではなくトークン一致でフェイルクローズドするもう 1 つの根拠である。
 
+## メンバーシップチャンネルの sort ドロップダウン UI
+
+メンバーシップを提供するチャンネルは、desktop・mobile web ともにカテゴリの
+sort 操作を別の UI で描画する。3 つの sort チップの代わりに、チップバーに
+sort ドロップダウンチップとオーディエンスフィルタチップが並ぶ。
+
+| 要素                         | DOM                                                                                                                                                 | 挙動                                                                                                                   |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| sort ドロップダウンチップ    | `chip-bar-view-model button[role=combobox]`（desktop は `ytd-browse[page-subtype='channels'] #primary` 内、mobile は `ytm-browse .tab-content` 内） | ラベルテキスト（`.ytChipShapeText`）が現在の sort を表す。自身の `aria-selected` は常に `false` で sort 状態を持たない |
+| オーディエンスフィルタチップ | `aria-selected` を持つ `button[role=tab]`。観測では「Members only」と「Public」                                                                     | グリッドのオーディエンスフィルタ。sort チップと同様に `aria-selected` を反転させるが、sort 操作ではない                |
+| sort 選択シート              | desktop: `ytd-popup-container` 内の `button[role=menuitem]`。mobile: 同じ要素が `bottom-sheet-container` 内                                         | 項目順は Latest・Popular・Oldest の正規順。各項目の tap コマンドはチップと同様に `continuationCommand.token` を持つ    |
+
+シートからの sort 選択はナビゲーションではない: ナビゲーションイベントは発火
+せず、URL のクエリも変化しない（mobile はシート表示中に `#bottom-sheet`
+ハッシュが付くことがある）。選択した sort が現れるのは DOM のみである:
+
+- combobox のラベルが選択した sort に変わる。
+- desktop ではチップバー全体が同じタイミングで再構築される（combobox 要素も
+  置き換わる）。mobile ではラベルテキストだけが差し替わり、combobox 要素は
+  生き残る。
+- グリッドは従来の sort と同様に入れ替わる（先頭ノード置き換えと同じパターン）。
+
+combobox のラベルとシート項目のタイトルはローカライズされる（英語 Latest /
+Popular / Oldest、日本語 新しい順 / 人気の動画 / 古い順 を観測）。シート
+項目には構造的な選択マーカーがなく、DOM の形状はすべて同一で、選択状態は
+combobox ラベルにのみ現れる。シートモデルの `isSelected` と、シート項目の
+browse 応答を特定するトークンは、チップの view-model data として main
+world にのみ存在し、content script からは読めない。
+
+sort はタブを離れて戻るときも、ハードリロードのたびにも Latest にリセット
+される（ログアウト状態で観測）。ラベル→sort 対応はライブページからではな
+く、フェッチしたカテゴリページから事前に学習する: フェッチした
+ytInitialData は classic・メンバーシップどちらのチャンネルでも同じパスに
+`chipBarViewModel` を持ち、sort ラベルは classic ではチップ自身の text に、
+メンバーシップでは combobox チップのシートモデルに載る。1つの抽出で両UIに
+対応できる。対応表にないラベルは Latest として解決される。
+
 ## チャンネルタブ
 
 チャンネルページのタブは `yt-tab-shape` 要素として描画される（desktop・mobile

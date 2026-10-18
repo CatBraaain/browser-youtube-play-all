@@ -18,7 +18,7 @@ const membersKinds = ["Videos", "Streams"] as const;
 const membersSorts = ["Latest", "Oldest"] as const;
 
 function menuItemName(kind: (typeof membersKinds)[number], sort: (typeof membersSorts)[number]) {
-  return `Members ${kind.toLowerCase()} (${sort})`;
+  return `${kind} (Members ${sort})`;
 }
 
 // Members-only playlist pages render their rows as lockup view models on

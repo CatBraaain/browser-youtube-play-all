@@ -144,7 +144,7 @@ async function renderDropdown(channel: Channel, latestEpoch: number) {
       if (href) {
         const a = document.createElement("a");
         a.href = href;
-        a.textContent = `Members ${membersKind.toLowerCase()} (${sortKind})`;
+        a.textContent = `${membersKind} (Members ${sortKind})`;
         menu.appendChild(a);
       }
     }

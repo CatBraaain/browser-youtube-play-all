@@ -98,6 +98,46 @@ headless contexts on a single machine; not seen in e2e-like sessions). The
 trigger is unknown; such sessions are another reason the token-matched gate
 fails closed instead of waiting on replacement alone.
 
+## Sort dropdown UI on membership channels
+
+Channels that provide membership render the category sort differently, on
+desktop and mobile web alike: instead of the three sort chips, the chip bar
+holds a sort dropdown chip plus audience filter chips.
+
+| Element               | DOM                                                                                                                                                  | Behavior                                                                                                                 |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Sort dropdown chip    | `chip-bar-view-model button[role=combobox]` (desktop inside `ytd-browse[page-subtype='channels'] #primary`, mobile inside `ytm-browse .tab-content`) | Its label text (`.ytChipShapeText`) is the current sort; its own `aria-selected` stays `false` and carries no sort state |
+| Audience filter chips | `button[role=tab]` with `aria-selected`, observed as "Members only" and "Public"                                                                     | Audience filters for the grid; they flip `aria-selected` like sort buttons do but are not sort controls                  |
+| Sort options sheet    | Desktop: `button[role=menuitem]` items inside `ytd-popup-container`; mobile: the same items inside `bottom-sheet-container`                          | Canonical item order Latest, Popular, Oldest; each item's tap command carries a `continuationCommand.token` like a chip  |
+
+Selecting a sort from the sheet is not a navigation: no navigation event fires
+and the URL keeps its query (the mobile URL can gain a `#bottom-sheet` hash
+while the sheet is open). The chosen sort surfaces only in the DOM:
+
+- The combobox label becomes the chosen sort.
+- On desktop the whole chip bar is rebuilt in the same pass (the combobox
+  element is replaced); on mobile only the label text swaps in place and the
+  combobox element survives.
+- The grid swaps as with a classic sort (the same first-node replacement
+  pattern).
+
+The combobox label and the sheet item titles are localized (observed English
+Latest / Popular / Oldest and Japanese 新しい順 / 人気の動画 / 古い順). The
+sheet items carry no structural selected marker — their DOM shapes are
+identical, and the selection shows only as the combobox label. The sheet
+model's `isSelected` and the token identifying a sheet item's browse
+response live on the chip's view-model data in the main world, which a
+content script cannot read.
+
+The sort resets to Latest whenever the viewer leaves the tab and returns,
+and on every hard reload (observed signed-out). The label→sort mapping is
+learned up front from the fetched category page instead of the live page:
+the fetched ytInitialData holds a `chipBarViewModel` at the same path for
+classic and membership channels alike, with the sort labels in the chips'
+own texts (classic) or in the combobox chip's sheet model (membership), so
+one extraction serves both UIs. A label the mapping does not know resolves
+to Latest.
+
 ## Channel tabs
 
 Channel pages render tabs as `yt-tab-shape` elements (desktop and mobile web).

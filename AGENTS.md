@@ -9,6 +9,11 @@ Before writing or changing tests that trigger navigation on YouTube, read `YT-SP
 1. Check that the test cases in `SPEC.md` and `SPEC.ja.md` mean the same, then align the test implementation with those cases. Do not weaken a case just to make a test pass.
 2. Run the tests, then converge the implementation until they pass. A case is converged only when a test covers it.
 
+# Selectors
+
+- Selectors and matching logic must be language-independent: never match localized display text (e.g. "Latest", "新しい順") in a selector or match key, and never hardcode such text in the source. Identify elements by structure instead — ARIA roles, container elements, and canonical item order. Display text may be learned at runtime as data, but a locale-dependent string must never appear as a selector or match key.
+- Prefer selectors that are hard to break: anchor on stable contracts (ARIA roles, long-lived container elements), scope them tightly enough to avoid false positives, and keep new selectors in the same fragility class as the neighboring ones.
+
 # YouTube navigation test rules
 
 - Prefer the helpers in `tests/utils.ts` over raw clicks and `goto` calls; they encode the waiting rules below.

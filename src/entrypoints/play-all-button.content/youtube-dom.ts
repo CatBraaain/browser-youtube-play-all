@@ -29,6 +29,25 @@ export class YoutubeDOM {
   public static SORT_BUTTON =
     "ytd-browse[page-subtype='channels'] #primary [aria-selected],ytm-browse .tab-content [aria-selected]";
 
+  // Membership channels replace the three sort chips with a sort dropdown
+  // chip labeled with the current sort, next to audience filter chips
+  // (YT-SPEC.md "Sort dropdown UI").
+  public static SORT_COMBOBOX =
+    "ytd-browse[page-subtype='channels'] #primary chip-bar-view-model button[role='combobox'],ytm-browse .tab-content chip-bar-view-model button[role='combobox']";
+
+  // The selected control's own text names the sort in both UIs: the dropdown
+  // chip's label (dropdown UI) or the selected chip's text (classic UI).
+  public static SORT_SELECTED =
+    "ytd-browse[page-subtype='channels'] #primary [aria-selected='true'],ytm-browse .tab-content [aria-selected='true']";
+
+  // The label→sort mapping is learned from the page fetch's chip bar before
+  // any UI interaction (youtube-api.ts), so no locale-dependent text is
+  // hardcoded. Labels never learned map to no sort, and the button falls
+  // back to Latest — YouTube resets the sort to Latest on every page load
+  // and tab change, so an unlearned label always means Latest (YT-SPEC.md
+  // "Sort dropdown UI").
+  private static readonly learnedSortLabels = new Map<string, SortKind>();
+
   public static get sortButtons() {
     // sort buttons may not exist when there are not enough videos
     return Array.from(document.querySelectorAll(YoutubeDOM.SORT_BUTTON));
@@ -57,26 +76,26 @@ export class YoutubeDOM {
     return sortButtonHolder;
   }
 
-  public static get sortKind(): SortKind | null {
-    const i = Array.from(YoutubeDOM.sortButtonHolder?.children || []).findIndex(
-      (eachButtonTree) =>
-        eachButtonTree.matches("[aria-selected=true]") ||
-        eachButtonTree.querySelector("[aria-selected=true]"),
-    );
-    const sortKind = (() => {
-      switch (i) {
-        case 0:
-          return "Latest";
-        case 1:
-          return "Popular";
-        case 2:
-          return "Oldest";
-        default:
-          return null;
-      }
-    })();
+  public static get sortCombobox(): Element | null {
+    return document.querySelector(YoutubeDOM.SORT_COMBOBOX);
+  }
 
-    return sortKind;
+  // Teaches the canonical-order labels of the current page's chip bar. The
+  // map is always replaced, so it always mirrors the latest page fetch.
+  public static learnSortLabels(labels: string[]): void {
+    YoutubeDOM.learnedSortLabels.clear();
+    if (labels.length !== YoutubeDOM.sorts.length) {
+      return;
+    }
+    labels.forEach((label, i) => {
+      YoutubeDOM.learnedSortLabels.set(label, YoutubeDOM.sorts[i]!);
+    });
+  }
+
+  public static get sortKind(): SortKind | null {
+    const selected = YoutubeDOM.sortCombobox ?? document.querySelector(YoutubeDOM.SORT_SELECTED);
+    const label = selected?.textContent?.trim() ?? "";
+    return YoutubeDOM.learnedSortLabels.get(label) ?? null;
   }
 }
 

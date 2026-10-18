@@ -45,17 +45,72 @@ async function applyFetchGate(url: string): Promise<void> {
   }
 }
 
-export async function fetchChannelId(channelUrl: string) {
+export type ChannelPageState = {
+  channelId: string | undefined;
+  sortLabels: string[];
+};
+
+// One fetch of the current channel page serves both the channel id and the
+// sort chip bar's canonical labels: the fetched ytInitialData carries a
+// chipBarViewModel at the same path on every category page, with the sort
+// labels in the chips' own texts (classic UI) or in the combobox chip's
+// sheet model (dropdown UI, YT-SPEC.md "Sort dropdown UI").
+export async function fetchChannelPageState(channelUrl: string): Promise<ChannelPageState> {
   await applyFetchGate(channelUrl);
   const res = await fetch(channelUrl);
   const html = await res.text();
+  return { channelId: channelIdOf(html), sortLabels: sortLabelsOf(html) };
+}
+
+function channelIdOf(html: string) {
   const matches = [
     ...(html.match(/<link rel="canonical" href="https:\/\/www.youtube.com\/channel\/(.*?)">/i) ??
       []),
     ...(html.match(/"https:\/\/www.youtube.com\/channel\/(.*?)"/i) ?? []),
   ];
-  const channelId = matches.at(1);
-  return channelId;
+  return matches.at(1);
+}
+
+// The bar's sort labels are the sort sheet's titles when a chip carries the
+// sheet (dropdown UI), otherwise the chips' own texts (classic UI). Anything
+// but exactly the canonical item count of non-empty texts means no readable
+// chip bar and yields no labels.
+function sortLabelsOf(html: string): string[] {
+  const data = parseYtInitialData(html);
+  if (data === undefined) {
+    return [];
+  }
+  let labels: string[] = [];
+  const visit = (value: unknown, depth: number): void => {
+    if (labels.length > 0 || !value || typeof value !== "object" || depth > 16) {
+      return;
+    }
+    for (const [key, entry] of Object.entries(value)) {
+      if (key === "chipBarViewModel") {
+        labels = sortLabelsOfChipBar(entry);
+      }
+      visit(entry, depth + 1);
+    }
+  };
+  visit(data, 0);
+  return labels;
+}
+
+function sortLabelsOfChipBar(chipBar: unknown): string[] {
+  const chips = ((chipBar as any)?.chips ?? []).map((chip: any) => chip?.chipViewModel ?? {});
+  const sheetItems = chips
+    .map(
+      (chip: any) =>
+        chip?.tapCommand?.innertubeCommand?.showSheetCommand?.panelLoadingStrategy?.inlineContent
+          ?.sheetViewModel?.content?.listViewModel?.listItems,
+    )
+    .find((items: unknown) => Array.isArray(items) && items.length === YoutubeDOM.sorts.length);
+  const texts = (
+    (sheetItems as any[] | undefined)?.map(
+      (item: any) => item?.listItemViewModel?.title?.content,
+    ) ?? chips.map((chip: any) => chip?.text)
+  ).filter((text: unknown): text is string => typeof text === "string" && text.length > 0);
+  return texts.length === YoutubeDOM.sorts.length ? texts : [];
 }
 
 export async function resolvePlaylistPath(

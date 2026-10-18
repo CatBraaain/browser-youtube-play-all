@@ -97,6 +97,11 @@ const waitForTransitionStart = async (
   }
 };
 
+// The combobox opens the sort options as a sheet of menuitem buttons
+// (desktop: ytd-popup-container, mobile: bottom-sheet-container).
+const SORT_SHEET_ITEMS =
+  "ytd-popup-container button[role='menuitem'],bottom-sheet-container button[role='menuitem']";
+
 export class YtPage {
   constructor(
     private page: Page,
@@ -553,9 +558,10 @@ export class YtChannelPage {
   // A sort click is not a SPA navigation: no navigation-end fires and the URL
   // stays unchanged, so there is no event to wait for (see YT-SPEC.md). The
   // click issues one /youtubei/v1/browse request whose body carries the
-  // chip's continuation token (chip-view-model data). Completion is causal,
-  // not heuristic:
-  // 1. the chip's token is read before the click (fail closed when absent);
+  // control's continuation token — the chip-view-model data on classic
+  // channels, the combobox chip's sheet model item on membership channels
+  // (YT-SPEC.md "Sort dropdown UI"). Completion is causal, not heuristic:
+  // 1. the token is read before the click (fail closed when absent);
   // 2. the /youtubei/v1/browse response whose REQUEST body carries that exact
   //    token must arrive — an unrelated browse response never qualifies;
   // 3. the grid's first video node is replaced (DOM identity, not href), and
@@ -577,19 +583,41 @@ export class YtChannelPage {
     const deadline = Date.now() + timeout;
     const remaining = () => Math.max(1, deadline - Date.now());
     const index = YoutubeDOM.sorts.indexOf(sort);
-    // The chip's tap-command data can attach after the chip renders (mobile),
-    // so poll for the token instead of reading it once.
+    // The sheet items expose the same canonical order as the classic chips
+    // (YoutubeDOM.sorts), which is what index-based selection relies on.
+    const viaDropdown = (await this.page.locator(YoutubeDOM.SORT_COMBOBOX).count()) > 0;
+    // The tap-command data can attach after the chip renders (mobile), so
+    // poll for the token instead of reading it once.
     let token: string | null = null;
     try {
       const tokenHandle = await this.page.waitForFunction(
-        ({ selector, index }) => {
-          const chip = Array.from(document.querySelectorAll(selector))[index];
+        ({ viaDropdown, index, sortButtonSelector, comboboxSelector }) => {
+          if (viaDropdown) {
+            const sheet = (
+              document.querySelector(comboboxSelector)?.closest("chip-view-model") as any
+            )?.data?.tapCommand?.innertubeCommand?.showSheetCommand?.panelLoadingStrategy
+              ?.inlineContent?.sheetViewModel?.content?.listViewModel?.listItems;
+            const commands =
+              sheet?.[index]?.listItemViewModel?.rendererContext?.commandContext?.onTap
+                ?.innertubeCommand?.commandExecutorCommand?.commands ?? [];
+            return (
+              commands
+                .map((command: any) => command?.continuationCommand?.token ?? null)
+                .find(Boolean) ?? null
+            );
+          }
+          const chip = Array.from(document.querySelectorAll(sortButtonSelector))[index];
           return (
             (chip?.closest("chip-view-model") as any)?.data?.tapCommand?.innertubeCommand
               ?.continuationCommand?.token ?? null
           );
         },
-        { selector: YoutubeDOM.SORT_BUTTON, index },
+        {
+          viaDropdown,
+          index,
+          sortButtonSelector: YoutubeDOM.SORT_BUTTON,
+          comboboxSelector: YoutubeDOM.SORT_COMBOBOX,
+        },
         { timeout: Math.min(10_000, remaining()) },
       );
       token = (await tokenHandle.jsonValue()) as string | null;
@@ -598,7 +626,7 @@ export class YtChannelPage {
     }
     if (token === null) {
       throw new Error(
-        `The ${sort} sort chip exposes no continuation token; its browse response cannot be identified (fail closed)`,
+        `The ${sort} sort control exposes no continuation token; its browse response cannot be identified (fail closed)`,
       );
     }
     // The response watcher is owned by this invocation: one listener and one
@@ -622,7 +650,18 @@ export class YtChannelPage {
       // Armed before the click so the click's own response is never missed.
       responseTimer = setTimeout(() => resolveResponse(null), remaining());
       this.page.on("response", responseListener);
-      if (options.click)
+      if (viaDropdown) {
+        await this.page
+          .locator(YoutubeDOM.SORT_COMBOBOX)
+          .describe("Sort dropdown chip")
+          .click({ timeout: remaining() });
+        const sheetItem = this.page
+          .locator(SORT_SHEET_ITEMS)
+          .nth(index)
+          .describe(`Channel ${sort} sort sheet item`);
+        if (options.click) await options.click(sheetItem);
+        else await sheetItem.click({ timeout: remaining() });
+      } else if (options.click)
         await options.click(
           this.page
             .locator(YoutubeDOM.SORT_BUTTON)

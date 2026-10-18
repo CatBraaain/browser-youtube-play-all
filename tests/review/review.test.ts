@@ -305,13 +305,13 @@ ytxTest("Review", async ({ context, page, eventWatcher }) => {
     await attachScreenshot(page, "members-dropdown-collapsed");
     await humanClick(toggle);
     for (const [kind, prefix] of [
-      ["videos", "UUMF"],
-      ["streams", "UUMV"],
+      ["Videos", "UUMF"],
+      ["Streams", "UUMV"],
     ] as const) {
       for (const sort of ["Latest", "Oldest"]) {
         const item = menu
-          .getByText(`Members ${kind} (${sort})`, { exact: true })
-          .describe(`Members ${kind} (${sort}) menu item`);
+          .getByText(`${kind} (Members ${sort})`, { exact: true })
+          .describe(`${kind} (Members ${sort}) menu item`);
         await expect(item).toBeVisible({ timeout: 30_000 });
         await expect(item).toHaveAttribute("href", new RegExp(`list=${prefix}[\\w-]+`));
       }
