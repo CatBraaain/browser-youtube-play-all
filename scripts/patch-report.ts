@@ -108,25 +108,38 @@ const labelScript = `
   function label() {
     document.querySelectorAll(".attachments-tab .attachment-item").forEach(function (item) {
       var name = item.querySelector("a") ? item.querySelector("a").textContent : "";
+      function capitalized(parts) {
+        return parts
+          .filter(Boolean)
+          .map(function (part) { return part.charAt(0).toUpperCase() + part.slice(1); })
+          .join(" - ");
+      }
       // Dropdown captures have no category-and-sort pair; group them under
       // their own headings instead ("Members …" covers the members channel).
       // Only the first capture of each group takes the heading, so the two
       // shots of a dropdown stay side by side in the two-column grid.
+      // A Members review capture pair is one filtered cell's button and
+      // destination, so the button shot takes its own heading like a public
+      // pair's, with the toggle state named.
+      var membersCell = /^members-(videos|shorts|streams)-(latest|popular|oldest)(?:-button)?$/.exec(
+        name,
+      );
+      var nasaCell = /^nasa-(videos|shorts|streams)-(latest|popular|oldest)-button$/.exec(name);
       var heading = /^members-dropdown-collapsed$/.test(name)
         ? "Members Play All Buttons Dropdown"
         : /^dropdown-collapsed$/.test(name)
           ? "Play All Buttons Dropdown"
-          : null;
+          : membersCell
+            ? "NASA - " + capitalized(membersCell.slice(1)) + " (Members only)"
+            : nasaCell
+              ? "NASA - " + capitalized(nasaCell.slice(1))
+              : null;
       if (!heading && !/-button$/.test(name)) return;
       var previous = item.previousElementSibling;
       if (previous && previous.hasAttribute("data-review-pair-label")) return;
       var label = document.createElement("div");
       label.setAttribute("data-review-pair-label", "");
-      label.textContent = heading || name
-        .replace(/-button$/, "")
-        .split("-")
-        .map(function (part) { return part.charAt(0).toUpperCase() + part.slice(1); })
-        .join(" - ");
+      label.textContent = heading || capitalized(name.replace(/-button$/, "").split("-"));
       item.parentNode.insertBefore(label, item);
     });
   }

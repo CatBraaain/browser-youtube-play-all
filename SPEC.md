@@ -24,7 +24,9 @@
 | ------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------- |
 | Follows the selected sort | A category page with the Play All button already shown                                          | Select a different sort on the page | The button shows the newly selected sort, e.g. "Play All (Popular)".         |
 | Follows the sort dropdown | A category page of a channel with membership perks, where the sort control is a dropdown chip labeled with the current sort instead of the three chips | Open the dropdown and select a different sort | The button shows the newly selected sort, and its destination follows it. |
-| Ignores audience filter chips | The same kind of page shows "Members only" / "Public" filter chips next to the sort dropdown | Toggle one of the filter chips      | The button keeps its sort label and destination.                             |
+| Follows the audience filter | The same kind of page shows "Members only" / "Public" filter chips next to the sort dropdown | Activate "Members only"             | The button switches to the current category's members-only playlist. Its label keeps the short "Play All (Latest)" / "Play All (Oldest)" form — the Members distinction stays in the Play All menu entries. The destination follows the same members-only playlist rules as the menu entries. |
+| Follows the audience filter back | The same kind of page with "Members only" selected | Activate "Public"                   | The button returns to the public playlist of the current sort, labeled like "Play All (Latest)".                                                                                                                                         |
+| Hides without a members playlist | Popular is selected, or the page is Shorts | Activate "Members only"             | No button is shown: members-only playlists exist only for Videos and Streams with Latest and Oldest.                                                                     |
 | Delayed Oldest resolution | Resolving Videos / Oldest is delayed while the viewer selects Oldest, then Latest, then Popular | Oldest finishes resolving           | The button remains "Play All (Popular)", and the selection stays on Popular. |
 
 ## Destination videos
@@ -35,7 +37,7 @@ Each case below applies to every category C ∈ {Videos, Shorts, Streams}, cover
 | ---------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | A channel's C page with Latest selected  | Activate "Play All (Latest)"  | The first three playable videos in the playlist panel at the destination match the first three videos on the channel's C / Latest page, in the same order. Panel rows that YouTube itself marks as unplayable, such as private videos, are excluded from this comparison; rows without that marking are never excluded.  |
 | A channel's C page with Popular selected | Activate "Play All (Popular)" | The first three playable videos in the playlist panel at the destination match the first three videos on the channel's C / Popular page, in the same order. Panel rows that YouTube itself marks as unplayable, such as private videos, are excluded from this comparison; rows without that marking are never excluded. |
-| A channel's C page with Oldest selected  | Activate "Play All (Oldest)"  | The selected video in the playlist panel at the destination matches the first video on the channel's C / Oldest page.                                                                                                                                                                                                    |
+| A channel's C page with Oldest selected  | Activate "Play All (Oldest)"  | The selected video in the playlist panel at the destination matches the first video on the channel's C / Oldest page. On a channel with membership perks, the Shorts / Oldest page can start with a members-only short that the public shorts playlist does not contain; the destination then selects the public shorts playlist's oldest item instead of that page's first row.                                                                                            |
 
 ## Oldest playlist
 
@@ -45,7 +47,7 @@ Each case below applies to every category C ∈ {Videos, Shorts, Streams}, cover
 
 ## Members-only destinations
 
-The Play All menu also lists members-only entries for channels with membership perks. Members-only playlists exist only for videos (UUMF) and live streams (UUMV); they have no Popular sort and no reverse-order playlist, and they are not listed for channels without membership perks.
+The Play All menu also lists members-only entries for channels with membership perks. Members-only playlists exist only for videos (UUMF) and live streams (UUMV); they have no Popular sort and no reverse-order playlist, and they are not listed for channels without membership perks. The chip-following button also switches to these playlists while the Members only filter is selected ("Selected sort").
 
 | Case                          | Condition                             | Operation                               | Expected result                                                                                                                                                                                                                                                                                        |
 | ----------------------------- | ------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -59,6 +61,7 @@ The Play All menu also lists members-only entries for channels with membership p
 | Case                           | Condition                                | Operation                         | Expected result                                                                                                |
 | ------------------------------ | ---------------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | Oldest resolution failure      | Videos / Oldest alone cannot be resolved | Select Oldest                     | The button shows "Play All (Oldest) (error)" instead of a working playlist link.                               |
+| Members resolution failure     | The Members only filter is selected, and that category's members-only playlist alone cannot be resolved | Activate "Members only" | The button shows "Play All (Latest) (error)" or "Play All (Oldest) (error)", following the selected sort, instead of a working playlist link. |
 | Error button does not navigate | "Play All (Oldest) (error)" is shown     | Activate the button               | The viewer stays on the same page.                                                                             |
 | Other sorts stay usable        | Videos / Oldest alone cannot be resolved | Select another sort from the menu | Other available menu choices remain usable, and selecting Popular shows a working "Play All (Popular)" button. |
 
@@ -70,7 +73,7 @@ A review unit is a `test.step()` step named as an operation, pairing one intenti
 
 | Test name | Journey |
 | --- | --- |
-| `Review` | Check Play All buttons across categories and sorts and verify each button's playlist destination, and check the members channel's dropdown lists its members-only entries. |
+| `Review` | Check Play All buttons across categories and sorts and verify each button's playlist destination on @Apple, then continue on the members channel @NASASpaceflight: its dropdown, the same cells plus the Members only toggle's own button-and-destination pairs, and the filter hiding the button where no members-only playlist exists. |
 
 The journey runs once per selected E2E project, using that project's browser and device. Mobile retains the normal project's Pixel 5 portrait viewport.
 

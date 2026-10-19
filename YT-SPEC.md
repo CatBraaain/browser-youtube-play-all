@@ -121,6 +121,28 @@ while the sheet is open). The chosen sort surfaces only in the DOM:
 - The grid swaps as with a classic sort (the same first-node replacement
   pattern).
 
+Activating an audience filter chip is not a navigation either: no navigation
+event fires and the URL keeps its query. The chip bar is rebuilt in the same
+pass (observed on desktop), and the grid swaps like a sort pick. Both chips
+start unselected on page load, and activating one chip selects it exclusively
+(observed: activating the other chip moves the selection; whether the selected
+chip can be deactivated by activating it again is unobserved). The chips render
+after the sort combobox in the canonical item order Members only, then Public,
+and Videos, Shorts, and Streams tabs alike render the same bar. Chip identity
+is read from that canonical order, never from the localized labels.
+Classic channels render their own three sort chips in a chip-bar-view-model of
+role=tab buttons too (observed on a non-membership channel), so a membership
+chip bar is identified by the sort combobox it also holds, never by the
+presence of a chip-bar-view-model alone.
+
+Members-only shorts also surface in category ordering: on a channel with
+membership perks, the Shorts tab's Oldest ordering can start with a
+members-only short, while the public shorts playlist (UUSH) does not contain
+members-only shorts — its row count and per-index item resolution then
+disagree with the grid's first row (observed on a membership channel; the
+shorts playlist page itself renders a single dynamically chosen row and does
+not list its rows).
+
 The combobox label and the sheet item titles are localized (observed English
 Latest / Popular / Oldest and Japanese 新しい順 / 人気の動画 / 古い順). The
 sheet items carry no structural selected marker — their DOM shapes are

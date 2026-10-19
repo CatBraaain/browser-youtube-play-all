@@ -35,6 +35,16 @@ export class YoutubeDOM {
   public static SORT_COMBOBOX =
     "ytd-browse[page-subtype='channels'] #primary chip-bar-view-model button[role='combobox'],ytm-browse .tab-content chip-bar-view-model button[role='combobox']";
 
+  // Audience filter chips of the membership chip bar: role=tab buttons in a
+  // chip-bar-view-model that also holds the sort combobox. The :has() gate
+  // keeps classic channels' own chip-bar-view-model sort chips — role=tab
+  // with aria-selected like the audience chips (observed on non-membership
+  // channels) — out, so bar identity is never read from a chip-bar-view-model
+  // alone (YT-SPEC.md "Sort dropdown UI"). Canonical item order: Members
+  // only, then Public.
+  public static AUDIENCE_CHIP =
+    "ytd-browse[page-subtype='channels'] #primary chip-bar-view-model:has(button[role='combobox']) button[role='tab'],ytm-browse .tab-content chip-bar-view-model:has(button[role='combobox']) button[role='tab']";
+
   // The selected control's own text names the sort in both UIs: the dropdown
   // chip's label (dropdown UI) or the selected chip's text (classic UI).
   public static SORT_SELECTED =
@@ -80,6 +90,21 @@ export class YoutubeDOM {
     return document.querySelector(YoutubeDOM.SORT_COMBOBOX);
   }
 
+  public static get audienceChips(): Element[] {
+    return Array.from(document.querySelectorAll(YoutubeDOM.AUDIENCE_CHIP));
+  }
+
+  // The selected audience filter, or null while no chip is selected (the
+  // initial state). Chips are identified by canonical item order, never by
+  // their localized text.
+  public static get audienceFilterKind(): AudienceFilterKind | null {
+    const kinds: AudienceFilterKind[] = ["MembersOnly", "Public"];
+    const selected = YoutubeDOM.audienceChips.findIndex(
+      (chip) => chip.getAttribute("aria-selected") === "true",
+    );
+    return selected === -1 ? null : (kinds[selected] ?? null);
+  }
+
   // Teaches the canonical-order labels of the current page's chip bar. The
   // map is always replaced, so it always mirrors the latest page fetch.
   public static learnSortLabels(labels: string[]): void {
@@ -101,3 +126,4 @@ export class YoutubeDOM {
 
 export type CategoryKind = "Videos" | "Shorts" | "Streams";
 export type SortKind = "Latest" | "Popular" | "Oldest";
+export type AudienceFilterKind = "MembersOnly" | "Public";

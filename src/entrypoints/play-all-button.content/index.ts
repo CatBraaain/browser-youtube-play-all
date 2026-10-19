@@ -9,6 +9,7 @@ import {
   scheduleUiTask,
 } from "./ui-scheduler";
 import { MEMBERS_KINDS, MEMBERS_SORTS } from "./youtube-api";
+import type { MembersSortKind } from "./youtube-api";
 import { YoutubeDOM } from "./youtube-dom";
 import { emitPageEnter, registerHooks, YTX_EVENTS, ytxEventEmitter } from "./youtube-hooks";
 
@@ -40,6 +41,13 @@ function main() {
     advanceUiEpoch();
     await scheduleUiTask((latestEpoch) => maybeRenderButton(channel, latestEpoch));
   });
+  ytxEventEmitter.on(YTX_EVENTS.FILTER_CHANGED, async (channel) => {
+    // A filter change invalidates UI renders still awaiting the previous
+    // filter's playlist path, mirroring the sort-change handling: the
+    // channel itself is unchanged by a filter toggle.
+    advanceUiEpoch();
+    await scheduleUiTask((latestEpoch) => maybeRenderButton(channel, latestEpoch));
+  });
 
   // Invalidate in-flight renders from the previous page while the new
   // page's channel id is still being fetched.
@@ -59,19 +67,45 @@ async function maybeRenderButton(channel: Channel, latestEpoch: number) {
 
   const sortKind = YoutubeDOM.sortKind ?? "Latest";
 
-  const targetPlayAllButton = document.querySelector<HTMLElement>(
-    `.play-all-btn.${categoryKind.toLowerCase()}.${sortKind.toLowerCase()}`,
-  );
-  if (targetPlayAllButton) {
-    equalizeLeadingGap(targetPlayAllButton);
+  // The Members only filter switches the button to the current category's
+  // members-only playlist (SPEC.md "Selected sort"). Those playlists exist
+  // only for Videos and Streams with Latest and Oldest, so when the current
+  // category and sort has no members-only playlist (Shorts, or Popular) the
+  // button has no destination to offer and is hidden.
+  const membersMode = YoutubeDOM.audienceFilterKind === "MembersOnly";
+  const membersKind = categoryKind === "Videos" || categoryKind === "Streams" ? categoryKind : null;
+  const membersSort: MembersSortKind | null =
+    sortKind === "Popular" ? null : sortKind === "Oldest" ? "Oldest" : "Latest";
+  if (membersMode && (membersKind === null || membersSort === null)) {
+    document.querySelector(".play-all-btn")?.remove();
+    return;
+  }
+
+  // The button's own classes encode the full routed state, so a re-render is
+  // skipped only when every class matches exactly: a compound-class query
+  // selector would also match a superset button rendered for the opposite
+  // filter state.
+  const buttonClasses = [
+    "play-all-btn",
+    categoryKind.toLowerCase(),
+    sortKind.toLowerCase(),
+    ...(membersMode ? ["members"] : []),
+  ];
+  const existingButton = document.querySelector<HTMLElement>(".play-all-btn");
+  if (
+    existingButton &&
+    existingButton.classList.length === buttonClasses.length &&
+    buttonClasses.every((className) => existingButton.classList.contains(className))
+  ) {
+    equalizeLeadingGap(existingButton);
     return;
   }
 
   const playAllButton = document.createElement("a");
-  playAllButton.classList.add("play-all-btn");
-  playAllButton.classList.add(categoryKind.toLowerCase());
-  playAllButton.classList.add(sortKind.toLowerCase());
-  const href = await channel.getPlaylistPath(categoryKind, sortKind);
+  buttonClasses.forEach((className) => playAllButton.classList.add(className));
+  const href = await (membersMode && membersKind && membersSort
+    ? channel.getMembersPlaylistPath(membersKind, membersSort)
+    : channel.getPlaylistPath(categoryKind, sortKind));
   if (isUiStale(latestEpoch)) {
     return;
   }
@@ -80,7 +114,12 @@ async function maybeRenderButton(channel: Channel, latestEpoch: number) {
   if (href) {
     playAllButton.href = href;
   }
-  playAllButton.textContent = href ? `Play All (${sortKind})` : `Play All (${sortKind}) (error)`;
+  // The chip bar is YouTube's fixed-height UI, where a longer label wraps
+  // and clips, so the button's own label keeps the short sort form — the
+  // adjacent Members only chip already names the filter state — and the
+  // Members distinction stays in the Play All menu entries.
+  const label = `Play All (${membersMode && membersSort ? membersSort : sortKind})`;
+  playAllButton.textContent = href ? label : `${label} (error)`;
 
   document.querySelector(".play-all-btn")?.remove();
   sortButtonHolder.appendChild(playAllButton);

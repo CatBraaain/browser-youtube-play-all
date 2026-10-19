@@ -25,6 +25,7 @@ export const YTX_EVENTS = {
 
   SORT_CHANGED: "ytx-sort-changed",
   SORT_RERENDERED: "ytx-sort-rerendered",
+  FILTER_CHANGED: "ytx-filter-changed",
 } as const;
 
 export const ytxEventEmitter = new EventEmitter<{
@@ -34,6 +35,7 @@ export const ytxEventEmitter = new EventEmitter<{
   [YTX_EVENTS.CATEGORY_ENTER]: (channel: Channel) => void;
   [YTX_EVENTS.SORT_CHANGED]: (channel: Channel) => void;
   [YTX_EVENTS.SORT_RERENDERED]: (channel: Channel) => void;
+  [YTX_EVENTS.FILTER_CHANGED]: (channel: Channel) => void;
 }>();
 
 export function registerHooks() {
@@ -41,6 +43,7 @@ export function registerHooks() {
   registerChannelHooks();
   registerCategoryHooks();
   registerSortHooks();
+  registerAudienceFilterHooks();
   registerLoggingHooks();
 }
 
@@ -107,7 +110,9 @@ function registerSortHooks() {
   // covers classic chip selections and dropdown-UI sort picks (the dropdown
   // chip's label swap rewrites no aria-selected of its own), and ignores the
   // audience filter chips that also flip aria-selected on membership
-  // channels (YT-SPEC.md "Sort dropdown UI").
+  // channels; the resolved sort reads the sort combobox's label first, and
+  // the chips are tracked by the audience filter hook below
+  // (YT-SPEC.md "Sort dropdown UI").
   ytxEventEmitter.on(YTX_EVENTS.CATEGORY_ENTER, async (currentChannel: Channel) => {
     let resolvedSort = YoutubeDOM.sortKind;
     const sortChangeObserver = new MutationObserver(() => {
@@ -156,6 +161,34 @@ function registerSortHooks() {
   });
 }
 
+function registerAudienceFilterHooks() {
+  // audience filter changed hook: fires when the selected audience filter
+  // chip changes. The chips flip aria-selected like sort buttons, but the
+  // resolved sort is unaffected (see the sort changed hook above), so this
+  // hook tracks the chips themselves (YT-SPEC.md "Sort dropdown UI").
+  ytxEventEmitter.on(YTX_EVENTS.CATEGORY_ENTER, async (currentChannel: Channel) => {
+    let resolvedFilter = YoutubeDOM.audienceFilterKind;
+    const filterChangeObserver = new MutationObserver(() => {
+      const filter = YoutubeDOM.audienceFilterKind;
+      if (filter !== resolvedFilter) {
+        resolvedFilter = filter;
+        ytxEventEmitter.emit(YTX_EVENTS.FILTER_CHANGED, currentChannel);
+      }
+    });
+    filterChangeObserver.observe(document, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["aria-selected"],
+    });
+    [YTX_EVENTS.PAGE_ENTER, YTX_EVENTS.PAGE_LEAVE].forEach((e) => {
+      ytxEventEmitter.once(e, () => {
+        filterChangeObserver.disconnect();
+      });
+    });
+  });
+}
+
 function registerLoggingHooks() {
   [YTX_EVENTS.PAGE_ENTER, YTX_EVENTS.PAGE_LEAVE].forEach((e) => {
     ytxEventEmitter.on(e, () => {
@@ -171,6 +204,7 @@ function registerLoggingHooks() {
     YTX_EVENTS.CATEGORY_ENTER,
     YTX_EVENTS.SORT_CHANGED,
     YTX_EVENTS.SORT_RERENDERED,
+    YTX_EVENTS.FILTER_CHANGED,
   ].forEach((e) => {
     ytxEventEmitter.on(e, (channel) => {
       logger.info(`${e} fired`, {

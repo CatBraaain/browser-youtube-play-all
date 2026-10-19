@@ -66,6 +66,13 @@ const VIDEO_LINKS = 'a[href*="/watch?"],a[href*="/shorts/"],a[href*="/live/"]';
 // the same bounded no-start observation.
 const SWALLOWED_CLICK_START_TIMEOUT_MS = 8_000;
 
+// Audience filter chips of the membership chip bar, in canonical item order:
+// Members only, then Public (YT-SPEC.md "Sort dropdown UI"). The :has() gate
+// matches the src-side rule (YoutubeDOM.AUDIENCE_CHIP): classic channels
+// render their own sort chips as role=tab too, so a membership bar is
+// identified by the sort combobox it holds. Never matched by localized text.
+const AUDIENCE_CHIP = "chip-bar-view-model:has(button[role='combobox']) button[role='tab']";
+
 // Resolves true once a transition shows a start signal: the navigation-start
 // event fired after the baseline, the URL moved away from `urlBefore`, or the
 // document was replaced. False on timeout (nothing provably started — the
@@ -705,6 +712,52 @@ export class YtChannelPage {
       // document: skip only then, so the original close/action error is not
       // replaced by a dispose failure; disposal errors on any other path
       // surface normally and are never swallowed.
+      if (!this.page.isClosed()) {
+        await this.disposeGridSwapWatch();
+      }
+    }
+  }
+
+  // An audience filter chip click is not a navigation: like a sort pick, the
+  // chip bar and the grid re-render asynchronously while the URL stays put
+  // (YT-SPEC.md "Sort dropdown UI"). The click is never replayed: the first
+  // click takes effect and the wait below observes it.
+  public async selectAudienceFilter(
+    filter: "MembersOnly" | "Public",
+    options: { timeout?: number; click?: (locator: Locator) => Promise<void> } = {},
+  ) {
+    const { timeout = 30_000 } = options;
+    const deadline = Date.now() + timeout;
+    const remaining = () => Math.max(1, deadline - Date.now());
+    const index = filter === "MembersOnly" ? 0 : 1;
+    const chip = this.page
+      .locator(AUDIENCE_CHIP)
+      .nth(index)
+      .describe(`${filter} audience filter chip`);
+    await this.armGridSwapWatch();
+    try {
+      if (options.click) await options.click(chip);
+      else await chip.click({ timeout: remaining() });
+      // A filter toggle's grid outcome is not contractual: the filtered grid
+      // can swap, empty out (a category with no members-only videos), or
+      // stay as-is, so unlike a sort pick there is no replacement to wait
+      // for. Completion is a settled grid instead: at least 1.5s after the
+      // click (a floor for YouTube to start the swap it is going to make)
+      // and then 800ms without grid mutations.
+      await this.page.evaluate(() => {
+        (window as any).__gridSwapWatch.armTime = performance.now();
+      });
+      await this.page.waitForFunction(
+        () => {
+          const state = (window as any).__gridSwapWatch;
+          if (!state) return false;
+          const now = performance.now();
+          return now - state.armTime >= 1_500 && now - state.lastMutation >= 800;
+        },
+        undefined,
+        { timeout: remaining() },
+      );
+    } finally {
       if (!this.page.isClosed()) {
         await this.disposeGridSwapWatch();
       }
