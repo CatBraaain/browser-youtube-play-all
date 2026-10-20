@@ -215,8 +215,8 @@ async function renderDropdown(channel: Channel, latestEpoch: number) {
         // line up rather than the menu border. The mobile toggle spans the
         // full header width, so its centered label starts far to the right
         // of the button edge the menu otherwise hangs from.
-        const itemPaddingLeft =
-          parseFloat(getComputedStyle(menu.querySelector("a")).paddingLeft) || 0;
+        const firstItem = menu.querySelector("a");
+        const itemPaddingLeft = firstItem ? parseFloat(getComputedStyle(firstItem).paddingLeft) : 0;
         menu.style.left = `${toggleLabel.getBoundingClientRect().left - container.getBoundingClientRect().left - itemPaddingLeft}px`;
       }
     });

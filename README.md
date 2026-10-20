@@ -13,14 +13,14 @@ Youtube Play All is a browser extension that adds "Play All" buttons for Videos,
 
 The following combinations are supported on desktop and mobile YouTube channel pages. “Public” refers to the regular channel playlists, rather than the members-only playlists.
 
-| Audience | Category | Latest | Popular | Oldest |
-| --- | --- | --- | --- | --- |
-| Public | Videos | Supported | Supported | Supported — mixed categories [1] |
-| Public | Shorts | Supported | Supported | Supported — mixed categories [1][2] |
-| Public | Streams | Supported | Supported | Supported — mixed categories [1] |
-| Members only | Videos | Supported [3] | Not supported | Starts at oldest item [3][4] |
-| Members only | Shorts | Not supported | Not supported | Not supported |
-| Members only | Streams | Supported [3] | Not supported | Starts at oldest item [3][4] |
+| Audience     | Category | Latest        | Popular       | Oldest                              |
+| ------------ | -------- | ------------- | ------------- | ----------------------------------- |
+| Public       | Videos   | Supported     | Supported     | Supported — mixed categories [1]    |
+| Public       | Shorts   | Supported     | Supported     | Supported — mixed categories [1][2] |
+| Public       | Streams  | Supported     | Supported     | Supported — mixed categories [1]    |
+| Members only | Videos   | Supported [3] | Not supported | Starts at oldest item [3][4]        |
+| Members only | Shorts   | Not supported | Not supported | Not supported                       |
+| Members only | Streams  | Supported [3] | Not supported | Starts at oldest item [3][4]        |
 
 1. Public Oldest mixes all three categories in oldest-first order. It starts at your category's oldest video. This may not be the playlist's first video.
 2. Shorts / Oldest starts at the oldest public Short. The channel page may show a members-only Short first.
