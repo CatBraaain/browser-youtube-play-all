@@ -1,3 +1,34 @@
+## [0.5.0] - 2026-10-18
+
+### 🚀 Features
+
+- Support members-only playlists
+- Support the new UI on channels with memberships
+
+### ⚡ Performance
+
+- Skip play all button work when it already exists
+
+### 🐛 Bug Fixes
+
+- Sync UI rendering with the YouTube page state
+- Keep dropdown renders alive across sort changes
+- Handle trailing slash in category slug
+- Fall back to empty playlist path on resolution failure
+- Converge play all leading gap onto the sort chip gap
+- Fix playlist loading on updated YouTube pages
+- Prevent slow or failed Oldest loading from blocking Latest and Popular
+
+### 🧪 Testing
+
+- Migrate e2e review to Playwright trace and HTML report
+- Harden YouTube SPA synchronization
+
+### ⚙️ Miscellaneous Tasks
+
+- Split CD publish into chrome and firefox matrix jobs
+- Add YouTube navigation spec (YT-SPEC.md)
+
 ## [0.4.3] - 2026-08-28
 
 ### 🐛 Bug Fixes
