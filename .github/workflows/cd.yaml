@@ -39,10 +39,11 @@ jobs:
         env:
           CHROME_ZIP: ${{ matrix.browser == 'chrome' && 'dist/chrome.zip' || '' }}
           CHROME_EXTENSION_ID: "lcgfhpllcjejniehjnhbfhnkdpmkeoce"
-          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
-          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
-          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
-          CHROME_PUBLISH_TARGET: "default"
+          CHROME_API_VERSION: "v2"
+          CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
+          CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ secrets.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
+          CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
+          CHROME_PUBLISH_TYPE: "DEFAULT_PUBLISH"
           CHROME_SKIP_SUBMIT_REVIEW: false
           FIREFOX_ZIP: ${{ matrix.browser == 'firefox' && 'dist/firefox.zip' || '' }}
           FIREFOX_SOURCES_ZIP: ${{ matrix.browser == 'firefox' && 'dist/sources.zip' || '' }}
