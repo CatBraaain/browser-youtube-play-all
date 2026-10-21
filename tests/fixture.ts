@@ -343,8 +343,6 @@ export const ytxTest = ytTest.extend({
         const chromeExtensionPath = path.join(import.meta.dirname, "../dist/chrome-mv3");
         const context = await chromium.launchPersistentContext("", {
           ...deviceOptions,
-          // Extensions only load in headed Chromium; headless drops --load-extension.
-          headless: false,
           args: [
             `--disable-extensions-except=${chromeExtensionPath}`,
             `--load-extension=${chromeExtensionPath}`,
