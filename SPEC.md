@@ -1,90 +1,85 @@
 # Test Cases
 
-## Scope
+This specification is for users, developers and agents selecting tests for the YouTube Play All extension. The table lists required behavior; one row can cover several test combinations.
 
-| Cases                                                | Applies on                                                                                          |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| All cases                                            | Desktop and mobile.                                                                                 |
-| Cases on a channel's Videos, Shorts, or Streams page | Direct category-page load (hard navigation) and navigation without a page reload (soft navigation). |
-| Members-only cases                                   | Any channel page (via the Play All menu), loaded directly or by soft navigation.                    |
+## Scope and notation
 
-## Button and menu
+### Navigation routes
 
-| Case                    | Condition                                              | Operation                                            | Expected result                                                                                               |
-| ----------------------- | ------------------------------------------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Initial button and menu | A channel's Videos page with Latest initially selected | View the page                                        | Exactly one Play All button is shown, labeled "Play All (Latest)". The separate Play All menu starts closed.  |
-| Open the menu           | The Play All menu is closed                            | Activate the menu's toggle                           | The menu opens.                                                                                               |
-| Close the menu          | The Play All menu is open                              | Activate the toggle again, or click outside the menu | The menu closes.                                                                                              |
-| Move to another channel | The viewer is on a channel page                        | Move to another channel                              | The Play All button and menu show links for the new channel, with no links remaining to the previous channel. |
-| Watch page              | A video watch page                                     | View the page                                        | Neither the Play All button nor the Play All menu is shown.                                                   |
+Category display and destination rows follow each listed route in order: search → channel home → category. Check D03 at home on every route before continuing. A direct category load alone does not cover the route. Direct loads are full page loads.
 
-## Selected sort
+| Navigation | To search | To channel home | To category |
+| --- | --- | --- | --- |
+| hard | Load directly | Load directly | Load directly |
+| soft1 | Navigate without reloading | Open through the channel thumbnail without reloading | Navigate without reloading |
+| soft2 | Navigate without reloading | Open through the channel name without reloading | Navigate without reloading |
 
-| Case                      | Condition                                                                                       | Operation                           | Expected result                                                              |
-| ------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------- |
-| Follows the selected sort | A category page with the Play All button already shown                                          | Select a different sort on the page | The button shows the newly selected sort, e.g. "Play All (Popular)".         |
-| Follows the sort dropdown | A category page of a channel with membership perks, where the sort control is a dropdown chip labeled with the current sort instead of the three chips | Open the dropdown and select a different sort | The button shows the newly selected sort, and its destination follows it. |
-| Follows the audience filter | The same kind of page shows "Members only" / "Public" filter chips next to the sort dropdown | Activate "Members only"             | The button switches to the current category's members-only playlist. Its label keeps the short "Play All (Latest)" / "Play All (Oldest)" form — the Members distinction stays in the Play All menu entries. The destination follows the same members-only playlist rules as the menu entries. |
-| Follows the audience filter back | The same kind of page with "Members only" selected | Activate "Public"                   | The button returns to the public playlist of the current sort, labeled like "Play All (Latest)".                                                                                                                                         |
-| Hides without a members playlist | Popular is selected, or the page is Shorts | Activate "Members only"             | No button is shown: members-only playlists exist only for Videos and Streams with Latest and Oldest.                                                                     |
-| Delayed Oldest resolution | Resolving Videos / Oldest is delayed while the viewer selects Oldest, then Latest, then Popular | Oldest finishes resolving           | The button remains "Play All (Popular)", and the selection stays on Popular. |
+For menu cases on any channel page, hard / soft means direct loading / navigation without a reload. These cases are not restricted to category pages. A sort selection or audience filter activation is not a navigation. Select the row's sort after reaching the category.
 
-## Destination videos
+### Test devices
 
-Each case below applies to every category C ∈ {Videos, Shorts, Streams}, covering all nine combinations.
+Check each case with the following combinations.
 
-| Condition                                | Operation                     | Expected result                                                                                                                                                                                                                                                                                                          |
-| ---------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| A channel's C page with Latest selected  | Activate "Play All (Latest)"  | The first three playable videos in the playlist panel at the destination match the first three videos on the channel's C / Latest page, in the same order. Panel rows that YouTube itself marks as unplayable, such as private videos, are excluded from this comparison; rows without that marking are never excluded.  |
-| A channel's C page with Popular selected | Activate "Play All (Popular)" | The first three playable videos in the playlist panel at the destination match the first three videos on the channel's C / Popular page, in the same order. Panel rows that YouTube itself marks as unplayable, such as private videos, are excluded from this comparison; rows without that marking are never excluded. |
-| A channel's C page with Oldest selected  | Activate "Play All (Oldest)"  | The selected video in the playlist panel at the destination matches the first video on the channel's C / Oldest page. On a channel with membership perks, the Shorts / Oldest page can start with a members-only short that the public shorts playlist does not contain; the destination then selects the public shorts playlist's oldest item instead of that page's first row.                                                                                            |
+| Navigation or case | Chrome desktop | Chrome mobile | Firefox desktop |
+| --- | --- | --- | --- |
+| hard | Included | Included | Included |
+| soft1 | Included | Included | Included |
+| soft2 | Included | Excluded | Included |
+| Other cases | Included | Included | Included |
 
-## Oldest playlist
+### Button display combinations
 
-| Case                         | Condition                        | Operation                    | Expected result                                                                                                                                                                                                                                       |
-| ---------------------------- | -------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Shared oldest-first playlist | Oldest is selected on a category | Activate "Play All (Oldest)" | The destination is a single playlist containing uploads from all categories in oldest-first order. That category's oldest video is selected. If another category has an older upload, the selected video is not the first item in the playlist panel. |
+Each cell shows whether the Play All button appears for that category, sort, and audience. Read rows as categories and columns as sorts.
 
-## Members-only destinations
+| Category | Audience | Latest | Popular | Oldest |
+| --- | --- | --- | --- | --- |
+| Videos | Public | shown | shown | shown |
+| Shorts | Public | shown | shown | shown |
+| Streams | Public | shown | shown | shown |
+| Videos | Members only | shown | hidden | shown |
+| Shorts | Members only | hidden | hidden | hidden |
+| Streams | Members only | shown | hidden | shown |
 
-The Play All menu also lists members-only entries for channels with membership perks. Members-only playlists exist only for videos (UUMF) and live streams (UUMV); they have no Popular sort and no reverse-order playlist, and they are not listed for channels without membership perks. The chip-following button also switches to these playlists while the Members only filter is selected ("Selected sort").
+### How to check the destination
 
-| Case                          | Condition                             | Operation                               | Expected result                                                                                                                                                                                                                                                                                        |
-| ----------------------------- | ------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Menu entries with membership  | A channel with membership perks       | Open the Play All menu                  | The menu lists members-only entries for videos and live streams, named like `Videos (Members Latest)`, each with Latest and Oldest. Latest links point at that channel's UUMF / UUMV playlist, and Oldest links start playback at the playlist's oldest item.                                                                                      |
-| Menu entries without membership | A channel without membership perks | Open the Play All menu                  | No members-only entry is listed.                                                                                                                                                                                                                                                                       |
-| Latest destination            | The menu lists a members-only entry   | Activate a members-only Latest entry    | The destination is that channel's members-only playlist, and its playlist panel lists the same video ids in the same order as the members-only playlist page. Rows are not filtered by playability: members-only rows are unplayable to signed-out viewers, and the comparison still holds.              |
-| Oldest destination            | The menu lists a members-only entry   | Activate a members-only Oldest entry    | The playlist panel's selected row is the members-only playlist's oldest item — the last row of the members-only playlist page.                                                                                                                                                                          |
+When checking the destination of a Play All link, the confirmation differs by audience and sort as follows.
 
-## Failure
+| Audience | Sort | What to check |
+| --- | --- | --- |
+| Public | Latest / Popular | The first three playable videos in the playlist panel at the destination match the first three videos on the channel's <category> / <sort> page, in the same order. This is the first three videos excluding rows that YouTube itself marks as unplayable (such as private videos). |
+| Public | Oldest | The selected video in the playlist panel at the destination matches the first video on the channel's <category> / Oldest page. |
+| Members only | Latest | The destination is that channel's members-only playlist, and its playlist panel lists the same video ids in the same order as the members-only playlist page. Rows are not filtered by playability: members-only rows are unplayable to signed-out viewers, and the comparison still holds. |
+| Members only | Oldest | The selected row in the playlist panel at the destination is the members-only playlist's oldest item — the last row of the members-only playlist page. |
 
-| Case                           | Condition                                | Operation                         | Expected result                                                                                                |
-| ------------------------------ | ---------------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Oldest resolution failure      | Videos / Oldest alone cannot be resolved | Select Oldest                     | The button shows "Play All (Oldest) (error)" instead of a working playlist link.                               |
-| Members resolution failure     | The Members only filter is selected, and that category's members-only playlist alone cannot be resolved | Activate "Members only" | The button shows "Play All (Latest) (error)" or "Play All (Oldest) (error)", following the selected sort, instead of a working playlist link. |
-| Error button does not navigate | "Play All (Oldest) (error)" is shown     | Activate the button               | The viewer stays on the same page.                                                                             |
-| Other sorts stay usable        | Videos / Oldest alone cannot be resolved | Select another sort from the menu | Other available menu choices remain usable, and selecting Popular shows a working "Play All (Popular)" button. |
+## Case list
 
-## Review
+A "—" in the "Review screenshot" column means the case is verified automatically only and is not captured for review.
 
-E2E tests split into coverage tests and review tests. Review tests live in `tests/review/review.test.ts`; coverage tests live in `tests/e2e/`. Recordings and review material come from Playwright's built-in trace and HTML report, not from a separate capture pipeline.
+| ID | Group | Target page | Category | Sort | Audience | Navigation | Operation | Expected result | Review screenshot |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| D01 | Display / Destination | Category of the membership-free channel @Apple | Videos / Shorts / Streams | Latest / Popular / Oldest | Public | hard / soft1 / soft2 | Record the video list of <category>, select <sort>, check the button display, then press "Play All (<sort>)" and navigate to its generated URL. | The "Play All (<sort>)" button is shown, and the destination is per "How to check the destination". | The "Play All (<sort>)" button before pressing → the playlist after navigating. |
+| D02 | Display / Destination | Category of the channel with membership perks @NASASpaceFlight | Videos / Shorts / Streams | Latest / Popular / Oldest | Public / Members only | hard / soft1 / soft2 | Select <sort>, then activate Public and then Members only. For combinations where the button is shown with Members only, press "Play All (<sort>)" and navigate to its generated URL. | As per the combination table, the Play All button is shown / not shown. When pressed, the destination is per "How to check the destination". | A screen showing the selected category, sort, and audience and whether the button is shown or hidden. When pressed, the members-only Play All button before pressing → the members-only playlist after navigating. |
+| D03 | Display | Channel home | — | — | Public / Members only | hard / soft1 / soft2 | Reach channel home as part of each route, before opening the category. | The Play All dropdown is shown, opens and closes via its toggle, and closes when clicking outside the menu. The open menu lists the entries per the button display combinations table. A channel with membership perks also shows the Members only entries; a channel without them shows the Public entries only. Every expected button in the open menu is visible on screen. | With the dropdown closed, scroll so the toggle aligns with the top edge of the screen and capture it. Then open it and capture the state where every expected button is visible on screen. |
+| A01 | Async | Channel category | Videos | Oldest → Latest → Popular | Public / Members only | hard / soft1 / soft2 | While resolving Videos / Oldest is delayed, the viewer selects Oldest, then Latest, then Popular; Oldest finishes resolving. | The button remains "Play All (Popular)", and the selection stays on Popular. With Members only, the toggle also keeps the selection and the delayed resolution never overwrites it. | — |
+| E01 | Error | Channel category | Videos | Oldest → Popular | Public | hard / soft1 / soft2 | Videos / Oldest alone cannot be resolved. Select Oldest, press the shown "Play All (Oldest) (error)", then select Popular from the menu. | The button shows "Play All (Oldest) (error)" instead of a working playlist link. After pressing, the viewer stays on the same page, the other available menu choices remain usable, and selecting Popular shows a working "Play All (Popular)" button. | — |
+| E02 | Error | Channel category | Videos / Streams | Latest / Oldest | Members only | hard / soft1 / soft2 | The Members only filter is selected, and that category's members-only playlist alone cannot be resolved; Activate "Members only". | The button shows "Play All (Latest) (error)" or "Play All (Oldest) (error)", following the selected sort, instead of a working playlist link. | — |
 
-A review unit is a `test.step()` step named as an operation, pairing one intention with one confirmation, and its assertions are ordinary `expect()`. Major locators are named with `.describe("name")`. Review journeys interact like a person: typed text uses `pressSequentially(text, { delay: 120 })`, and clicks use `click({ steps: 15 })`.
+## Review operation
 
-| Test name | Journey |
-| --- | --- |
-| `Review` | Check Play All buttons across categories and sorts and verify each button's playlist destination on @Apple, then continue on the members channel @NASASpaceflight: its dropdown, the same cells plus the Members only toggle's own button-and-destination pairs, and the filter hiding the button where no members-only playlist exists. |
+All cases are managed as E2E tests in `tests/e2e/`. Cases with capture content written in the case list's "Review screenshot" column are the review targets, and their test files are named `*.review.test.ts`. The same case is not defined separately for review; automatic verification and review use the same run results. Cases without review material, such as the async and error cases, are also verified automatically. Review is done from the screenshots attached to Playwright's built-in trace and HTML report.
 
-The journey runs once per selected E2E project, using that project's browser and device. Mobile retains the normal project's Pixel 5 portrait viewport.
+A review unit is a `test.step()` step named as an operation, pairing one intention with one confirmation, and its assertions are ordinary `expect()`. Major locators are named with `.describe("name")`.
 
-Each cell attaches two viewport screenshots to the test result in click order: the Play All button on the channel page, then the playlist destination. The HTML report lists test attachments in that attach order.
+Review-target tests also run with the route and device combinations defined for each case. Mobile keeps the normal project's Pixel 5 portrait viewport.
+
+Captures follow the case list's "Review screenshot" column. Each screenshot captures the full viewport and is attached to the test result in operation order. The HTML report lists test attachments in that attach order.
 
 ### Running and viewing a review
 
-`bun run test` runs both coverage and review tests. `bun run test:review` is a partial run of only the tests in `tests/review/`, with one worker, on Chrome desktop and Chrome mobile. In both runs, review traces are always retained, including successful attempts; non-review tests retain traces only for failed attempts (`trace: "retain-on-failure"`).
+`bun run test` runs all E2E tests, including the review targets. Review traces are always retained, including successful attempts; non-review tests retain traces only for failed attempts (`trace: "retain-on-failure"`).
 
-Both runs save their results to the same Playwright HTML report, overwritten by the most recent run. The report can be viewed after either run without rerunning tests; `bun run test:review` is optional for viewing.
+The run results are saved to the same Playwright HTML report and overwritten by the most recent run. They can be viewed after the run without rerunning tests. In the report list, identify review targets by file name and open the `*.review.test.ts` files. Non-review files also remain in the list.
 
-The extension's normal, hover and focus background colors for Play All buttons take priority over ordinary inline background colors. In trace snapshots, Play All buttons keep these colors and suppress the viewer's target outline. Other targets' highlights and click-position markers remain visible.
+Play All buttons keep the extension's normal, hover and focus background colors in preference to ordinary inline background colors. In trace snapshots, Play All buttons keep these colors and suppress the viewer's target outline. Other targets' highlights and click-position markers remain visible.
 
-`bun run review` first applies the report patch (`scripts/patch-report.ts`) and then starts the report server with `--port 0`. The patch renders the trace viewer's Attachments tab as a two-column grid where each button and destination pair stacks vertically under a category-and-sort heading (for example, `Videos - Latest`), with the Attachments tab initially selected. It is idempotent: serving again applies no further change, and it fails loudly when no report exists yet. The patch fixes the snapshot pane to a small height so the Attachments pane starts at full height; it does not seed the bottom pane height, because a near-maximum seed kept the snapshot pane squeezed to almost nothing and every browser zoom change re-moved the pane boundary. The patch also fixes the trace viewer's film strip height, so that the asynchronous video thumbnail generation does not grow the timeline and move the pane boundary after the trace opens. Open the URL shown at startup and select a review test by its name in the report. Opening a test shows its steps and its trace; the trace viewer plays the journey and shows the page state at every step. Stop the server with Ctrl+C. The owner judges the observed behavior from the trace and report; assertion status stays with the runner's pass/fail, not with how the recording looks.
+`bun run review` first applies the report patch (`scripts/patch-report.ts`) and then starts the report server with `--port 0`. The patch renders the trace viewer's Attachments tab as a two-column grid where each button and destination pair stacks vertically under a category-and-sort heading (for example, `Videos - Latest`), with the Attachments tab initially selected. It is idempotent: serving again applies no further change, and it fails loudly when no report exists yet. The patch fixes the snapshot pane to a small height so the Attachments pane starts at full height; it does not seed the bottom pane height, because a near-maximum seed kept the snapshot pane squeezed to almost nothing and every browser zoom change re-moved the pane boundary. The patch also fixes the trace viewer's film strip height, so that the asynchronous video thumbnail generation does not grow the timeline and move the pane boundary after the trace opens. Open the URL shown at startup and, in the report, pick the test by its name from the review-target files. Opening a test shows its steps and its trace; in the trace viewer's Attachments tab, check the screenshots defined in the case list. Stop the server with Ctrl+C. The owner judges the observed behavior from the screenshots. Assertion status stays with the runner's pass/fail, not with how the screenshots look.
