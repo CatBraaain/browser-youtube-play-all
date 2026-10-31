@@ -42,7 +42,7 @@ export default defineConfig({
       name: `${name}-e2e`,
       use: device,
       testDir: path.join(import.meta.dirname, "tests"),
-      testMatch: ["e2e/**/*.test.ts", "review/**/*.test.ts"],
+      testMatch: ["e2e/**/*.test.ts"],
     })),
   ],
 });

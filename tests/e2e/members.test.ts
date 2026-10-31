@@ -1,54 +1,23 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
-import { ytxTest } from "../fixture";
-import { YtChannelPage, YtVideoPage } from "../utils";
+import { ytxTest, type EventWatcher } from "../fixture";
+import { readFullReferencePlaylist } from "../helpers/playlist";
+import {
+  membersPlaylistHref,
+  YtChannelPage,
+  YtVideoPage,
+  type MembersPlaylistCategory,
+} from "../utils";
 
-// A channel that publishes members-only videos and live streams. Its
-// members-only video count is small, which keeps the playlist-page
-// comparisons cheap; if the channel ever drops all members-only videos the
-// resolution fails and the entries legitimately disappear.
 const memberChannel = "@NakiriAyame";
 const noMemberChannel = "@Apple";
-
-const membersPlaylistPrefixes = {
-  Videos: "UUMF",
-  Streams: "UUMV",
-} as const;
 const membersKinds = ["Videos", "Streams"] as const;
 const membersSorts = ["Latest", "Oldest"] as const;
 
-function menuItemName(kind: (typeof membersKinds)[number], sort: (typeof membersSorts)[number]) {
+ytxTest.setTimeout(300_000);
+
+function menuItemName(kind: MembersPlaylistCategory, sort: "Latest" | "Oldest") {
   return `${kind} (Members ${sort})`;
-}
-
-// Members-only playlist pages render their rows as lockup view models on
-// both desktop and mobile web.
-async function openMembersPlaylistPage(page: Page, listId: string) {
-  await page.goto(`https://www.youtube.com/playlist?list=${listId}`);
-  await expect(
-    page
-      .locator("yt-lockup-view-model a[href*='watch?v=']")
-      .first()
-      .describe("First playlist page row"),
-  ).toBeVisible({ timeout: 30_000 });
-}
-
-async function getPlaylistPageVideoIds(page: Page, limit: number): Promise<string[]> {
-  return await page
-    .locator("yt-lockup-view-model a[href*='watch?v=']")
-    .describe("Playlist page rows")
-    .evaluateAll(
-      (links, args: { limit: number }) => {
-        const ids: string[] = [];
-        for (const link of links) {
-          if (ids.length >= args.limit) break;
-          const id = (link.getAttribute("href") ?? "").match(/[?&]v=([\w-]{11})/)?.[1];
-          if (id && !ids.includes(id)) ids.push(id);
-        }
-        return ids;
-      },
-      { limit },
-    );
 }
 
 async function openPlayAllMenu(page: Page) {
@@ -57,146 +26,89 @@ async function openPlayAllMenu(page: Page) {
   await dropdown.locator("button").describe("Play All menu toggle").click();
   const menu = dropdown.locator(":scope > div").describe("Play All menu");
   await expect(menu).toBeVisible();
+  await expect(menu.getByText("Videos (Latest)", { exact: true })).toBeVisible({ timeout: 30_000 });
   return menu;
 }
 
-// The category links resolve before the members-only links in the menu's
-// render, so their visibility proves the menu has been rebuilt for this
-// channel before any members-only assertion runs.
-async function expectMenuResolved(page: Page, menu: ReturnType<Page["locator"]>) {
-  await expect(
-    menu.getByText("Videos (Latest)", { exact: true }).describe("Videos Latest menu item"),
-  ).toBeVisible({ timeout: 30_000 });
+async function expectMenuEntryLinksToMembersPlaylist(
+  menu: Locator,
+  kind: MembersPlaylistCategory,
+  sort: "Latest" | "Oldest",
+) {
+  const link = menu
+    .getByText(menuItemName(kind, sort), { exact: true })
+    .describe(menuItemName(kind, sort));
+  await expect(link).toHaveAttribute("href", membersPlaylistHref(kind, sort), { timeout: 60_000 });
+  return link;
+}
+
+async function activateMenuEntry(
+  page: Page,
+  watcher: EventWatcher,
+  link: Locator,
+  expectedListId: string,
+) {
+  const since = await watcher.captureNavigationBaseline();
+  await link.click();
+  await watcher.waitForNavigationEnd({
+    since,
+    expectedUrl: new RegExp(`[?&]list=${expectedListId}(?:&|$)`),
+    timeout: 60_000,
+  });
+  expect(new URL(page.url()).searchParams.get("list")).toBe(expectedListId);
 }
 
 ytxTest("Members: menu entries follow the channel's membership", async ({ page, eventWatcher }) => {
-  const ytChannelPage = new YtChannelPage(memberChannel, page, eventWatcher);
-  await ytChannelPage.navigateToCategory("Videos", "hard");
+  const channelPage = new YtChannelPage(memberChannel, page, eventWatcher);
+  await channelPage.navigateToCategory("Videos", "hard");
   const menu = await openPlayAllMenu(page);
-  await expectMenuResolved(page, menu);
-
   for (const kind of membersKinds) {
-    for (const sort of membersSorts) {
-      const link = menu
-        .getByText(menuItemName(kind, sort), { exact: true })
-        .describe(`${menuItemName(kind, sort)} menu item`);
-      const hrefPattern =
-        sort === "Latest"
-          ? new RegExp(`^/playlist\\?list=${membersPlaylistPrefixes[kind]}[\\w-]+&playnext=1$`)
-          : new RegExp(
-              `^/watch\\?v=[\\w-]{11}&list=${membersPlaylistPrefixes[kind]}[\\w-]+&index=\\d+$`,
-            );
-      await expect(link).toHaveAttribute("href", hrefPattern, { timeout: 60_000 });
-    }
+    for (const sort of membersSorts) await expectMenuEntryLinksToMembersPlaylist(menu, kind, sort);
   }
 
-  const otherChannelPage = new YtChannelPage(noMemberChannel, page, eventWatcher);
-  await otherChannelPage.navigateToCategory("Videos", "hard");
+  const other = new YtChannelPage(noMemberChannel, page, eventWatcher);
+  await other.navigateToCategory("Videos", "hard");
   const otherMenu = await openPlayAllMenu(page);
-  await expectMenuResolved(page, otherMenu);
-
   for (const kind of membersKinds) {
     for (const sort of membersSorts) {
-      await expect(
-        otherMenu
-          .getByText(menuItemName(kind, sort), { exact: true })
-          .describe(`${menuItemName(kind, sort)} menu item`),
-      ).toHaveCount(0);
+      await expect(otherMenu.getByText(menuItemName(kind, sort), { exact: true })).toHaveCount(0);
     }
   }
 });
 
-membersKinds.forEach((kind) => {
-  ytxTest(
-    `Members: Latest destination matches the ${kind} members-only playlist page`,
-    async ({ page, eventWatcher }) => {
-      const ytChannelPage = new YtChannelPage(memberChannel, page, eventWatcher);
-      await ytChannelPage.navigateToCategory("Videos", "hard");
-      const menu = await openPlayAllMenu(page);
-      await expectMenuResolved(page, menu);
-
-      const link = menu
-        .getByText(menuItemName(kind, "Latest"), { exact: true })
-        .describe(`${menuItemName(kind, "Latest")} menu item`);
-      await expect(link).toHaveAttribute(
-        "href",
-        new RegExp(`list=${membersPlaylistPrefixes[kind]}[\\w-]+&playnext=1`),
-        { timeout: 60_000 },
-      );
-      const expectedListId = new URL(
-        (await link.getAttribute("href"))!,
-        page.url(),
-      ).searchParams.get("list")!;
-
-      const playlistTab = await page.context().newPage();
-      try {
-        await openMembersPlaylistPage(playlistTab, expectedListId);
-        const expectedIds = await getPlaylistPageVideoIds(playlistTab, 3);
+for (const kind of membersKinds) {
+  for (const sort of membersSorts) {
+    ytxTest(
+      `Members: ${sort} menu destination matches the independent ${kind} playlist`,
+      async ({ page, eventWatcher }) => {
+        const channel = new YtChannelPage(memberChannel, page, eventWatcher);
+        await channel.navigateToCategory("Videos", "hard");
+        const menu = await openPlayAllMenu(page);
+        const link = await expectMenuEntryLinksToMembersPlaylist(menu, kind, sort);
+        const url = new URL((await link.getAttribute("href"))!, page.url());
+        const listId = url.searchParams.get("list")!;
+        const reference = await readFullReferencePlaylist(page, listId);
+        const expectedIds = reference.map((row) => row.videoId);
         expect(expectedIds.length).toBeGreaterThan(0);
-
-        await link.click();
-        await expect
-          .poll(() => new URL(page.url()).searchParams.get("list"), { timeout: 30_000 })
-          .toBe(expectedListId);
-        const ytVideoPage = new YtVideoPage(page);
-        await expect
-          .poll(() => ytVideoPage.getPlaylistVideoIds(expectedIds.length), { timeout: 60_000 })
-          .toEqual(expectedIds);
-      } finally {
-        await playlistTab.close();
-      }
-    },
-  );
-
-  ytxTest(
-    `Members: Oldest destination selects the oldest ${kind} members-only item`,
-    async ({ page, eventWatcher }) => {
-      const ytChannelPage = new YtChannelPage(memberChannel, page, eventWatcher);
-      await ytChannelPage.navigateToCategory("Videos", "hard");
-      const menu = await openPlayAllMenu(page);
-      await expectMenuResolved(page, menu);
-
-      const link = menu
-        .getByText(menuItemName(kind, "Oldest"), { exact: true })
-        .describe(`${menuItemName(kind, "Oldest")} menu item`);
-      await expect(link).toHaveAttribute(
-        "href",
-        new RegExp(`list=${membersPlaylistPrefixes[kind]}[\\w-]+&index=\\d+`),
-        { timeout: 60_000 },
-      );
-      const hrefUrl = new URL((await link.getAttribute("href"))!, page.url());
-      const expectedVideoId = hrefUrl.searchParams.get("v")!;
-
-      const playlistTab = await page.context().newPage();
-      try {
-        await openMembersPlaylistPage(playlistTab, hrefUrl.searchParams.get("list")!);
-        if (kind === "Videos") {
-          // The members-only video playlist is short: the un-scrolled page
-          // lists every row, so the selected video must equal its literal
-          // last row and the link's index must equal the row count.
-          const rows = await getPlaylistPageVideoIds(playlistTab, 100);
-          expect(rows.length).toBeGreaterThan(0);
-          expect(expectedVideoId).toBe(rows.at(-1));
-          expect(String(rows.length)).toBe(hrefUrl.searchParams.get("index"));
+        const videos = new YtVideoPage(page);
+        if (sort === "Oldest") {
+          const oldestId = expectedIds.at(-1)!;
+          expect(url.searchParams.get("v")).toBe(oldestId);
+          expect(url.searchParams.get("index")).toBe(String(expectedIds.length));
+          if (kind === "Streams") expect(expectedIds.slice(0, 3)).not.toContain(oldestId);
+          await activateMenuEntry(page, eventWatcher, link, listId);
+          expect(new URL(page.url()).searchParams.get("v")).toBe(oldestId);
+          await expect
+            .poll(() => videos.getPlaylistSelectedVideoId(), { timeout: 60_000 })
+            .toBe(oldestId);
         } else {
-          // The live-stream playlist is long and lazily loaded. Its oldest
-          // item is not among the leading rows, and the Oldest link starts
-          // playback at the playlist's final index.
-          const leadingIds = await getPlaylistPageVideoIds(playlistTab, 3);
-          expect(leadingIds).not.toContain(expectedVideoId);
+          await activateMenuEntry(page, eventWatcher, link, listId);
+          const leadingIds = expectedIds.slice(0, 3);
+          await expect
+            .poll(() => videos.getPlaylistVideoIds(leadingIds.length), { timeout: 60_000 })
+            .toEqual(leadingIds);
         }
-
-        await link.click();
-        await expect
-          .poll(() => new URL(page.url()).searchParams.get("v"), { timeout: 30_000 })
-          .toBe(expectedVideoId);
-        const ytVideoPage = new YtVideoPage(page);
-        await expect
-          .poll(() => ytVideoPage.getPlaylistSelectedVideoId(), { timeout: 60_000 })
-          .toBe(expectedVideoId);
-      } finally {
-        await playlistTab.close();
-      }
-    },
-  );
-});
+      },
+    );
+  }
+}

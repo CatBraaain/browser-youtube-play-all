@@ -109,6 +109,44 @@ const waitForTransitionStart = async (
 const SORT_SHEET_ITEMS =
   "ytd-popup-container button[role='menuitem'],bottom-sheet-container button[role='menuitem']";
 
+// The playlist list-id prefixes YouTube assigns to the generated playlists:
+// a public playlist per category and sort, and one members-only playlist per category.
+const PLAYLIST_PREFIXES = {
+  public: {
+    Videos: { Latest: "UULF", Popular: "UULP" },
+    Shorts: { Latest: "UUSH", Popular: "UUPS" },
+    Streams: { Latest: "UULV", Popular: "UUPV" },
+  },
+  members: {
+    Videos: "UUMF",
+    Streams: "UUMV",
+  },
+} as const;
+
+// The categories that have a members-only playlist.
+export type MembersPlaylistCategory = keyof typeof PLAYLIST_PREFIXES.members;
+
+// The href the public Play All button generates for the cell. The Oldest link
+// is not a prefix: it generates a watch URL whose list id has its own literal
+// shape, asserted as such.
+export const publicPlaylistHref = (category: CategoryKind, sort: SortKind): RegExp =>
+  sort === "Oldest"
+    ? /^\/watch\?v=[\w-]{11}&list=UL01234567890$/
+    : new RegExp(
+        `^/playlist\\?list=${PLAYLIST_PREFIXES.public[category][sort]}[\\w-]+&playnext=1$`,
+      );
+
+// The href the members-only Play All entry generates for the kind and sort.
+export const membersPlaylistHref = (
+  category: MembersPlaylistCategory,
+  sort: "Latest" | "Oldest",
+): RegExp =>
+  sort === "Oldest"
+    ? new RegExp(
+        `^/watch\\?v=[\\w-]{11}&list=${PLAYLIST_PREFIXES.members[category]}[\\w-]+&index=\\d+$`,
+      )
+    : new RegExp(`^/playlist\\?list=${PLAYLIST_PREFIXES.members[category]}[\\w-]+&playnext=1$`);
+
 export class YtPage {
   constructor(
     private page: Page,
@@ -139,17 +177,29 @@ export class YtSearchPage {
   }
 
   public topVideoChannelThumbnailButton(channelName: string | null = null): Locator {
-    const thumb = channelName !== null ? `[href="/${channelName}"]` : `[href*="/@"]`;
+    const thumb = channelName !== null ? `[href="/${channelName}" i]` : `[href*="/@"]`;
     return this.page
       .locator(
         // Mobile serves two search-result DOM variants; the channel card inside
         // ytm-compact-channel-renderer has no .media-channel ancestor
         this.ytPage.isMobile
           ? `.media-channel ${thumb}, ytm-compact-channel-renderer ${thumb}`
-          : `#channel-thumbnail:not([hidden])${channelName !== null ? `[href="/${channelName}"]` : ""}`,
+          : `#channel-thumbnail:not([hidden])${channelName !== null ? `[href="/${channelName}" i]` : ""}`,
       )
       .first()
       .describe("Search result channel thumbnail"); // [href^="/channel/"] or [href^="link:///"]
+  }
+
+  public channelThumbnailButton(channelName: string | null = null): Locator {
+    if (this.ytPage.isMobile) return this.topVideoChannelThumbnailButton(channelName);
+    const channelHref =
+      channelName === null ? '[href*="/@"],[href^="/channel/"]' : `[href="/${channelName}" i]`;
+    return this.page
+      .locator("ytd-channel-renderer a:has(#avatar)")
+      .filter({ has: this.page.locator("yt-img-shadow") })
+      .and(this.page.locator(channelHref))
+      .first()
+      .describe("Search result channel card thumbnail");
   }
 
   // YouTube sometimes swallows clicks on SPA anchors: it preventDefault()s the
@@ -160,10 +210,14 @@ export class YtSearchPage {
   // or the URL begins to move): then wait for the landing instead.
   public async clickChannelThumbnailButton(
     channelName: string | null = null,
-    options: { click?: (locator: Locator) => Promise<void> } = {},
+    options: { click?: (locator: Locator) => Promise<void>; card?: boolean } = {},
   ): Promise<void> {
     const since = await this.eventWatcher.captureNavigationBaseline(this.ytPage.NavigationEndEvent);
-    const button = this.topVideoChannelThumbnailButton(channelName);
+    // The channel-card avatar anchor keeps the BDD soft1 journey in-document;
+    // every other caller keeps the legacy top-video thumbnail contract.
+    const button = options.card
+      ? this.channelThumbnailButton(channelName)
+      : this.topVideoChannelThumbnailButton(channelName);
     const channelUrl =
       channelName !== null
         ? new RegExp(`youtube\\.com/${escapeRegExp(channelName)}/?$`, "i")
@@ -177,7 +231,7 @@ export class YtSearchPage {
     return this.page
       .locator(
         "#channel-info #channel-name" +
-          (channelName !== null ? `:has([href="/${channelName}"])` : ""),
+          (channelName !== null ? `:has([href="/${channelName}" i])` : ""),
       )
       .first()
       .describe("Search result channel name");
@@ -257,6 +311,7 @@ export class YtSearchPage {
   public async navigateToChannel(
     channelName: string | null,
     navigation: "soft1" | "soft2" | "hard",
+    options: { click?: (locator: Locator) => Promise<void>; card?: boolean } = {},
   ) {
     // Search-result cards link channels either by handle (/@name) or by
     // legacy channel id (/channel/UC...), depending on the result.
@@ -267,16 +322,28 @@ export class YtSearchPage {
     const since = await this.eventWatcher.captureNavigationBaseline(this.ytPage.NavigationEndEvent);
     switch (navigation) {
       case "soft1":
-        await this.clickUntilLanded(this.topVideoChannelThumbnailButton(channelName), channelUrl);
+        await this.clickUntilLanded(
+          options.card
+            ? this.channelThumbnailButton(channelName)
+            : this.topVideoChannelThumbnailButton(channelName),
+          channelUrl,
+          options,
+        );
         break;
       case "soft2":
-        await this.clickUntilLanded(this.topVideoChannelNameButton(channelName), channelUrl);
+        await this.clickUntilLanded(
+          this.topVideoChannelNameButton(channelName),
+          channelUrl,
+          options,
+        );
         break;
       case "hard": {
-        const channelButton = this.topVideoChannelThumbnailButton(channelName);
-        // Search results may load slowly even after the navigation-end event
-        await channelButton.waitFor({ state: "visible" });
-        const relUrl = await channelButton.getAttribute("href");
+        let relUrl = channelName === null ? null : `/${channelName}`;
+        if (relUrl === null) {
+          const channelButton = this.topVideoChannelThumbnailButton();
+          await channelButton.waitFor({ state: "visible", timeout: 30_000 });
+          relUrl = await channelButton.getAttribute("href");
+        }
         await this.page.goto(`https://www.youtube.com${relUrl}`, {
           waitUntil: "domcontentloaded",
         });
@@ -351,7 +418,7 @@ export class YtVideoPage {
           exclude: string[];
         },
       ) => {
-        // Rows YouTube itself marks unplayable (see the review tests) are
+        // Rows YouTube itself marks unplayable are
         // skipped before the first-n cut; with an empty exclusion list this
         // is identical to slicing the first n links.
         const excluded = new Set(exclude);
@@ -923,5 +990,10 @@ export class YtChannelPage {
       .describe(`Play All ${category} ${sort} button`)
       .getAttribute("href");
     return `https://www.youtube.com${href}`;
+  }
+
+  // SPEC.md D02 display step: no Play All button is offered for the cell.
+  public async expectNoPlayAllButton(): Promise<void> {
+    await expect(this.page.locator(".play-all-btn").describe("Play All button")).toHaveCount(0);
   }
 }

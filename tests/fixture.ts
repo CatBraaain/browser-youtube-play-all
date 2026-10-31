@@ -310,9 +310,6 @@ export async function attachEventWatcher(page: Page): Promise<EventWatcher> {
   return eventWatcher;
 }
 
-// Button journeys retain their tag for Playwright filtering.
-export const JOURNEY_TAG = "@journey";
-
 export const ytTest = test.extend<{
   eventWatcher: EventWatcher;
   channelIdFinder: ChannelIdFinder;
@@ -343,6 +340,8 @@ export const ytxTest = ytTest.extend({
         const chromeExtensionPath = path.join(import.meta.dirname, "../dist/chrome-mv3");
         const context = await chromium.launchPersistentContext("", {
           ...deviceOptions,
+          channel: "chromium",
+          headless: true,
           args: [
             `--disable-extensions-except=${chromeExtensionPath}`,
             `--load-extension=${chromeExtensionPath}`,
@@ -362,6 +361,7 @@ export const ytxTest = ytTest.extend({
         const firefoxWithExt = withExtension(firefox, firefoxExtensionPath);
         const context = await firefoxWithExt.launchPersistentContext("", {
           ...deviceOptions,
+          headless: true,
           firefoxUserPrefs: {
             "media.autoplay.blocking_policy": 2, // altearnative to --mute-audio
           },

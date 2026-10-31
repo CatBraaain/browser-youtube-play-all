@@ -2,6 +2,8 @@
 
 `SPEC.md` is the canonical English spec for this OSS project. `SPEC.ja.md` is its Japanese counterpart. When either file changes, update the other in the same change so both describe the same behavior.
 
+The D01–D03 cases run as E2E tests in `tests/e2e/play-all.test.ts`, driven by the combinations in `tests/e2e/combinations.ts`. These tests verify behavior and attach screenshots in the same execution. The review album uses those screenshots. `SPEC.md` and `SPEC.ja.md` remain the canonical source for every case and the test operations.
+
 # Development flow
 
 Before writing or changing tests that trigger navigation on YouTube, read `YT-SPEC.md` for how YouTube's SPA navigation works, and follow the navigation test rules below.

@@ -1,12 +1,12 @@
 # テストケース
 
-YouTube Play All拡張の必要なテストを選ぶ利用者・開発者・agent向けの仕様。表は要求される振る舞いを示し、1行が複数のテストの組合せを含むことがある。
+YouTube Play All拡張の必要なテストを選ぶ利用者・開発者・agent向けの仕様。D01〜D03 は `tests/e2e/play-all.test.ts` の E2Eテストとして実装され、`tests/e2e/combinations.ts` の組合せ定義で駆動される。A01・E01・E02 は `tests/e2e/resolution.test.ts` で実行する。
 
 ## 適用範囲と凡例
 
 ### ナビゲーション経路
 
-カテゴリの表示・リンク先の行は、記載した各経路で検索 → チャンネルhome → カテゴリの順に確認する。各経路のhomeで D03 を確認してから進む。カテゴリ直開きだけで経路全体の確認を代替しない。「直接読み込み」は完全なページ読み込みを指す。
+各ケースは次の経路でチャンネルカテゴリページへ到達する。カテゴリ直開きだけで経路全体の確認を代替しない。「直接読み込み」は完全なページ読み込みを指す。
 
 | 遷移方法 | 検索への移動 | チャンネルhomeへの移動 | カテゴリへの移動 |
 | --- | --- | --- | --- |
@@ -14,7 +14,7 @@ YouTube Play All拡張の必要なテストを選ぶ利用者・開発者・agen
 | soft1 | 再読み込みなし | チャンネルのサムネイルから再読み込みなし | 再読み込みなし |
 | soft2 | 再読み込みなし | チャンネル名から再読み込みなし | 再読み込みなし |
 
-任意のチャンネルページでのメニューケースの hard / soft は、直接読み込み／再読み込みなしの移動を指す。カテゴリページに限定しない。並び順の選択と公開範囲フィルタの操作はページ遷移ではない。カテゴリへ到達してから行の並び順を選択する。
+並び順の選択と公開範囲フィルタの操作はページ遷移ではない。
 
 ### テストデバイス
 
@@ -40,46 +40,48 @@ YouTube Play All拡張の必要なテストを選ぶ利用者・開発者・agen
 | Shorts | Members only | 非表示 | 非表示 | 非表示 |
 | Streams | Members only | 表示 | 非表示 | 表示 |
 
-### リンク先の確認方法
-
-Play All のリンク先を確認するとき、公開範囲と並び順によって確認する内容が次のように変わる。
-
-| 公開範囲 | 並び順 | 確認する内容 |
-| --- | --- | --- |
-| Public | Latest / Popular | リンク先のプレイリストパネルの再生可能な最初の3本が、チャンネルの <カテゴリ> / <並び順> ページの最初の3本と同じ順序で一致する。ただし、YouTube 自身が再生不可として示す行（非公開動画など）を除く3本。 |
-| Public | Oldest | リンク先のプレイリストパネルで選択される動画が、チャンネルの <カテゴリ> / Oldest ページの最初の動画と一致する。 |
-| Members only | Latest | 遷移先はそのチャンネルのメンバー限定プレイリストであり、プレイリストパネルはメンバー限定プレイリストページと同じ動画IDを同じ順序で並べる。行は再生可能性で絞り込まない。メンバー限定の行は未ログインの視聴者には再生不可だが、比較はそのまま成立する。 |
-| Members only | Oldest | リンク先のプレイリストパネルで選択される行は、メンバー限定プレイリストの最古の項目、すなわちメンバー限定プレイリストページの末尾の行である。 |
-
 ## ケース一覧
 
-「レビュー用スクリーンショット」列の「—」は、自動検証のみでレビュー用の撮影を行わないことを示す。
+以下の D01〜D03 行が対象範囲を定める。E2Eテストが操作・期待結果・撮影箇所を実装する。D03 行より下のケースは自動検証のみを行う。
 
-| ID | 区分 | 対象ページ | カテゴリ | 並び順 | 公開範囲 | 遷移方法 | 操作 | 期待結果 | レビュー用スクリーンショット |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| D01 | 表示 / リンク先 | メンバーシップのないチャンネル @Apple のカテゴリ | Videos / Shorts / Streams | Latest / Popular / Oldest | Public | hard / soft1 / soft2 | <カテゴリ> の動画一覧を記録し、<並び順> を選択してボタン表示を確認した後、「Play All (<並び順>)」を押下して生成URLへ実際に移動する。 | 「Play All (<並び順>)」ボタンが表示され、遷移先は「リンク先の確認方法」の表のとおり。 | 押下前の「Play All (<並び順>)」ボタン → 遷移後のプレイリスト。 |
-| D02 | 表示 / リンク先 | メンバーシップのあるチャンネル @NASASpaceFlight のカテゴリ | Videos / Shorts / Streams | Latest / Popular / Oldest | Public / Members only | hard / soft1 / soft2 | <並び順> を選択し、Public、次に Members only をそれぞれ有効にする。Members only でボタンが表示される組合せでは、「Play All (<並び順>)」を押下して生成URLへ実際に移動する。 | 「Play All (<並び順>)」ボタンが組合せ表のとおりに 表示される / 表示されない。押下した場合の遷移先は「リンク先の確認方法」の表のとおり。 | 選択中のカテゴリ・並び順・公開範囲と、ボタンの表示／非表示が分かる画面。押下した場合は、押下前のメンバー限定 Play All ボタン → 遷移後のメンバー限定プレイリスト。 |
-| D03 | 表示 | チャンネルhome | — | — | Public / Members only | hard / soft1 / soft2 | 各経路でカテゴリへ移る前にチャンネルhomeへ到達する。 | Play All ドロップダウンが表示され、トグルで開閉し、メニューの外側をクリックすると閉じる。開いたメニューには、ボタン表示の組合せのとおりのエントリが並ぶ。メンバーシップ特典のあるチャンネルでは Members only のエントリも表示され、ないチャンネルでは Public のエントリのみ表示される。 開いたメニューの期待される全ボタンが画面内に見えている。 | ドロップダウンを閉じ、開閉ボタンを画面上端に揃えるようスクロールして撮影する。次に開き、期待される全ボタンが画面内に見える状態を撮影する。 |
-| A01 | 非同期 | チャンネルカテゴリ | Videos | Oldest → Latest → Popular | Public / Members only | hard / soft1 / soft2 | Videos / Oldest の解決が遅延している間に、視聴者が Oldest、次に Latest、次に Popular を選択する。Oldest の解決が完了する。 | ボタンは「Play All (Popular)」のままで、選択は Popular にとどまる。Members only でも同様に、トグルで Members only を有効化した後も選択は保持され、遅延した解決が完了しても上書きされない。 | — |
-| E01 | エラー | チャンネルカテゴリ | Videos | Oldest → Popular | Public | hard / soft1 / soft2 | Videos / Oldest 単体が解決できない。Oldest を選択し、表示された「Play All (Oldest) (error)」を押下した後、メニューから Popular を選択する。 | ボタンは、機能するプレイリストリンクの代わりに「Play All (Oldest) (error)」と表示される。押下後も視聴者は同じページにとどまり、他の利用可能なメニューの選択肢は引き続き利用でき、Popular を選択すると機能する「Play All (Popular)」ボタンが表示される。 | — |
-| E02 | エラー | チャンネルカテゴリ | Videos / Streams | Latest / Oldest | Members only | hard / soft1 / soft2 | Members only フィルタが選択中で、そのカテゴリのメンバー限定プレイリスト単体が解決できない。「Members only」を有効にする。 | ボタンは、機能するプレイリストリンクの代わりに、選択中の並び順に応じて「Play All (Latest) (error)」または「Play All (Oldest) (error)」と表示する。 | — |
+| ID | 区分 | 対象ページ | カテゴリ | 並び順 | 公開範囲 | 遷移方法 |
+| --- | --- | --- | --- | --- | --- | --- |
+| D01 | 表示 / リンク先 | メンバーシップのないチャンネル @Apple のカテゴリ | Videos / Shorts / Streams | Latest / Popular / Oldest | Public | hard / soft1 / soft2 |
+| D02 | 表示 / リンク先 | メンバーシップのあるチャンネル @NASASpaceFlight のカテゴリ | Videos / Shorts / Streams | Latest / Popular / Oldest | Public / Members only | hard / soft1 / soft2 |
+| D03 | 表示 | チャンネルhome（各経路でカテゴリの前に到達） | — | — | Public / Members only | hard / soft1 / soft2 |
+| A01 | 非同期 | チャンネルカテゴリ | Videos | Oldest → Latest → Popular | Public / Members only | hard / soft1 / soft2 |
+| E01 | エラー | チャンネルカテゴリ | Videos | Oldest → Popular | Public | hard / soft1 / soft2 |
+| E02 | エラー | チャンネルカテゴリ | Videos / Streams | Latest / Oldest | Members only | hard / soft1 / soft2 |
+
+### A01: Oldest解決の遅延
+
+Videos / Oldest の解決が遅延している間に、視聴者が Oldest、次に Latest、次に Popular を選択する。Oldest の解決が完了する。ボタンは「Play All (Popular)」のままで、選択は Popular にとどまる。Members only でも同様に、選択は保持され、遅延した解決が完了しても上書きされない。
+
+### E01: Oldest解決の失敗
+
+Videos / Oldest 単体が解決できない。Oldest を選択し、表示された「Play All (Oldest) (error)」を押下する。エラーボタンは機能するプレイリストリンクを持たず、押下しても同じページにとどまる。このエラー状態から次の2つの振る舞いを別々に検証する。
+
+- 拡張メニューを開き Videos / Popular を選択すると、プレイリストへ遷移して動画が表示される。
+- 元のカテゴリページで YouTube の並び順操作から Popular を選択すると、カテゴリページから離れず、機能する「Play All (Popular)」ボタンが表示される。
+
+### E02: メンバー限定プレイリスト解決の失敗
+
+Members only フィルタが選択中で、そのカテゴリのメンバー限定プレイリスト単体が解決できない。ボタンは、選択中の並び順に応じて「Play All (Latest) (error)」または「Play All (Oldest) (error)」と表示する。
 
 ## レビュー運用
 
-すべてのケースを `tests/e2e/` の E2Eテストとして管理する。ケース一覧の「レビュー用スクリーンショット」列に撮影内容を記したケースをレビュー対象とし、そのテストのファイル名を `*.review.test.ts` とする。同じケースをレビュー専用に重複定義せず、自動検証とレビューには同じ実行結果を使う。非同期・エラーなど、レビュー対象外のケースも自動検証する。レビューは Playwright 内蔵の trace と HTML report に添付されたスクリーンショットで行う。
+E2Eテストが本書のケースを検証する。D01〜D03 は、アサーションと同じ実行内でレビュー画像を撮影する。各画像はケース・チャンネル・カテゴリ・並び順・公開範囲・経路・撮影場面の構造化メタデータを持つ。
 
-レビューの単位は操作文を名前にする `test.step()` ステップで、1ステップを意図1つと確認1組に対応させ、アサーションは通常の `expect()` で書く。主要なlocatorには `.describe("name")` で名前を付ける。
+各 D01/D02テストは最初に D03 のhome メニュー確認（トグル開閉、ボタン表示組合せ表どおりの厳密なエントリ集合、全ボタンの同時画面内表示、閉じた状態と開いた状態の撮影、外clickでの閉鎖）を行う。その後、セルの操作・期待結果のアサーション・定義された時点でのviewport全体の撮影を、同じ実行内で行う。スクリーンショットは操作順にテスト結果へ添付する。レビュー対象のtraceは成功時も失敗時も保持し、対象外のテストは失敗時のみtraceを保持する（`trace: "retain-on-failure"`）。モバイルはPixel 5縦向きviewportを維持する。
 
-レビュー対象のテストも、各ケースに定めた経路とデバイスの組合せで実行する。モバイルは通常プロジェクトのPixel 5縦向きviewportを維持する。
+リンク先の比較は、YouTubeが再生不可と示す行を除外する。Latest並び順では、現在ライブ配信と示す行も除外する（自動生成Latest playlistはVODのみを含むため）。Popular playlistはライブ配信を含むため、除外は行わない。
 
-撮影内容はケース一覧の「レビュー用スクリーンショット」列に従う。各スクリーンショットはviewport全体を撮影し、操作順にテスト結果へ添付する。HTML reportはテストattachmentをその添付順に並べる。
+E2Eギャラリー（`e2e-gallery.html`）は同じ E2E実行のスクリーンショットを表示する。Playwright HTML reportからはスクリーンショットとtraceを参照できる。所有者はスクリーンショットで観測された振る舞いを判断する。アサーションの合否はスクリーンショットの見た目ではなく、ランナーのpass/failに従う。
 
 ### レビューの実行と閲覧
 
-`bun run test` は、レビュー対象を含むすべての E2Eテストを実行する。レビュー対象のtraceは成功試行を含めて常に保持する。対象外のテストは失敗試行のtraceだけを保持する (`trace: "retain-on-failure"`)。
+`bun run test` は拡張をビルドし、すべての spec・E2Eプロジェクトを Chrome desktop・Chrome mobile・Firefox desktop で実行する。Chrome mobile は soft2経路を skipする（desktop専用のため）。ギャラリーはこの実行で添付された画像を使用する。
 
-実行結果はPlaywright HTML reportに保存され、直近の実行結果で上書きされる。実行後は再テストせずに閲覧できる。reportの一覧ではファイル名でレビュー対象を識別し、`*.review.test.ts` のファイルを開く。対象外のファイルも一覧には残る。
+`bun run review` はテストを実行せず、Vite でギャラリーを配信する。先に `bun run test` を実行する。Vite が起動時に表示する URL の `e2e-gallery.html`（通常 `http://127.0.0.1:5173/e2e-gallery.html`）で閲覧する。
 
 Play Allボタンの通常・hover・focus時の背景色は、通常のインライン指定より拡張CSSの色を優先する。traceスナップショット内でもこれらの色を維持し、ビューアの対象要素用の枠線を抑制する。他の対象要素のハイライトとクリック位置のマーカーは維持する。
-
-`bun run review` は最初にreportパッチ (`scripts/patch-report.ts`) を適用してから`--port 0` でreportサーバーを起動する。パッチは、trace viewerのAttachmentsタブを、buttonとdestinationのペアをカテゴリと並び順の見出し（例: `Videos - Latest`）の下に縦に積む2列のグリッドにし、Attachmentsタブを初期選択にする。パッチは冪等で、再サーブしても見た目は変わらず、レポートがまだ無い場合は明示的に失敗する。パッチはsnapshotペインを小さな固定高さにし、Attachmentsペインが最初から最大の高さになるようにする。ペイン高さは初期化しない。最大近くのseedはsnapshotペインをほぼ潰し続け、ブラウザズームのたびにペイン境界が動くためである。パッチはtrace viewerのfilm stripの高さも固定し、動画サムネイルの非同期生成でtimelineが伸びてtraceを開いた後にペイン境界が動くことを防ぐ。起動時に表示されたURLを開き、report内でレビュー対象のファイルからテスト名を選ぶ。テストを開き、trace viewerのAttachmentsタブで、ケース一覧に定めたスクリーンショットを確認する。Ctrl+Cでサーバーを停止する。所有者はスクリーンショットで観測された振る舞いを判断する。アサーションの合否はスクリーンショットの見た目ではなく、ランナーのpass/failに従う。
