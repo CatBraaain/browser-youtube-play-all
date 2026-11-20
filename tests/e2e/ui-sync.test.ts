@@ -3,7 +3,7 @@ import { errors, expect, type Page } from "@playwright/test";
 import { YoutubeDOM } from "@/entrypoints/play-all-button.content/youtube-dom";
 
 import { attachEventWatcher, ytxTest, type EventWatcher } from "../fixture";
-import { YtChannelPage, YtSearchPage } from "../utils";
+import { YtChannelPage, YtPage, YtSearchPage } from "../utils";
 
 const firstChannel = "@Microsoft";
 const secondChannel = "@YouTube";
@@ -34,6 +34,18 @@ ytxTest(
     await expect(menu).toBeVisible();
     await page.mouse.click(1, 1);
     await expect(menu).toBeHidden();
+    // A click that YouTube stops from bubbling (the search box) must still
+    // close the menu, and the dropdown must stay in the DOM so the hidden
+    // check cannot pass vacuously. On mobile the search button click already
+    // closes the menu through a normal bubbling click, so this step is
+    // desktop-only.
+    if (!new YtPage(page, eventWatcher).isMobile) {
+      await dropdown.locator("button").describe("Play All menu toggle").click();
+      await expect(menu).toBeVisible();
+      await page.locator("input.yt-searchbox-input").describe("YouTube search input").click();
+      await expect(menu).toBeHidden();
+      await expect(dropdown).toHaveCount(1);
+    }
   },
 );
 

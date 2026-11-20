@@ -244,13 +244,21 @@ async function renderDropdown(channel: Channel, latestEpoch: number) {
       },
       { signal },
     );
+    // Capture phase: YouTube stops click propagation inside its own UI (e.g.
+    // the search box), so those clicks never reach a bubble-phase listener
+    // here and the menu would stay open. Capture runs before any page handler
+    // can stop the event. Clicks inside the dropdown are skipped: the toggle
+    // manages its own state, and a menu click must not close the menu.
     document.addEventListener(
       "click",
-      () => {
+      (e) => {
+        if (e.target instanceof Node && container.contains(e.target)) {
+          return;
+        }
         isOpen = false;
         menu.classList.add("hidden");
       },
-      { signal },
+      { signal, capture: true },
     );
   }
 }
