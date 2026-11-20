@@ -150,6 +150,14 @@ function equalizeLeadingGap(button: HTMLElement) {
   button.style.marginLeft = `${marginLeft + chipGap - leadingGap}px`;
 }
 
+// The dropdown's listeners include a document-wide click-to-close handler,
+// which must not outlive its dropdown: YouTube detaches the dropdown when a
+// channel navigation rebuilds the header, and a surviving document handler
+// would keep that detached subtree alive and run on every click. Appending a
+// replacement dropdown releases the previous listener set through this
+// controller (page-leave DOM removal is left to YouTube's re-rendering).
+let dropdownListeners: AbortController | null = null;
+
 async function renderDropdown(channel: Channel, latestEpoch: number) {
   const container = document.createElement("div");
   container.className = "play-all-btns";
@@ -196,36 +204,53 @@ async function renderDropdown(channel: Channel, latestEpoch: number) {
   container.append(button, menu);
 
   if (document.querySelector("yt-flexible-actions-view-model .play-all-btns") === null) {
+    dropdownListeners?.abort();
+    dropdownListeners = new AbortController();
+    const { signal } = dropdownListeners;
     document.querySelector("yt-flexible-actions-view-model")?.appendChild(container);
 
     let isOpen = false;
-    button.addEventListener("click", (e) => {
-      e.stopPropagation();
-      isOpen = !isOpen;
-      menu.classList.toggle("hidden", !isOpen);
-      if (isOpen) {
-        // Keep the open menu inside the viewport: the header sits well below
-        // the top of the page, so a full-height menu would render its lower
-        // rows off-screen and unclickable. A small minimum keeps the menu
-        // scrollable even in that edge case.
-        const available = window.innerHeight - button.getBoundingClientRect().bottom - 8;
-        menu.style.maxHeight = `${Math.max(available, 160)}px`;
-        // Align the toggle label's left edge with the menu items' text left
-        // edge: shift the menu left by its item padding, so the characters
-        // line up rather than the menu border. The mobile toggle spans the
-        // full header width, so its centered label starts far to the right
-        // of the button edge the menu otherwise hangs from.
-        const firstItem = menu.querySelector("a");
-        const itemPaddingLeft = firstItem ? parseFloat(getComputedStyle(firstItem).paddingLeft) : 0;
-        menu.style.left = `${toggleLabel.getBoundingClientRect().left - container.getBoundingClientRect().left - itemPaddingLeft}px`;
-      }
-    });
-    menu.addEventListener("click", (e) => {
-      e.stopPropagation();
-    });
-    document.addEventListener("click", () => {
-      isOpen = false;
-      menu.classList.add("hidden");
-    });
+    button.addEventListener(
+      "click",
+      (e) => {
+        e.stopPropagation();
+        isOpen = !isOpen;
+        menu.classList.toggle("hidden", !isOpen);
+        if (isOpen) {
+          // Keep the open menu inside the viewport: the header sits well below
+          // the top of the page, so a full-height menu would render its lower
+          // rows off-screen and unclickable. A small minimum keeps the menu
+          // scrollable even in that edge case.
+          const available = window.innerHeight - button.getBoundingClientRect().bottom - 8;
+          menu.style.maxHeight = `${Math.max(available, 160)}px`;
+          // Align the toggle label's left edge with the menu items' text left
+          // edge: shift the menu left by its item padding, so the characters
+          // line up rather than the menu border. The mobile toggle spans the
+          // full header width, so its centered label starts far to the right
+          // of the button edge the menu otherwise hangs from.
+          const firstItem = menu.querySelector("a");
+          const itemPaddingLeft = firstItem
+            ? parseFloat(getComputedStyle(firstItem).paddingLeft)
+            : 0;
+          menu.style.left = `${toggleLabel.getBoundingClientRect().left - container.getBoundingClientRect().left - itemPaddingLeft}px`;
+        }
+      },
+      { signal },
+    );
+    menu.addEventListener(
+      "click",
+      (e) => {
+        e.stopPropagation();
+      },
+      { signal },
+    );
+    document.addEventListener(
+      "click",
+      () => {
+        isOpen = false;
+        menu.classList.add("hidden");
+      },
+      { signal },
+    );
   }
 }
