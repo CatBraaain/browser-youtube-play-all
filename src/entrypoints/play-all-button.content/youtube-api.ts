@@ -113,6 +113,8 @@ function sortLabelsOfChipBar(chipBar: unknown): string[] {
   return texts.length === YoutubeDOM.sorts.length ? texts : [];
 }
 
+export const SYNC_SORTS: SortKind[] = ["Latest", "Popular"];
+
 export async function resolvePlaylistPath(
   channelId: string,
   categoryKind: CategoryKind,

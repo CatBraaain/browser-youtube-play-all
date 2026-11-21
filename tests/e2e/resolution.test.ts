@@ -38,6 +38,8 @@ for (const route of routes) {
         skipMobileSoft2(info, route);
         const delayedPlaylist =
           audience === "Public" ? "/playlist?list=UULF" : "/playlist?list=UUMF";
+        const gatedEntryText =
+          audience === "Public" ? "Videos (Oldest)" : "Videos (Members Latest)";
         await installFetchGate(page, { delay: [delayedPlaylist] });
         const journey = await reachCategory(
           page,
@@ -61,7 +63,10 @@ for (const route of routes) {
               timeout: 30_000,
             })
             .toContain(delayedPlaylist);
-          await expect(page.locator(".play-all-btns")).toHaveCount(0);
+          await expect(page.locator(".play-all-btns")).toHaveCount(1);
+          await expect(
+            page.locator(".play-all-btns").getByText(gatedEntryText, { exact: true }),
+          ).toHaveCount(0);
           if (audience === "Members only") {
             await journey.selectSort("Latest");
             await journey.activateAudience("Members only");
@@ -78,6 +83,9 @@ for (const route of routes) {
           }
           await releaseFetchGate(page);
           await expect(page.locator(".play-all-btns")).toHaveCount(1, { timeout: 60_000 });
+          await expect(
+            page.locator(".play-all-btns").getByText(gatedEntryText, { exact: true }),
+          ).toHaveCount(1);
           await journey.expectSort("Popular");
           if (audience === "Members only") {
             await journey.expectAudience("Members only", "Videos", "Popular");

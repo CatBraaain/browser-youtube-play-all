@@ -8,7 +8,7 @@ import {
   schedulePageTask,
   scheduleUiTask,
 } from "./ui-scheduler";
-import { MEMBERS_KINDS, MEMBERS_SORTS } from "./youtube-api";
+import { MEMBERS_KINDS, MEMBERS_SORTS, SYNC_SORTS } from "./youtube-api";
 import type { MembersSortKind } from "./youtube-api";
 import { YoutubeDOM } from "./youtube-dom";
 import { emitPageEnter, registerHooks, YTX_EVENTS, ytxEventEmitter } from "./youtube-hooks";
@@ -173,6 +173,7 @@ function findVisibleFlexibleActions(): HTMLElement | null {
 async function renderDropdown(channel: Channel, latestEpoch: number) {
   const container = document.createElement("div");
   container.className = "play-all-btns";
+  container.dataset.ytxPageEpoch = String(latestEpoch);
 
   const button = document.createElement("button");
   const toggleLabel = document.createElement("span");
@@ -182,29 +183,25 @@ async function renderDropdown(channel: Channel, latestEpoch: number) {
   const menu = document.createElement("div");
   menu.className = "hidden";
 
-  for (const categoryKind of YoutubeDOM.categories) {
-    for (const sortKind of YoutubeDOM.sorts) {
-      const href = await channel.getPlaylistPath(categoryKind, sortKind);
-      if (href) {
-        const a = document.createElement("a");
-        a.href = href;
-        a.textContent = `${categoryKind} (${sortKind})`;
-        menu.appendChild(a);
-      }
-    }
+  function appendMenuEntry(href: string, label: string) {
+    const a = document.createElement("a");
+    a.href = href;
+    a.textContent = label;
+    menu.appendChild(a);
   }
 
-  // Members-only entries resolve last and are appended after the category
-  // links: they exist only on channels with membership perks, and a failed
-  // resolution (a channel without them) simply appends nothing.
-  for (const membersKind of MEMBERS_KINDS) {
-    for (const sortKind of MEMBERS_SORTS) {
-      const href = await channel.getMembersPlaylistPath(membersKind, sortKind);
+  function isMountedForThisEpoch() {
+    const mounted = document.querySelector<HTMLElement>(
+      "yt-flexible-actions-view-model .play-all-btns",
+    );
+    return mounted?.dataset.ytxPageEpoch === String(latestEpoch);
+  }
+
+  for (const categoryKind of YoutubeDOM.categories) {
+    for (const sortKind of SYNC_SORTS) {
+      const href = await channel.getPlaylistPath(categoryKind, sortKind);
       if (href) {
-        const a = document.createElement("a");
-        a.href = href;
-        a.textContent = `${membersKind} (Members ${sortKind})`;
-        menu.appendChild(a);
+        appendMenuEntry(href, `${categoryKind} (${sortKind})`);
       }
     }
   }
@@ -215,12 +212,10 @@ async function renderDropdown(channel: Channel, latestEpoch: number) {
 
   container.append(button, menu);
 
-  const holder = findVisibleFlexibleActions();
-  if (holder !== null && holder.querySelector(".play-all-btns") === null) {
+  if (!isMountedForThisEpoch()) {
     dropdownListeners?.abort();
     dropdownListeners = new AbortController();
     const { signal } = dropdownListeners;
-    holder.appendChild(container);
 
     let isOpen = false;
     button.addEventListener(
@@ -273,5 +268,60 @@ async function renderDropdown(channel: Channel, latestEpoch: number) {
       },
       { signal, capture: true },
     );
+
+    function mountDropdown() {
+      const holder = findVisibleFlexibleActions();
+      if (holder === null) {
+        return;
+      }
+      const mounted = document.querySelector<HTMLElement>(
+        "yt-flexible-actions-view-model .play-all-btns",
+      );
+      const isThisEpochDropdown = mounted?.dataset.ytxPageEpoch === String(latestEpoch);
+      if (isThisEpochDropdown && mounted.parentElement === holder) {
+        return;
+      }
+      if (!isThisEpochDropdown) {
+        mounted?.remove();
+      }
+      holder.appendChild(container);
+    }
+    mountDropdown();
+    const mountWatcher = new MutationObserver(() => {
+      if (isPageStale(latestEpoch)) {
+        mountWatcher.disconnect();
+        return;
+      }
+      mountDropdown();
+    });
+    mountWatcher.observe(document, { childList: true, subtree: true });
+  }
+
+  const networkSorts = YoutubeDOM.sorts.filter((sortKind) => !SYNC_SORTS.includes(sortKind));
+  for (const categoryKind of YoutubeDOM.categories) {
+    for (const sortKind of networkSorts) {
+      const href = await channel.getPlaylistPath(categoryKind, sortKind);
+      if (isPageStale(latestEpoch)) {
+        return;
+      }
+      if (href) {
+        appendMenuEntry(href, `${categoryKind} (${sortKind})`);
+      }
+    }
+  }
+
+  // Members-only entries resolve last and are appended after the category
+  // links: they exist only on channels with membership perks, and a failed
+  // resolution (a channel without them) simply appends nothing.
+  for (const membersKind of MEMBERS_KINDS) {
+    for (const sortKind of MEMBERS_SORTS) {
+      const href = await channel.getMembersPlaylistPath(membersKind, sortKind);
+      if (isPageStale(latestEpoch)) {
+        return;
+      }
+      if (href) {
+        appendMenuEntry(href, `${membersKind} (Members ${sortKind})`);
+      }
+    }
   }
 }
