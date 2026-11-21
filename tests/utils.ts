@@ -62,15 +62,6 @@ const collectVideoIds = (value: unknown, out: string[] = []): string[] => {
 const VIDEO_GRID = "ytd-browse[role='main'] #primary #contents,ytm-browse .modern-tabs";
 const VIDEO_LINKS = 'a[href*="/watch?"],a[href*="/shorts/"],a[href*="/live/"]';
 
-// Video id of a channel grid watch link: the "v" query of its watch URL.
-// Extracted so line widths stay under the formatter limit for every oxfmt
-// version; vite-plus 0.2.x and 1.x wrap the inline form differently, which
-// made renovate dependency PRs fail `vp check` formatting on either side.
-const watchLinkVideoId = (link: Element): string => {
-  const url = new URL(`https://www.youtube.com${link.getAttribute("href")!}`);
-  return url.searchParams.get("v")!;
-};
-
 // How long a click on an SPA anchor or channel tab waits for a start signal
 // before concluding the click was swallowed. A navigation that started later
 // than this would be re-clicked; observed start latencies are well under a
@@ -1131,7 +1122,13 @@ export class YtChannelPage {
         )
         .describe("Channel video grid watch links")
         .evaluateAll((links, n) => {
-          const videoIds = links.map(watchLinkVideoId);
+          // Playwright serializes only this callback source into the page, so
+          // module-scope helpers are undefined in the browser; extract the
+          // "v" query inline, same shape as the Shorts branch above.
+          const videoIds = links.map((link) => {
+            const url = new URL(`https://www.youtube.com${link.getAttribute("href")!}`);
+            return url.searchParams.get("v")!;
+          });
           return [...new Set(videoIds)].slice(0, n);
         }, n);
     }
