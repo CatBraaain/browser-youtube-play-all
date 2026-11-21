@@ -10,7 +10,9 @@ import { attachEventWatcher, type EventWatcher } from "../fixture";
 import {
   attachSearchResultsEvidence,
   membersPlaylistHref,
+  PLAYLIST_PREFIXES,
   publicPlaylistHref,
+  PUBLIC_OLDEST_LIST_ID,
   SEARCH_REDRAW_ATTEMPTS,
   YtChannelPage,
   YtSearchPage,
@@ -21,6 +23,8 @@ import {
   playlistRows,
   readFullDestinationPanel,
   readFullReferencePlaylist,
+  readPlaylistHeaderCount,
+  resolveSharedUploadsOldest,
   type PlaylistRow,
 } from "./playlist";
 
@@ -469,6 +473,88 @@ export class PlayAllJourney {
     await this.attachJson("selected-playlist-comparison", {
       expected,
       source: last ? "full-members-playlist-last-row" : "channel-grid-first-row",
+    });
+  }
+
+  // SPEC D01/D02 Public Oldest destination checks beyond the selected row.
+  // The shared Oldest list (UL01234567890) is the channel's full uploads
+  // playlist spanning all three categories, and the selected video sits at
+  // the panel head exactly when no other category holds an older upload.
+  // The panel serves its rows in per-destination windows whose absolute row
+  // order is not comparable across destinations (observed on live YouTube),
+  // so these checks rely on the panel's own total and selected markers plus
+  // independently fetched playlist-page references — never on the button
+  // href and never on the window's absolute row order.
+  async verifyOldestSharedDestination() {
+    expect(this.channelId).toMatch(/^UC[\w-]{22}$/);
+    const suffix = this.channelId.slice(2);
+    const uploadsCountOf = (category: CategoryKind) =>
+      readPlaylistHeaderCount(
+        this.destination,
+        `${PLAYLIST_PREFIXES.public[category].Latest}${suffix}`,
+      );
+    const [videoCount, shortsCount, streamsCount, sharedOldest, panel] = await Promise.all([
+      uploadsCountOf("Videos"),
+      uploadsCountOf("Shorts"),
+      uploadsCountOf("Streams"),
+      resolveSharedUploadsOldest(this.destination, this.channelId),
+      this.readDestinationPanelSummary(),
+    ]);
+    const selectedPosition = panel.rows.findIndex((row) => row.selected);
+    await this.attachJson("oldest-shared-playlist-check", {
+      counts: { Videos: videoCount, Shorts: shortsCount, Streams: streamsCount },
+      panel: {
+        playlistId: panel.playlistId,
+        totalVideos: panel.totalVideos,
+        servedRows: panel.rows.length,
+      },
+      sharedOldest,
+      selected:
+        selectedPosition >= 0
+          ? { position: selectedPosition, videoId: panel.rows[selectedPosition]!.videoId }
+          : null,
+    });
+    expect(panel.playlistId).toBe(PUBLIC_OLDEST_LIST_ID);
+    // Two independent totals name the shared playlist's size: the sum of the
+    // three category playlist headers proves all three categories feed it,
+    // and the plain uploads playlist header (UU) proves it is the channel's
+    // full uploads list. Both are read from playlist pages, never from the
+    // button href.
+    expect(panel.totalVideos).toBe(videoCount + shortsCount + streamsCount);
+    expect(panel.totalVideos).toBe(sharedOldest.count);
+    expect(selectedPosition).toBeGreaterThanOrEqual(0);
+    expect(panel.rows[selectedPosition]!.videoId).toBe(this.savedIds[0]);
+    if (sharedOldest.videoId === this.savedIds[0]) {
+      // The chosen category holds the channel's globally oldest upload:
+      // nothing can precede it, so the panel starts at the selected row.
+      expect(selectedPosition).toBe(0);
+    } else {
+      // Another category holds an older upload: the panel must not start at
+      // the selected row — the shared playlist's head is that older video.
+      expect(selectedPosition).toBeGreaterThan(0);
+    }
+  }
+
+  // Ordered summary of the rows the destination panel has served, read from
+  // the panel's own data model. Desktop (ytd) and mobile (ytm) panels carry
+  // the same shape: contents rows of playlistPanelVideoRenderer with a
+  // selected marker, the playlist id, and the playlist's total video count.
+  private async readDestinationPanelSummary(): Promise<{
+    playlistId: string;
+    totalVideos: number;
+    rows: { videoId: string; selected: boolean }[];
+  }> {
+    return await this.panel.evaluate((element) => {
+      const data = (element as any).data ?? {};
+      const rows = (Array.isArray(data.contents) ? data.contents : [])
+        .map((item: any) => item?.playlistPanelVideoRenderer)
+        .filter((row: any) => typeof row?.videoId === "string" && row.videoId.length === 11)
+        .map((row: any) => ({ videoId: row.videoId as string, selected: row.selected === true }));
+      return {
+        playlistId: String(data.playlistId ?? ""),
+        totalVideos: Number(data.totalVideos ?? 0),
+        rows,
+      };
     });
   }
 

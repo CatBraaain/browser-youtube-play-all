@@ -138,7 +138,7 @@ const SORT_SHEET_ITEMS =
 
 // The playlist list-id prefixes YouTube assigns to the generated playlists:
 // a public playlist per category and sort, and one members-only playlist per category.
-const PLAYLIST_PREFIXES = {
+export const PLAYLIST_PREFIXES = {
   public: {
     Videos: { Latest: "UULF", Popular: "UULP" },
     Shorts: { Latest: "UUSH", Popular: "UUPS" },
@@ -154,11 +154,13 @@ const PLAYLIST_PREFIXES = {
 export type MembersPlaylistCategory = keyof typeof PLAYLIST_PREFIXES.members;
 
 // The href the public Play All button generates for the cell. The Oldest link
-// is not a prefix: it generates a watch URL whose list id has its own literal
-// shape, asserted as such.
+// is not a prefix: it generates a watch URL whose list id is the shared
+// uploads playlist literal below, asserted as such.
+export const PUBLIC_OLDEST_LIST_ID = "UL01234567890";
+
 export const publicPlaylistHref = (category: CategoryKind, sort: SortKind): RegExp =>
   sort === "Oldest"
-    ? /^\/watch\?v=[\w-]{11}&list=UL01234567890$/
+    ? new RegExp(`^/watch\\?v=[\\w-]{11}&list=${PUBLIC_OLDEST_LIST_ID}$`)
     : new RegExp(
         `^/playlist\\?list=${PLAYLIST_PREFIXES.public[category][sort]}[\\w-]+&playnext=1$`,
       );

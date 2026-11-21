@@ -173,6 +173,7 @@ async function runPublicOldest(
   await journey.expectDestination();
   await expect(journey.panel).toBeVisible({ timeout: 60_000 });
   await journey.compareSelected(false);
+  await journey.verifyOldestSharedDestination();
   await journey.showPanel(true);
   await journey.capture("public-destination");
 }

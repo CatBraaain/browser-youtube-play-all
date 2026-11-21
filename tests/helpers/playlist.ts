@@ -29,6 +29,86 @@ export function playlistRows(value: unknown, renderer: string): PlaylistRow[] {
   });
 }
 
+// Fetches a relative /playlist URL inside the given page and parses its
+// ytInitialData. The fetch runs in the page's own world: it is same-origin
+// with the www/m host the journey is on, and YouTube answers with the script
+// layout matching the page's own client (desktop var assignment, mobile
+// single-quoted \xXX string, or the shared <script id> template). The parsing
+// mirrors the extension's own playlist resolution (youtube-api.ts), so a
+// layout switch cannot read as a resolution failure.
+async function fetchPlaylistPageData(page: Page, url: string): Promise<unknown> {
+  return await page.evaluate(async (url) => {
+    let response: Response;
+    try {
+      response = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+    } catch (error) {
+      throw new Error(`Playlist page fetch failed for ${url}: ${String(error)}`);
+    }
+    if (!response.ok) throw new Error(`Playlist page HTTP ${response.status} for ${url}`);
+    const html = await response.text();
+    const elementJson = html.match(
+      /<script[^>]*\bid="yt-initial-data"[^>]*>([\s\S]*?)<\/script>/,
+    )?.[1];
+    const isMobileHost = location.host === "m.youtube.com";
+    const varJson = elementJson
+      ? undefined
+      : isMobileHost
+        ? html.match(/var ytInitialData\s*=\s*'([\s\S]*?)';/)?.[1]
+        : html.match(/var ytInitialData\s*=\s*(\{[\s\S]*?\});/)?.[1];
+    const json = elementJson ?? varJson;
+    if (json === undefined) {
+      throw new Error(`No ytInitialData script in the playlist page: ${url}`);
+    }
+    return JSON.parse(
+      !elementJson && isMobileHost
+        ? json
+            .replace(/\\\\\\x22/g, '\\\\\\"')
+            .replace(/\\x([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+        : json,
+    );
+  }, url);
+}
+
+// The video count a playlist page declares in its header (for example
+// UULF's "116 videos"). Digits-only extraction matches the extension's own
+// count parsing.
+export async function readPlaylistHeaderCount(page: Page, listId: string): Promise<number> {
+  const data = await fetchPlaylistPageData(page, `/playlist?list=${listId}`);
+  const header = findObjects(data, "playlistHeaderRenderer")[0];
+  const countText = (header as any)?.stats?.[0]?.runs?.[0]?.text;
+  const digits = typeof countText === "string" ? countText.match(/\d/g)?.join("") : undefined;
+  if (digits === undefined || digits === "") {
+    throw new Error(`Playlist ${listId} declares no readable video count`);
+  }
+  return Number(digits);
+}
+
+// Resolves the shared uploads playlist's oldest item the way the extension
+// resolves category oldests: the header's video count selects the last row
+// (oldest-first is the reverse of the page's newest-first list), and the
+// /playlist?index=<count> response names that row in currentVideoEndpoint.
+export async function resolveSharedUploadsOldest(
+  page: Page,
+  channelId: string,
+): Promise<{ count: number; videoId: string }> {
+  const listId = `UU${channelId.slice(2)}`;
+  const count = await readPlaylistHeaderCount(page, listId);
+  const data = await fetchPlaylistPageData(
+    page,
+    `/playlist?list=${listId}&index=${count}&playnext=1`,
+  );
+  const endpoint = findObjects(data, "currentVideoEndpoint")[0] as any;
+  const videoId =
+    endpoint?.watchEndpoint?.videoId ??
+    String(endpoint?.commandMetadata?.webCommandMetadata?.url ?? "").match(
+      /[?&]v=([a-zA-Z0-9_-]{11})/,
+    )?.[1];
+  if (typeof videoId !== "string" || !/^[\w-]{11}$/.test(videoId)) {
+    throw new Error(`Shared uploads playlist ${listId} resolved no oldest video`);
+  }
+  return { count, videoId };
+}
+
 export async function readFullReferencePlaylist(
   page: Page,
   listId: string,
