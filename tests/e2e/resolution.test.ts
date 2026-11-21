@@ -63,9 +63,9 @@ for (const route of routes) {
               timeout: 30_000,
             })
             .toContain(delayedPlaylist);
-          await expect(page.locator(".play-all-btns")).toHaveCount(1);
+          await expect(page.locator(".play-all-btns:visible")).toHaveCount(1);
           await expect(
-            page.locator(".play-all-btns").getByText(gatedEntryText, { exact: true }),
+            page.locator(".play-all-btns:visible").getByText(gatedEntryText, { exact: true }),
           ).toHaveCount(0);
           if (audience === "Members only") {
             await journey.selectSort("Latest");
@@ -82,9 +82,9 @@ for (const route of routes) {
             await journey.channelPage.expectNoPlayAllButton();
           }
           await releaseFetchGate(page);
-          await expect(page.locator(".play-all-btns")).toHaveCount(1, { timeout: 60_000 });
+          await expect(page.locator(".play-all-btns:visible")).toHaveCount(1, { timeout: 60_000 });
           await expect(
-            page.locator(".play-all-btns").getByText(gatedEntryText, { exact: true }),
+            page.locator(".play-all-btns:visible").getByText(gatedEntryText, { exact: true }),
           ).toHaveCount(1);
           await journey.expectSort("Popular");
           if (audience === "Members only") {

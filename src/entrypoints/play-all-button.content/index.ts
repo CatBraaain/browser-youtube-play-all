@@ -191,9 +191,8 @@ async function renderDropdown(channel: Channel, latestEpoch: number) {
   }
 
   function isMountedForThisEpoch() {
-    const mounted = document.querySelector<HTMLElement>(
-      "yt-flexible-actions-view-model .play-all-btns",
-    );
+    const holder = findVisibleFlexibleActions();
+    const mounted = holder?.querySelector<HTMLElement>(".play-all-btns");
     return mounted?.dataset.ytxPageEpoch === String(latestEpoch);
   }
 
@@ -274,16 +273,11 @@ async function renderDropdown(channel: Channel, latestEpoch: number) {
       if (holder === null) {
         return;
       }
-      const mounted = document.querySelector<HTMLElement>(
-        "yt-flexible-actions-view-model .play-all-btns",
-      );
-      const isThisEpochDropdown = mounted?.dataset.ytxPageEpoch === String(latestEpoch);
-      if (isThisEpochDropdown && mounted.parentElement === holder) {
+      const mounted = holder.querySelector<HTMLElement>(".play-all-btns");
+      if (mounted?.dataset.ytxPageEpoch === String(latestEpoch)) {
         return;
       }
-      if (!isThisEpochDropdown) {
-        mounted?.remove();
-      }
+      mounted?.remove();
       holder.appendChild(container);
     }
     mountDropdown();
