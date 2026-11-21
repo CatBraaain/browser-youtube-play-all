@@ -96,6 +96,16 @@ therefore impossible on a lockup-shaped results page. A legacy channel
 element can also exist in the DOM without ever becoming visible: a
 `#channel-info #channel-name` first match that stays invisible.
 
+### Channel card loss under rapid repeated queries
+
+Issuing the same search repeatedly within a short window can drop the
+channel card from the results (observed in repeated desktop E2E runs of one
+query; no consent, captcha, or unusual-traffic page preceded it). A read can
+show a visible `ytd-channel-renderer` while a click seconds later finds
+none: the results DOM was rebuilt without the card in between. Whether this
+is rate limiting is unknown, and the loss is transient: re-issuing the same
+search restores the legacy shape.
+
 ## Sort changes are not navigations
 
 Clicking a sort chip (Latest / Popular / Oldest) does not go through the SPA

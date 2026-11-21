@@ -84,6 +84,15 @@ desktop の結果ページは2つの形式で描画され、どちらの形式�
 存在し続けながら可視化されないこともある（可視化されない
 `#channel-info #channel-name` の最初の一致）。
 
+### 同一検索の反復での channel card 欠落
+
+短時間に同一クエリの検索を繰り返すと、応答から channel card が抜けることがある
+（desktop の E2E 反復実行で観測。consent・captcha・unusual traffic の表示は
+先行しなかった）。ある読み取りでは `ytd-channel-renderer` が可視で、
+数秒後のクリック時点では存在しない: その間に結果の DOM が card なしで
+再構築される。レート制限かは不明で、欠落は一時的: 同じ検索の再発行で
+legacy 形式が戻る。
+
 ## sort 切り替えはナビゲーションではない
 
 sort チップ（Latest / Popular / Oldest）のクリックは SPA ルーターを経由しない。

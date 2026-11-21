@@ -49,6 +49,14 @@ export type EvidenceStage =
   | "members-hidden"
   | "members-destination";
 
+// How many times openHome may redraw the search and retry the soft channel
+// navigation. Under rapid repeated searches YouTube can serve results without
+// the channel card (YT-SPEC.md "Channel card loss under rapid repeated
+// queries"): the card is missing from the response, or vanishes between the
+// shape checks and the click (observed 2026-11-21). Each attempt re-issues
+// the same canonical search, so the SPEC transition contract is unchanged.
+const OPEN_HOME_ATTEMPTS = SEARCH_REDRAW_ATTEMPTS;
+
 export class PlayAllJourney {
   evidenceCase: EvidenceCase | undefined;
   channel = "";
@@ -113,14 +121,29 @@ export class PlayAllJourney {
 
   async openHome(channel: string, route: Route) {
     expect(channel).toBe(this.channel);
-    if (route !== "hard") await this.expectSoftChannelTarget(channel, route);
-    const before = await this.watcher.captureNavigationBaseline();
-    await new YtSearchPage(this.page, this.watcher).navigateToChannel(channel, route, {
-      click: humanClick,
-      card: true,
-    });
-    const after = await this.watcher.captureNavigationBaseline();
-    expect(after.docId === before.docId).toBe(route !== "hard");
+    const soft = route !== "hard";
+    // The channel card can also vanish between the shape checks and the click
+    // (OPEN_HOME_ATTEMPTS): redraw the search and retry the whole soft route
+    // when that happens. Skips (lockup-only results) and every other failure
+    // propagate unchanged.
+    for (let attempt = 0; attempt < OPEN_HOME_ATTEMPTS; attempt++) {
+      if (soft) {
+        if (attempt > 0) await this.search(channel, route);
+        await this.expectSoftChannelTarget(channel, route);
+      }
+      const before = await this.watcher.captureNavigationBaseline();
+      try {
+        await new YtSearchPage(this.page, this.watcher).navigateToChannel(channel, route, {
+          click: humanClick,
+          card: true,
+        });
+        const after = await this.watcher.captureNavigationBaseline();
+        expect(after.docId === before.docId).toBe(soft);
+        break;
+      } catch (error) {
+        if (attempt === OPEN_HOME_ATTEMPTS - 1 || !isVerifiedTargetLoss(error)) throw error;
+      }
+    }
     await expect
       .poll(
         async () => {
@@ -149,8 +172,9 @@ export class PlayAllJourney {
       .toMatch(/^UC[\w-]{22}$/);
   }
 
-  // Redraws the search while only lockup rows render (YT-SPEC.md); skips with
-  // evidence when they persist, throws when nothing renders.
+  // Redraws the search while the results render no channel target — only
+  // lockup rows, or nothing usable at all (YT-SPEC.md); skips with evidence
+  // when only lockup rows persist, throws when nothing renders.
   private async expectSoftChannelTarget(channel: string, route: Route): Promise<void> {
     const search = new YtSearchPage(this.page, this.watcher);
     const target =
@@ -160,7 +184,7 @@ export class PlayAllJourney {
     let shape: SearchResultsShape = "target";
     for (let attempt = 0; attempt < SEARCH_REDRAW_ATTEMPTS; attempt++) {
       shape = await search.waitForChannelTarget(target);
-      if (shape !== "lockup") break;
+      if (shape === "target") break;
       if (attempt < SEARCH_REDRAW_ATTEMPTS - 1) await this.search(channel, route);
     }
     if (shape === "lockup") {
@@ -795,4 +819,18 @@ function membersSort(value: SortKind): "Latest" | "Oldest" {
 }
 export async function humanClick(locator: Locator) {
   await locator.click({ steps: 15, timeout: 15_000 });
+}
+
+// True when the channel target the shape checks verified moments earlier was
+// gone by click time (YT-SPEC.md "Channel card loss under rapid repeated
+// queries"): the click gave up within its timeout, or the re-check inside
+// navigateToChannel found only degraded shapes. This is the only recoverable
+// openHome failure; skips, assertions, and navigation failures propagate
+// unchanged.
+function isVerifiedTargetLoss(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return (
+    /^locator\.click: Timeout \d+ms exceeded/.test(error.message) ||
+    error.message.includes("A soft navigation to the channel is impossible")
+  );
 }
