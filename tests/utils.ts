@@ -1002,26 +1002,74 @@ export class YtChannelPage {
     // a late re-render after an earlier replacement resets the quiet clock.
     // expectedIds, when present, is the applied-content check: the grid's
     // ordered visible video ids must equal the matched response's first ids.
-    await this.page.waitForFunction(
-      (expectedIds: string[]) => {
-        const w = window as any;
-        const state = w.__gridSwapWatch;
-        if (!state) return false;
-        if (state.replacementAt === null) return false;
-        if (performance.now() - state.lastMutation < 800) return false;
-        if (expectedIds.length > 0) {
-          const current = w.__gridOrderedVideoIds();
-          if (
-            JSON.stringify(current.slice(0, expectedIds.length)) !== JSON.stringify(expectedIds)
-          ) {
-            return false;
+    try {
+      await this.page.waitForFunction(
+        (expectedIds: string[]) => {
+          const w = window as any;
+          const state = w.__gridSwapWatch;
+          if (!state) return false;
+          if (state.replacementAt === null) return false;
+          if (performance.now() - state.lastMutation < 800) return false;
+          if (expectedIds.length > 0) {
+            const current = w.__gridOrderedVideoIds();
+            if (
+              JSON.stringify(current.slice(0, expectedIds.length)) !== JSON.stringify(expectedIds)
+            ) {
+              return false;
+            }
           }
-        }
-        return true;
-      },
-      options.expectedIds,
-      { timeout },
-    );
+          return true;
+        },
+        options.expectedIds,
+        { timeout },
+      );
+    } catch (cause) {
+      if (cause instanceof errors.TimeoutError) {
+        throw await this.describeGridSwapState(options.expectedIds, cause);
+      }
+      throw cause;
+    }
+  }
+
+  // Diagnostic aid: on a wait timeout, report which swap condition never
+  // became true. Read-only; the wait contract itself is unchanged.
+  private async describeGridSwapState(
+    expectedIds: string[],
+    cause: errors.TimeoutError,
+  ): Promise<errors.TimeoutError> {
+    let breakdown: string;
+    try {
+      const state = await this.page.evaluate(
+        ({ expectedIds, grid }) => {
+          const w = window as any;
+          const s = w.__gridSwapWatch;
+          if (!s) return null;
+          const now = performance.now();
+          return {
+            msSinceReplacement: s.replacementAt === null ? null : Math.round(now - s.replacementAt),
+            msSinceLastMutation: Math.round(now - s.lastMutation),
+            gridRoots: document.querySelectorAll(grid).length,
+            currentIds: (w.__gridOrderedVideoIds?.() ?? []).slice(0, 10),
+            expectedIds,
+            selectedChipLabels: Array.from(
+              document.querySelectorAll(
+                "ytd-browse[page-subtype='channels'] [aria-selected='true'], ytm-browse [aria-selected='true']",
+              ),
+            ).map((el) => (el.textContent ?? "").trim()),
+            url: location.href,
+          };
+        },
+        { expectedIds, grid: VIDEO_GRID },
+      );
+      breakdown = state === null ? "grid swap watch state missing" : JSON.stringify(state);
+    } catch (diagnosticCause) {
+      breakdown = `unavailable: ${
+        diagnosticCause instanceof Error ? diagnosticCause.message : String(diagnosticCause)
+      }`;
+    }
+    return new errors.TimeoutError(`${cause.message}\nwaitForGridSwap breakdown: ${breakdown}`, {
+      cause,
+    });
   }
 
   private async disposeGridSwapWatch(): Promise<void> {
