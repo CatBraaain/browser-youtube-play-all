@@ -45,6 +45,17 @@ DOM はルーターの内部状態の準備より先にレンダリングされ�
 ハッシュのみの URL 変化は同じ document のまま扱われ、ナビゲーションイベント
 は発火しない。これは検索 UI を開く操作であり、ルート遷移ではない。
 
+### stale ページは hidden のまま残存する
+
+ソフトナビゲーションの後、page manager は前のルートのページを `hidden`
+属性付きで DOM に残し続けることがある。hidden のページは内容を保持する:
+stale な検索結果ページは channel card のページヘッダと、そこに含まれる別の
+`yt-flexible-actions-view-model` を、document 順でアクティブページより先に
+持ち続ける。そのため `yt-flexible-actions-view-model` の document 順の
+クエリは、アクティブページではなく hidden の stale ページ内に解決する
+ことがある。この種のクエリは描画中のコンテナに限定すること
+（`Element.checkVisibility()`）。
+
 ### 検索結果 URL
 
 結果ページの URL は `…/results?search_query=<query>` だが、追加のクエリ

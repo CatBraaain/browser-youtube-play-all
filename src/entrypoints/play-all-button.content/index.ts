@@ -158,6 +158,18 @@ function equalizeLeadingGap(button: HTMLElement) {
 // controller (page-leave DOM removal is left to YouTube's re-rendering).
 let dropdownListeners: AbortController | null = null;
 
+// A hidden stale page can hold the document-order first flexible actions
+// (YT-SPEC.md "Stale pages stay attached and hidden").
+function findVisibleFlexibleActions(): HTMLElement | null {
+  const containers = document.querySelectorAll<HTMLElement>("yt-flexible-actions-view-model");
+  for (const container of containers) {
+    if (container.checkVisibility?.() ?? true) {
+      return container;
+    }
+  }
+  return containers[0] ?? null;
+}
+
 async function renderDropdown(channel: Channel, latestEpoch: number) {
   const container = document.createElement("div");
   container.className = "play-all-btns";
@@ -203,11 +215,12 @@ async function renderDropdown(channel: Channel, latestEpoch: number) {
 
   container.append(button, menu);
 
-  if (document.querySelector("yt-flexible-actions-view-model .play-all-btns") === null) {
+  const holder = findVisibleFlexibleActions();
+  if (holder !== null && holder.querySelector(".play-all-btns") === null) {
     dropdownListeners?.abort();
     dropdownListeners = new AbortController();
     const { signal } = dropdownListeners;
-    document.querySelector("yt-flexible-actions-view-model")?.appendChild(container);
+    holder.appendChild(container);
 
     let isOpen = false;
     button.addEventListener(

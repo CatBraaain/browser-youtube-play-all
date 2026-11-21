@@ -57,6 +57,17 @@ URL change such as `m.youtube.com/#searching` from the m root stays in the
 same document and fires no navigation event: it opens the search UI, it is not
 a route.
 
+### Stale pages stay attached and hidden
+
+After a soft navigation, the page manager can keep the previous route's page
+attached in the DOM under the `hidden` attribute. A hidden page keeps its
+full content: a stale search results page still carries the channel card's
+page header with its own `yt-flexible-actions-view-model`, which precedes
+the active page's in document order. Document-order queries for
+`yt-flexible-actions-view-model` can therefore resolve inside a hidden stale
+page instead of the active page; scope such queries to rendered containers
+(`Element.checkVisibility()`).
+
 ### Search results URLs
 
 The results page URL is `…/results?search_query=<query>`, but extra query
