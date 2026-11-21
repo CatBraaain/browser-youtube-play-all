@@ -3,7 +3,15 @@ import { expect, type Page } from "@playwright/test";
 import { YoutubeDOM } from "@/entrypoints/play-all-button.content/youtube-dom";
 
 import { attachEventWatcher, ytxTest, type EventWatcher } from "../fixture";
-import { YtChannelPage, YtPage, YtSearchPage, attachSearchResultsEvidence } from "../utils";
+import {
+  PLAYLIST_PREFIXES,
+  YtChannelPage,
+  YtPage,
+  YtSearchPage,
+  attachSearchResultsEvidence,
+  publicPlaylistHref,
+  readChannelPageId,
+} from "../utils";
 
 const firstChannel = "@Microsoft";
 const secondChannel = "@YouTube";
@@ -120,13 +128,47 @@ ytxTest(
       await expect(button).not.toHaveAttribute("href", firstHref!);
       const dropdown = scenarioPage.locator(".play-all-btns").describe("Play All dropdown");
       await expect(dropdown).toHaveCount(1, { timeout: 30_000 });
-      await expect(
-        dropdown.getByText("Videos (Latest)").describe("Videos Latest menu item"),
-      ).not.toHaveAttribute("href", firstHref!);
 
-      await expect(button).toHaveAttribute("href", /^\/playlist\?list=UULF[\w-]+&playnext=1$/, {
-        timeout: 30_000,
-      });
+      // Not being the previous href is not enough: a well-formed href for the
+      // wrong channel would pass a format check. The page itself declares the
+      // channel id, so the button href is compared against it.
+      await expect
+        .poll(() => readChannelPageId(scenarioPage), { timeout: 30_000 })
+        .toMatch(/^UC[\w-]{22}$/);
+      const channelIdSuffix = (await readChannelPageId(scenarioPage)).slice(2);
+      await expect(button).toHaveAttribute(
+        "href",
+        new RegExp(`^/playlist\\?list=UULF${channelIdSuffix}&playnext=1$`),
+        { timeout: 30_000 },
+      );
+
+      // The previous check covered only the Videos (Latest) menu entry, so a
+      // stale href in any other entry passed silently. Open the menu and
+      // check all nine entries through their role.
+      const menu = dropdown.locator(":scope > div").describe("Play All menu");
+      await dropdown.locator("button").describe("Play All menu toggle").click();
+      await expect(menu).toBeVisible();
+      await expect(dropdown.locator("a")).toHaveCount(9, { timeout: 30_000 });
+      for (const category of ["Videos", "Shorts", "Streams"] as const) {
+        for (const sort of ["Latest", "Popular"] as const) {
+          await expect(
+            dropdown
+              .getByRole("link", { name: `${category} (${sort})`, exact: true })
+              .describe(`${category} ${sort} menu link`),
+          ).toHaveAttribute(
+            "href",
+            new RegExp(
+              `^/playlist\\?list=${PLAYLIST_PREFIXES.public[category][sort]}${channelIdSuffix}&playnext=1$`,
+            ),
+            { timeout: 30_000 },
+          );
+        }
+        await expect(
+          dropdown
+            .getByRole("link", { name: `${category} (Oldest)`, exact: true })
+            .describe(`${category} Oldest menu link`),
+        ).toHaveAttribute("href", publicPlaylistHref(category, "Oldest"), { timeout: 30_000 });
+      }
       return true;
     };
 

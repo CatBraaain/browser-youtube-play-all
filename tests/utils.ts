@@ -176,6 +176,27 @@ export const membersPlaylistHref = (
       )
     : new RegExp(`^/playlist\\?list=${PLAYLIST_PREFIXES.members[category]}[\\w-]+&playnext=1$`);
 
+// Reads the channel id the page itself declares: the canonical link first,
+// then the visible browse data model, then ytInitialData. Structural only,
+// so it never depends on localized display text.
+export function readChannelPageId(page: Page): Promise<string> {
+  return page.evaluate(() => {
+    const canonical = document.querySelector('link[rel="canonical"]')?.getAttribute("href") ?? "";
+    const canonicalId = new URL(canonical, location.href).pathname.match(
+      /^\/channel\/(UC[\w-]+)$/,
+    )?.[1];
+    const models = Array.from(document.querySelectorAll("ytd-browse,ytm-browse"))
+      .filter((element) => element.getBoundingClientRect().height > 0)
+      .map((element) => (element as any).data);
+    return (
+      canonicalId ??
+      models.map((model) => model?.metadata?.channelMetadataRenderer?.externalId).find(Boolean) ??
+      (window as any).ytInitialData?.metadata?.channelMetadataRenderer?.externalId ??
+      ""
+    );
+  });
+}
+
 export class YtPage {
   constructor(
     private page: Page,
