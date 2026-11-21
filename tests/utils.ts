@@ -7,6 +7,7 @@ import {
   expect,
   type Request,
   type Response,
+  type TestInfo,
 } from "@playwright/test";
 
 import {
@@ -17,6 +18,8 @@ import {
 import { YTD_EVENTS, YTM_EVENTS } from "@/entrypoints/play-all-button.content/youtube-hooks";
 
 import type { EventWatcher, NavigationBaseline } from "./fixture";
+
+export type SearchResultsShape = "target" | "lockup" | "none";
 
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -65,6 +68,30 @@ const VIDEO_LINKS = 'a[href*="/watch?"],a[href*="/shorts/"],a[href*="/live/"]';
 // second. Shared by the search-anchor and category-tab paths so both honor
 // the same bounded no-start observation.
 const SWALLOWED_CLICK_START_TIMEOUT_MS = 8_000;
+
+// Search results render in two shapes; see YT-SPEC.md "Search results shapes".
+const LOCKUP_VIDEO_ROW = "yt-lockup-view-model:not(ytd-ad-slot-renderer *):has(a[href*='/watch?'])";
+const LOCKUP_CHANNEL_ANCHOR =
+  'yt-lockup-view-model:not(ytd-ad-slot-renderer *) a[href^="/@"],yt-lockup-view-model:not(ytd-ad-slot-renderer *) a[href^="/channel/UC"]';
+
+const SEARCH_RESULTS_SHAPE_TIMEOUT_MS = 20_000;
+
+export const SEARCH_REDRAW_ATTEMPTS = 3;
+
+export async function attachSearchResultsEvidence(
+  testInfo: TestInfo,
+  page: Page,
+  shape: SearchResultsShape,
+): Promise<void> {
+  await testInfo.attach("search-results-shape", {
+    body: `shape: ${shape}\nurl: ${page.url()}\n`,
+    contentType: "text/plain",
+  });
+  await testInfo.attach("search-results-snapshot", {
+    body: await page.locator("body").ariaSnapshot(),
+    contentType: "text/yaml",
+  });
+}
 
 // Audience filter chips of the membership chip bar, in canonical item order:
 // Members only, then Public (YT-SPEC.md "Sort dropdown UI"). The :has() gate
@@ -228,13 +255,58 @@ export class YtSearchPage {
   }
 
   public topVideoChannelNameButton(channelName: string | null = null): Locator {
+    return (
+      this.page
+        .locator(
+          "#channel-info #channel-name" +
+            (channelName !== null ? `:has([href="/${channelName}" i])` : ""),
+        )
+        // .first() must not resolve a hidden ytd-channel-name (observed 2026-10-29).
+        .filter({ visible: true })
+        .first()
+        .describe("Search result channel name")
+    );
+  }
+
+  // Its click navigates by full page load, so this is data only, never a soft-route click target.
+  public lockupVideoChannelAnchor(): Locator {
     return this.page
-      .locator(
-        "#channel-info #channel-name" +
-          (channelName !== null ? `:has([href="/${channelName}" i])` : ""),
-      )
+      .locator(LOCKUP_CHANNEL_ANCHOR)
       .first()
-      .describe("Search result channel name");
+      .describe("Lockup-shaped search result channel link");
+  }
+
+  // Returns which shape the results offer: the target, lockup rows only, or neither. Waits
+  // resolve on visible elements only — hidden lockup templates can precede everything else.
+  public async waitForChannelTarget(
+    channelTarget: Locator,
+    timeoutMs: number = SEARCH_RESULTS_SHAPE_TIMEOUT_MS,
+  ): Promise<SearchResultsShape> {
+    const lockupRows = this.page.locator(LOCKUP_VIDEO_ROW).describe("Lockup-shaped search results");
+    const visibleTarget = channelTarget
+      .filter({ visible: true })
+      .first()
+      .describe("Visible search result channel target");
+    const visibleLockupRow = lockupRows
+      .filter({ visible: true })
+      .first()
+      .describe("Visible lockup-shaped search result");
+    const targetWait = visibleTarget
+      .waitFor({ state: "visible", timeout: timeoutMs })
+      .then(() => "target" as const);
+    const lockupWait = visibleLockupRow
+      .waitFor({ state: "visible", timeout: timeoutMs })
+      .then(() => "lockup" as const);
+    // Swallow the losing wait: its rejection only means "this shape never appeared".
+    targetWait.catch(() => {});
+    lockupWait.catch(() => {});
+    try {
+      await Promise.race([targetWait, lockupWait]);
+    } catch {
+      return "none";
+    }
+    // Prefer the legacy target when both shapes rendered.
+    return (await visibleTarget.count()) > 0 ? "target" : "lockup";
   }
 
   // Mobile keeps the search box hidden behind the header's search button
@@ -322,27 +394,37 @@ export class YtSearchPage {
     const since = await this.eventWatcher.captureNavigationBaseline(this.ytPage.NavigationEndEvent);
     switch (navigation) {
       case "soft1":
-        await this.clickUntilLanded(
-          options.card
-            ? this.channelThumbnailButton(channelName)
-            : this.topVideoChannelThumbnailButton(channelName),
-          channelUrl,
-          options,
-        );
+      case "soft2": {
+        const button =
+          navigation === "soft2"
+            ? this.topVideoChannelNameButton(channelName)
+            : options.card
+              ? this.channelThumbnailButton(channelName)
+              : this.topVideoChannelThumbnailButton(channelName);
+        await this.expectSoftChannelTarget(button);
+        await this.clickUntilLanded(button, channelUrl, options);
         break;
-      case "soft2":
-        await this.clickUntilLanded(
-          this.topVideoChannelNameButton(channelName),
-          channelUrl,
-          options,
-        );
-        break;
+      }
       case "hard": {
         let relUrl = channelName === null ? null : `/${channelName}`;
         if (relUrl === null) {
           const channelButton = this.topVideoChannelThumbnailButton();
-          await channelButton.waitFor({ state: "visible", timeout: 30_000 });
-          relUrl = await channelButton.getAttribute("href");
+          const shape = await this.waitForChannelTarget(channelButton);
+          if (shape === "lockup") {
+            relUrl = await this.lockupVideoChannelAnchor().getAttribute("href");
+          } else if (shape === "target") {
+            await channelButton.waitFor({ state: "visible", timeout: 5_000 });
+            relUrl = await channelButton.getAttribute("href");
+          }
+          if (relUrl === null) {
+            const reason =
+              shape === "none"
+                ? "no channel target or lockup rows appeared"
+                : "the rendered target carried no href";
+            throw new Error(
+              `The search results rendered no channel URL to navigate to (${reason}). Results URL: ${this.page.url()}`,
+            );
+          }
         }
         await this.page.goto(`https://www.youtube.com${relUrl}`, {
           waitUntil: "domcontentloaded",
@@ -351,6 +433,20 @@ export class YtSearchPage {
       }
     }
     await this.eventWatcher.waitForNavigationEnd({ since, expectedUrl: channelUrl });
+  }
+
+  // A soft navigation is impossible on lockup-shaped results; fail fast instead of
+  // burning the test timeout on the click's auto-wait (YT-SPEC.md "Search results shapes").
+  private async expectSoftChannelTarget(button: Locator): Promise<void> {
+    const shape = await this.waitForChannelTarget(button);
+    if (shape === "target") return;
+    const reason =
+      shape === "lockup"
+        ? "rendered only lockup rows, whose channel links navigate by full page load (YT-SPEC.md)"
+        : "rendered no channel target or lockup rows";
+    throw new Error(
+      `A soft navigation to the channel is impossible: the search results ${reason}. Redraw the search or skip with evidence. Results URL: ${this.page.url()}`,
+    );
   }
 
   // YouTube sometimes swallows clicks on SPA anchors: it preventDefault()s the

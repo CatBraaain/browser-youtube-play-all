@@ -8,11 +8,14 @@ import {
 
 import { attachEventWatcher, type EventWatcher } from "../fixture";
 import {
+  attachSearchResultsEvidence,
   membersPlaylistHref,
   publicPlaylistHref,
+  SEARCH_REDRAW_ATTEMPTS,
   YtChannelPage,
   YtSearchPage,
   YtVideoPage,
+  type SearchResultsShape,
 } from "../utils";
 import {
   playlistRows,
@@ -105,6 +108,7 @@ export class PlayAllJourney {
 
   async openHome(channel: string, route: Route) {
     expect(channel).toBe(this.channel);
+    if (route !== "hard") await this.expectSoftChannelTarget(channel, route);
     const before = await this.watcher.captureNavigationBaseline();
     await new YtSearchPage(this.page, this.watcher).navigateToChannel(channel, route, {
       click: humanClick,
@@ -138,6 +142,33 @@ export class PlayAllJourney {
         { timeout: 30_000 },
       )
       .toMatch(/^UC[\w-]{22}$/);
+  }
+
+  // Redraws the search while only lockup rows render (YT-SPEC.md); skips with
+  // evidence when they persist, throws when nothing renders.
+  private async expectSoftChannelTarget(channel: string, route: Route): Promise<void> {
+    const search = new YtSearchPage(this.page, this.watcher);
+    const target =
+      route === "soft2"
+        ? search.topVideoChannelNameButton(channel)
+        : search.channelThumbnailButton(channel);
+    let shape: SearchResultsShape = "target";
+    for (let attempt = 0; attempt < SEARCH_REDRAW_ATTEMPTS; attempt++) {
+      shape = await search.waitForChannelTarget(target);
+      if (shape !== "lockup") break;
+      if (attempt < SEARCH_REDRAW_ATTEMPTS - 1) await this.search(channel, route);
+    }
+    if (shape === "lockup") {
+      await attachSearchResultsEvidence(this.testInfo, this.page, shape);
+      this.testInfo.skip(
+        true,
+        "YouTube served only lockup-shaped search results, whose channel links navigate by full page load; they offer no soft navigation target to a channel (YT-SPEC.md)",
+      );
+    }
+    if (shape === "target") return;
+    throw new Error(
+      `The search results rendered no channel target for the soft navigation. Results URL: ${this.page.url()}`,
+    );
   }
 
   async openCategory(category: CategoryKind, route: Route) {

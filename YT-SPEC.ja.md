@@ -54,6 +54,28 @@ DOM はルーターの内部状態の準備より先にレンダリングされ�
 とデコード済みの `search_query` 値を検証すること。追加パラメータを付与する
 要因は不明である（モバイル実行のすべてに出現したわけではない）。
 
+### 検索結果の2形式
+
+desktop の結果ページは2つの形式で描画され、どちらの形式の応答が返るかは
+リクエストごとに変わる。1セッション内でリロードや検索を挟んで両形式が
+入れ替わったことも観測した（2026-11-20）。
+
+| 形式 | 動画行 | チャンネル要素 | チャンネルカード |
+| ---- | ------ | -------------- | ---------------- |
+| legacy | `ytd-video-renderer` | SPA アンカー: `#channel-thumbnail`（アバター）と `#channel-info #channel-name`（名前）。クリックは SPA のソフトナビゲーション | `ytd-channel-renderer` 行。こちらも SPA アンカー |
+| lockup | 主アンカーが `/watch?` URL の `yt-lockup-view-model` 行（広告は `ytd-ad-slot-renderer` 配下） | 各行のメタデータ内のチャンネル href（`/@handle` か `/channel/UC…`）を持つ素のアンカーのみ。`#channel-thumbnail`・`#channel-info`・`ytd-channel-renderer` は存在しない | lockup 応答では未観測 |
+
+対応する `/youtubei/v1/search` 応答は `videoRenderer` /
+`channelRenderer` の代わりに `lockupViewModel` を運ぶ（失敗実行の1つで
+lockup 37件・legacy renderer 0件を観測）。lockup のアンカーはフルページ
+ロードで遷移する。SPA ルータはクリックを横録せず、アバターと名前の
+アンカーへの信頼されたクリックがドキュメントを置き換え、ナビゲーション
+イベントも発火しなかった。つまり lockup 形式の結果ページではチャンネルへの
+ソフトナビゲーションは不可能である。legacy 要素が可視化されない形でだけ
+存在する例も観測した（可視化されない `#channel-info #channel-name` の
+最初の一致、2026-10-29 観測）。モバイル YouTube が lockup 形式を返すかは
+不明である。
+
 ## sort 切り替えはナビゲーションではない
 
 sort チップ（Latest / Popular / Oldest）のクリックは SPA ルーターを経由しない。
@@ -193,6 +215,8 @@ desktop・mobile web の Chromium と desktop の Firefox で、ヘッドレス�
   `yt-tab-shape` の DOM 順から乖離しうるか（1:1 を仮定。乖離があれば
   誤タブクリックとして現れ、着地 URL の待機で後から検出される）。
 - 検索結果 URL に追加パラメータを付与する要因と、その出現の安定性。
+- 検索応答がどの形式になるか、それを決める要因、lockup 形式がモバイル
+  YouTube に来るか、lockup 応答にチャンネルカードが含まれうるか。
 - 適用済み内容チェックは、グリッドの先頭の可視動画 id が応答の走査順で
   先頭の `videoId` 値と一致することを仮定する。先頭項目が描画されない
   応答（フィルタ・非公開など）はフェイルクローズドとなる。

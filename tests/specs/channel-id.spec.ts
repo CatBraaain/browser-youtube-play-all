@@ -1,7 +1,12 @@
 import { expect, test } from "@playwright/test";
 
 import { ytTest } from "../fixture";
-import { YtSearchPage } from "../utils";
+import {
+  YtSearchPage,
+  attachSearchResultsEvidence,
+  SEARCH_REDRAW_ATTEMPTS,
+  type SearchResultsShape,
+} from "../utils";
 
 type SearchTestCase = {
   navigation: "soft" | "hard";
@@ -60,12 +65,41 @@ searchTestCases.forEach(({ navigation: searchNavigation, searchWord }) => {
     }) => {
       ytTest(
         `channelId: ${channelNavigation} from ${searchWord}`,
-        async ({ page, eventWatcher, channelIdFinder, isMobile }) => {
+        async ({ page, eventWatcher, channelIdFinder, isMobile }, testInfo) => {
           ytTest.skip(isMobile, "skip mobile device");
 
           const ytSearchPage = new YtSearchPage(page, eventWatcher);
-          await ytSearchPage.search(searchWord, searchNavigation);
-          await ytSearchPage.navigateToChannel(null, channelNavigation);
+          if (channelNavigation === "hard") {
+            // The hard route navigates by URL and works on both shapes.
+            await ytSearchPage.search(searchWord, searchNavigation);
+            await ytSearchPage.navigateToChannel(null, channelNavigation);
+          } else {
+            // Soft routes need a legacy SPA target; redraw the search and skip
+            // with evidence when every draw lands on lockup rows (YT-SPEC.md).
+            const target =
+              channelNavigation === "soft2"
+                ? ytSearchPage.topVideoChannelNameButton()
+                : ytSearchPage.topVideoChannelThumbnailButton();
+            let shape: SearchResultsShape = "none";
+            for (let attempt = 0; attempt < SEARCH_REDRAW_ATTEMPTS; attempt++) {
+              await ytSearchPage.search(searchWord, searchNavigation);
+              shape = await ytSearchPage.waitForChannelTarget(target);
+              if (shape !== "lockup") break;
+            }
+            if (shape === "lockup") {
+              await attachSearchResultsEvidence(testInfo, page, shape);
+              testInfo.skip(
+                true,
+                "YouTube served only lockup-shaped search results, whose channel links navigate by full page load; they offer no soft navigation target to a channel (YT-SPEC.md)",
+              );
+            }
+            if (shape === "none") {
+              throw new Error(
+                `The search results rendered no channel target for the soft navigation. Results URL: ${page.url()}`,
+              );
+            }
+            await ytSearchPage.navigateToChannel(null, channelNavigation);
+          }
 
           await channelIdFinder.expectNavigationEndEvent(existsOnNavigationEnd);
           await channelIdFinder.expectCanonicalLink(existsOnCanonicalLink);

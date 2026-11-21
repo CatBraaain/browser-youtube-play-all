@@ -66,6 +66,28 @@ parameters are not contractual: validate the parsed pathname and the decoded
 `search_query` value, not a positional pattern. What appends the extra
 parameters is unknown (it did not appear in every mobile run).
 
+### Search results shapes
+
+The desktop results page renders in two shapes, and which one a response
+carries varies per request; one session flipped between them across reloads
+and searches (observed 2026-11-20).
+
+| Shape | Video rows | Channel identity | Channel card |
+| ----- | ---------- | ---------------- | ------------ |
+| Legacy | `ytd-video-renderer` | SPA anchors: `#channel-thumbnail` (avatar) and `#channel-info #channel-name` (name); clicking them is an SPA soft navigation | `ytd-channel-renderer` row, an SPA anchor too |
+| Lockup | `yt-lockup-view-model` rows whose main anchors carry `/watch?` URLs (ads render under `ytd-ad-slot-renderer`) | a plain anchor with the channel href (`/@handle` or `/channel/UC…`) inside each row's metadata; no `#channel-thumbnail`, `#channel-info`, or `ytd-channel-renderer` exists | not observed in a lockup response |
+
+The corresponding `/youtubei/v1/search` responses carry `lockupViewModel`
+entries instead of `videoRenderer` / `channelRenderer` (observed 37 lockups,
+0 legacy renderers in one failing run). Lockup anchors navigate by a full page
+load: the SPA router does not intercept their clicks, and trusted clicks on
+the avatar and name anchors replaced the document and fired no navigation
+events. A soft navigation to a channel is therefore impossible on a
+lockup-shaped results page. Hidden-only legacy elements have also been
+observed: a `#channel-info #channel-name` first match that never became
+visible (observed 2026-10-29). Whether mobile YouTube serves the lockup shape
+is unknown.
+
 ## Sort changes are not navigations
 
 Clicking a sort chip (Latest / Popular / Oldest) does not go through the SPA
@@ -214,6 +236,9 @@ notes, not in this file. Unknowns:
   would surface as a wrong tab click caught later by the landing-URL wait).
 - What appends extra parameters to the search results URL, and how reliably
   they appear.
+- Which shape a search response carries, what decides it, whether the lockup
+  shape reaches mobile YouTube, and whether lockup responses can include a
+  channel card at all.
 - The applied-content check assumes the grid's leading visible video ids equal
   the response's leading `videoId` values in walk order; a response whose
   leading items are not rendered (filtered/unavailable) would fail closed.

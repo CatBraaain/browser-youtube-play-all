@@ -1,9 +1,9 @@
-import { errors, expect, type Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 import { YoutubeDOM } from "@/entrypoints/play-all-button.content/youtube-dom";
 
 import { attachEventWatcher, ytxTest, type EventWatcher } from "../fixture";
-import { YtChannelPage, YtPage, YtSearchPage } from "../utils";
+import { YtChannelPage, YtPage, YtSearchPage, attachSearchResultsEvidence } from "../utils";
 
 const firstChannel = "@Microsoft";
 const secondChannel = "@YouTube";
@@ -94,14 +94,13 @@ ytxTest(
       // A visible card does not mean the search transition finished; YouTube can
       // still swallow clicks until yt-navigate-finish (see YT-SPEC.md).
       await scenarioWatcher.waitForNavigationEnd({ since: searchSince });
-      const channelButton = search.topVideoChannelThumbnailButton(secondChannel);
-      try {
-        await channelButton.waitFor({ state: "visible", timeout: 20_000 });
-      } catch (error) {
-        if (error instanceof errors.TimeoutError && (await channelButton.count()) === 0) {
-          return false;
-        }
-        throw error;
+      // A missing target is YouTube-side variance; retry the scenario on a fresh tab.
+      const shape = await search.waitForChannelTarget(
+        search.topVideoChannelThumbnailButton(secondChannel),
+      );
+      if (shape !== "target") {
+        await attachSearchResultsEvidence(testInfo, scenarioPage, shape);
+        return false;
       }
       // soft1 also completes the channel transition's navigation-end wait; the
       // tab click below must run outside the swallowed-click window (YT-SPEC.md).
