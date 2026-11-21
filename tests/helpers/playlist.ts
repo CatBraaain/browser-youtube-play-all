@@ -83,6 +83,19 @@ export async function readPlaylistHeaderCount(page: Page, listId: string): Promi
   return Number(digits);
 }
 
+// The video id a playlist page's currentVideoEndpoint names: watchEndpoint
+// embeds it directly on some layouts, others only carry a watch URL in
+// commandMetadata.
+function currentVideoEndpointId(data: unknown): string | undefined {
+  const endpoint = findObjects(data, "currentVideoEndpoint")[0] as any;
+  return (
+    endpoint?.watchEndpoint?.videoId ??
+    String(endpoint?.commandMetadata?.webCommandMetadata?.url ?? "").match(
+      /[?&]v=([a-zA-Z0-9_-]{11})/,
+    )?.[1]
+  );
+}
+
 // Resolves the shared uploads playlist's oldest item the way the extension
 // resolves category oldests: the header's video count selects the last row
 // (oldest-first is the reverse of the page's newest-first list), and the
@@ -97,16 +110,49 @@ export async function resolveSharedUploadsOldest(
     page,
     `/playlist?list=${listId}&index=${count}&playnext=1`,
   );
-  const endpoint = findObjects(data, "currentVideoEndpoint")[0] as any;
-  const videoId =
-    endpoint?.watchEndpoint?.videoId ??
-    String(endpoint?.commandMetadata?.webCommandMetadata?.url ?? "").match(
-      /[?&]v=([a-zA-Z0-9_-]{11})/,
-    )?.[1];
+  const videoId = currentVideoEndpointId(data);
   if (typeof videoId !== "string" || !/^[\w-]{11}$/.test(videoId)) {
     throw new Error(`Shared uploads playlist ${listId} resolved no oldest video`);
   }
   return { count, videoId };
+}
+
+// Shorts playlists (UUSH/UUMS) list no rows on their playlist pages, so the
+// full reference resolves each row by its own index instead: the header
+// count bounds the rows, and each index's page names its row in
+// currentVideoEndpoint. The index runs 1 (newest) to count (oldest), the
+// order the destination panel serves.
+export async function readFullShortsReferencePlaylist(
+  page: Page,
+  listId: string,
+): Promise<PlaylistRow[]> {
+  const count = await readPlaylistHeaderCount(page, listId);
+  const rows = await Promise.all(
+    Array.from({ length: count }, (_, offset) =>
+      resolvePlaylistRowByIndex(page, listId, offset + 1),
+    ),
+  );
+  const videoIds = new Set(rows.map((row) => row.videoId));
+  if (videoIds.size !== rows.length) {
+    throw new Error(`Shorts playlist ${listId} resolved duplicate rows across indexes`);
+  }
+  return rows;
+}
+
+async function resolvePlaylistRowByIndex(
+  page: Page,
+  listId: string,
+  index: number,
+): Promise<PlaylistRow> {
+  const data = await fetchPlaylistPageData(
+    page,
+    `/playlist?list=${listId}&index=${index}&playnext=1`,
+  );
+  const videoId = currentVideoEndpointId(data);
+  if (typeof videoId !== "string" || !/^[\w-]{11}$/.test(videoId)) {
+    throw new Error(`Shorts playlist ${listId} resolved no row at index ${index}`);
+  }
+  return { videoId, unplayable: false };
 }
 
 export async function readFullReferencePlaylist(

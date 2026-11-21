@@ -23,6 +23,7 @@ import {
   playlistRows,
   readFullDestinationPanel,
   readFullReferencePlaylist,
+  readFullShortsReferencePlaylist,
   readPlaylistHeaderCount,
   resolveSharedUploadsOldest,
   type PlaylistRow,
@@ -261,7 +262,7 @@ export class PlayAllJourney {
     const pattern =
       audience === "Public"
         ? publicPlaylistHref(this.category, sort)
-        : membersPlaylistHref(membersCategory(this.category), membersSort(sort));
+        : membersPlaylistHref(this.category, membersSort(sort));
     await expect(this.button(audience, sort)).toHaveAttribute("href", pattern, { timeout: 60_000 });
   }
 
@@ -357,14 +358,20 @@ export class PlayAllJourney {
     return allIds.filter((id) => !excludedIds.has(id)).slice(0, count);
   }
 
+  // The members playlist reference for the full-panel comparison. Shorts
+  // playlists list no rows on their playlist pages (YT-SPEC.md), so their
+  // reference resolves every row by index instead.
   async saveFullMembersPlaylist(category: CategoryKind) {
     expect(category).toBe(this.category);
     this.referenceCategoryUrl = this.page.url();
     this.referenceDocumentId = (await this.watcher.captureNavigationBaseline()).docId;
-    const prefix = membersCategory(category) === "Videos" ? "UUMF" : "UUMV";
+    const prefix = PLAYLIST_PREFIXES.members[category];
     expect(this.channelId).toMatch(/^UC[\w-]{22}$/);
     this.referenceListId = prefix + this.channelId.slice(2);
-    this.referenceRows = await readFullReferencePlaylist(this.page, this.referenceListId);
+    this.referenceRows =
+      category === "Shorts"
+        ? await readFullShortsReferencePlaylist(this.page, this.referenceListId)
+        : await readFullReferencePlaylist(this.page, this.referenceListId);
     this.savedIds = this.referenceRows.map((row) => row.videoId);
     await this.attachJson("full-members-playlist-reference", {
       listId: this.referenceListId,
@@ -614,7 +621,7 @@ export class PlayAllJourney {
       const pattern =
         entry.audience === "Public"
           ? publicPlaylistHref(entry.category, entry.sort)
-          : membersPlaylistHref(membersCategory(entry.category), membersSort(entry.sort));
+          : membersPlaylistHref(entry.category, membersSort(entry.sort));
       await expect(link).toHaveAttribute("href", pattern);
     }
   }
@@ -782,10 +789,6 @@ export class PlayAllJourney {
   }
 }
 
-function membersCategory(value: CategoryKind): "Videos" | "Streams" {
-  if (value !== "Shorts") return value;
-  throw new Error("Shorts has no members playlist");
-}
 function membersSort(value: SortKind): "Latest" | "Oldest" {
   if (value !== "Popular") return value;
   throw new Error("Members playlists have no Popular sort");

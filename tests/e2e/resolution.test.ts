@@ -1,11 +1,11 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
 
-import { YoutubeDOM } from "@/entrypoints/play-all-button.content/youtube-dom";
+import { YoutubeDOM, type CategoryKind } from "@/entrypoints/play-all-button.content/youtube-dom";
 
 import { ytxTest, type EventWatcher } from "../fixture";
 import { installFetchGate, releaseFetchGate } from "../helpers/fetch-gate";
 import { PlayAllJourney } from "../helpers/play-all-journey";
-import { YtVideoPage } from "../utils";
+import { PLAYLIST_PREFIXES, YtVideoPage } from "../utils";
 import { nasaChannel, type Route } from "./combinations";
 
 const routes: Route[] = ["hard", "soft1", "soft2"];
@@ -17,7 +17,7 @@ async function reachCategory(
   info: TestInfo,
   channel: string,
   route: Route,
-  category: "Videos" | "Streams" = "Videos",
+  category: CategoryKind = "Videos",
 ) {
   const journey = new PlayAllJourney(page, watcher, info);
   await journey.search(channel, route);
@@ -188,14 +188,14 @@ for (const route of routes) {
     });
   }
 
-  for (const category of ["Videos", "Streams"] as const) {
+  for (const category of ["Videos", "Shorts", "Streams"] as const) {
     for (const sort of ["Latest", "Oldest"] as const) {
       ytxTest(
         `E02: failed members ${category} ${sort} has no link via ${route}`,
         async ({ page, eventWatcher }, info) => {
           skipMobileSoft2(info, route);
           await installFetchGate(page, {
-            abort: [`/playlist?list=${category === "Videos" ? "UUMF" : "UUMV"}`],
+            abort: [`/playlist?list=${PLAYLIST_PREFIXES.members[category]}`],
           });
           const journey = await reachCategory(
             page,

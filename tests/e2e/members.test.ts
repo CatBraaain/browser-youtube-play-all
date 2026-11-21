@@ -11,7 +11,10 @@ import {
 
 const memberChannel = "@NakiriAyame";
 const noMemberChannel = "@Apple";
-const membersKinds = ["Videos", "Streams"] as const;
+const allMembersKinds = ["Videos", "Shorts", "Streams"] as const;
+// @NakiriAyame posts members-only videos and streams but no members-only
+// shorts (no UUMS playlist), so its menu lists no Shorts entry.
+const memberChannelEntryKinds = ["Videos", "Streams"] as const;
 const membersSorts = ["Latest", "Oldest"] as const;
 
 ytxTest.setTimeout(300_000);
@@ -62,21 +65,24 @@ ytxTest("Members: menu entries follow the channel's membership", async ({ page, 
   const channelPage = new YtChannelPage(memberChannel, page, eventWatcher);
   await channelPage.navigateToCategory("Videos", "hard");
   const menu = await openPlayAllMenu(page);
-  for (const kind of membersKinds) {
+  for (const kind of memberChannelEntryKinds) {
     for (const sort of membersSorts) await expectMenuEntryLinksToMembersPlaylist(menu, kind, sort);
+  }
+  for (const sort of membersSorts) {
+    await expect(menu.getByText(menuItemName("Shorts", sort), { exact: true })).toHaveCount(0);
   }
 
   const other = new YtChannelPage(noMemberChannel, page, eventWatcher);
   await other.navigateToCategory("Videos", "hard");
   const otherMenu = await openPlayAllMenu(page);
-  for (const kind of membersKinds) {
+  for (const kind of allMembersKinds) {
     for (const sort of membersSorts) {
       await expect(otherMenu.getByText(menuItemName(kind, sort), { exact: true })).toHaveCount(0);
     }
   }
 });
 
-for (const kind of membersKinds) {
+for (const kind of memberChannelEntryKinds) {
   for (const sort of membersSorts) {
     ytxTest(
       `Members: ${sort} menu destination matches the independent ${kind} playlist`,

@@ -10,7 +10,7 @@ const routes: Route[] = ["hard", "soft1", "soft2"];
 const categories: Category[] = ["Videos", "Shorts", "Streams"];
 const first3Sorts: Sort[] = ["Latest", "Popular"];
 const allSorts: Sort[] = ["Latest", "Popular", "Oldest"];
-const membersCategories: Category[] = ["Videos", "Streams"];
+const membersCategories: Category[] = ["Videos", "Shorts", "Streams"];
 const membersSorts: Sort[] = ["Latest", "Oldest"];
 
 function cells(sorts: Sort[], cats: Category[] = categories): [Category, Sort][] {
@@ -28,21 +28,18 @@ export const d01First3Rows = rows(cells(first3Sorts));
 export const d01OldestRows = rows(cells(["Oldest"]));
 
 // D02 (@NASASpaceFlight): Public rows mirror D01's grid; Members-only rows
-// cover the shown cells (Videos/Streams x Latest/Oldest) and the hidden cells
-// (Videos/Streams Popular and every Shorts sort).
+// cover the shown cells (every category x Latest/Oldest) and the hidden
+// cells (Popular: members-only playlists have no Popular variant).
 export const d02PublicFirst3Rows = rows(cells(first3Sorts));
 export const d02PublicOldestRows = rows(cells(["Oldest"]));
 
 export const d02MembersLatestRows = rows(cells(["Latest"], membersCategories));
 export const d02MembersOldestRows = rows(cells(["Oldest"], membersCategories));
 
-export const d02HiddenRows = rows([
-  ...cells(["Popular"], ["Videos", "Streams"]),
-  ...cells(allSorts, ["Shorts"]),
-]);
+export const d02HiddenRows = rows(cells(["Popular"]));
 
 // Menu entries per channel: the public-only channel lists the 9 public
-// entries; the membership channel adds the 4 shown Members-only entries.
+// entries; the membership channel adds the 6 shown Members-only entries.
 export const publicMenuEntries: MenuEntry[] = cells(allSorts).map(([category, sort]) => ({
   audience: "Public" as const,
   category,

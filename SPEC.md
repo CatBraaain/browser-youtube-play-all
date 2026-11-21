@@ -37,7 +37,7 @@ Each cell shows whether the Play All button appears for that category, sort, and
 | Shorts | Public | shown | shown | shown |
 | Streams | Public | shown | shown | shown |
 | Videos | Members only | shown | hidden | shown |
-| Shorts | Members only | hidden | hidden | hidden |
+| Shorts | Members only | shown | hidden | shown |
 | Streams | Members only | shown | hidden | shown |
 
 ## Case list
@@ -51,7 +51,7 @@ The D01–D03 rows below define the scope. The E2E tests implement the operation
 | D03 | Display | Channel home (reached on every route before the category) | — | — | Public / Members only | hard / soft1 / soft2 |
 | A01 | Async | Channel category | Videos | Oldest → Latest → Popular | Public / Members only | hard / soft1 / soft2 |
 | E01 | Error | Channel category | Videos | Oldest → Popular | Public | hard / soft1 / soft2 |
-| E02 | Error | Channel category | Videos / Streams | Latest / Oldest | Members only | hard / soft1 / soft2 |
+| E02 | Error | Channel category | Videos / Shorts / Streams | Latest / Oldest | Members only | hard / soft1 / soft2 |
 
 ### A01: delayed Oldest resolution
 

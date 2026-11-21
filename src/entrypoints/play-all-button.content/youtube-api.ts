@@ -135,10 +135,10 @@ export async function resolvePlaylistPath(
   }
 }
 
-export type MembersKind = "Videos" | "Streams";
+export type MembersKind = "Videos" | "Shorts" | "Streams";
 export type MembersSortKind = "Latest" | "Oldest";
 
-export const MEMBERS_KINDS: MembersKind[] = ["Videos", "Streams"];
+export const MEMBERS_KINDS: MembersKind[] = ["Videos", "Shorts", "Streams"];
 export const MEMBERS_SORTS: MembersSortKind[] = ["Latest", "Oldest"];
 
 // Members-only playlists have no Popular variant and no reverse-order (UL)
@@ -165,7 +165,8 @@ export async function resolveMembersPlaylistPath(
 }
 
 function membersPlaylistId(channelId: string, membersKind: MembersKind): string {
-  return `${membersKind === "Videos" ? "UUMF" : "UUMV"}${channelId.slice(2)}`;
+  const prefixes = { Videos: "UUMF", Shorts: "UUMS", Streams: "UUMV" } as const;
+  return `${prefixes[membersKind]}${channelId.slice(2)}`;
 }
 
 function resolveMembersPlaylistUrl(channelId: string, membersKind: MembersKind): string {

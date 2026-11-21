@@ -155,6 +155,7 @@ export const PLAYLIST_PREFIXES = {
   },
   members: {
     Videos: "UUMF",
+    Shorts: "UUMS",
     Streams: "UUMV",
   },
 } as const;

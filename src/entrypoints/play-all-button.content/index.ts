@@ -68,15 +68,13 @@ async function maybeRenderButton(channel: Channel, latestEpoch: number) {
   const sortKind = YoutubeDOM.sortKind ?? "Latest";
 
   // The Members only filter switches the button to the current category's
-  // members-only playlist (SPEC.md "Selected sort"). Those playlists exist
-  // only for Videos and Streams with Latest and Oldest, so when the current
-  // category and sort has no members-only playlist (Shorts, or Popular) the
-  // button has no destination to offer and is hidden.
+  // members-only playlist (SPEC.md "Selected sort"). Every category has one,
+  // but with Latest and Oldest only, so when the current sort is Popular
+  // the button has no destination to offer and is hidden.
   const membersMode = YoutubeDOM.audienceFilterKind === "MembersOnly";
-  const membersKind = categoryKind === "Videos" || categoryKind === "Streams" ? categoryKind : null;
   const membersSort: MembersSortKind | null =
     sortKind === "Popular" ? null : sortKind === "Oldest" ? "Oldest" : "Latest";
-  if (membersMode && (membersKind === null || membersSort === null)) {
+  if (membersMode && membersSort === null) {
     document.querySelector(".play-all-btn")?.remove();
     return;
   }
@@ -103,8 +101,8 @@ async function maybeRenderButton(channel: Channel, latestEpoch: number) {
 
   const playAllButton = document.createElement("a");
   buttonClasses.forEach((className) => playAllButton.classList.add(className));
-  const href = await (membersMode && membersKind && membersSort
-    ? channel.getMembersPlaylistPath(membersKind, membersSort)
+  const href = await (membersMode && membersSort
+    ? channel.getMembersPlaylistPath(categoryKind, membersSort)
     : channel.getPlaylistPath(categoryKind, sortKind));
   if (isUiStale(latestEpoch)) {
     return;

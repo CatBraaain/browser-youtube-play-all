@@ -37,7 +37,7 @@ YouTube Play All拡張の必要なテストを選ぶ利用者・開発者・agen
 | Shorts | Public | 表示 | 表示 | 表示 |
 | Streams | Public | 表示 | 表示 | 表示 |
 | Videos | Members only | 表示 | 非表示 | 表示 |
-| Shorts | Members only | 非表示 | 非表示 | 非表示 |
+| Shorts | Members only | 表示 | 非表示 | 表示 |
 | Streams | Members only | 表示 | 非表示 | 表示 |
 
 ## ケース一覧
@@ -51,7 +51,7 @@ YouTube Play All拡張の必要なテストを選ぶ利用者・開発者・agen
 | D03 | 表示 | チャンネルhome（各経路でカテゴリの前に到達） | — | — | Public / Members only | hard / soft1 / soft2 |
 | A01 | 非同期 | チャンネルカテゴリ | Videos | Oldest → Latest → Popular | Public / Members only | hard / soft1 / soft2 |
 | E01 | エラー | チャンネルカテゴリ | Videos | Oldest → Popular | Public | hard / soft1 / soft2 |
-| E02 | エラー | チャンネルカテゴリ | Videos / Streams | Latest / Oldest | Members only | hard / soft1 / soft2 |
+| E02 | エラー | チャンネルカテゴリ | Videos / Shorts / Streams | Latest / Oldest | Members only | hard / soft1 / soft2 |
 
 ### A01: Oldest解決の遅延
 

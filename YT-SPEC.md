@@ -173,6 +173,18 @@ disagree with the grid's first row (observed on a membership channel; the
 shorts playlist page itself renders a single dynamically chosen row and does
 not list its rows).
 
+Members-only shorts have a generated playlist of their own (UUMS), like the
+members-only videos (UUMF) and streams (UUMV) playlists: it exists on a
+channel that posts members-only shorts (observed on @NASASpaceflight) and is
+absent on a membership channel without them (observed on @NakiriAyame: the
+playlist page answers an ERROR alert, "The playlist does not exist"). The
+UUMS playlist page does not enumerate its rows either — only the header
+count rendered (observed 0 row entries) — and each row resolves by its index:
+index 1 names the newest short and index=count the oldest, the same order
+the watch page's playlist panel serves. Signed out, a members-only short's
+watch page is UNPLAYABLE (the membership offer), yet the page still renders
+the playlist panel and its rows.
+
 The combobox label and the sheet item titles are localized (observed English
 Latest / Popular / Oldest and Japanese 新しい順 / 人気の動画 / 古い順). The
 sheet items carry no structural selected marker — their DOM shapes are
