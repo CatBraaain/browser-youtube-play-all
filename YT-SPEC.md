@@ -10,13 +10,13 @@ a way this document does not explain, update it together with the fix.
 
 ## Navigation signals and what each proves
 
-| Signal                                                         | What it is                                             | What it proves                                          | What it does not prove                                                               |
-| -------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `domcontentloaded`                                             | The HTML document is parsed                            | The document exists                                     | That the SPA rendered or routed anything                                             |
-| Navigation start (`yt-navigate-start` / `state-navigatestart`) | The router accepted a transition                       | A transition began                                      | That it completed, or which route it lands on                                        |
-| Navigation end (`yt-navigate-finish` / `state-navigateend`)    | The router finished a transition                       | The transition ended on the URL recorded at firing time | That follow-up UI (grids, chips) has rendered, or that no further transition started |
-| URL change                                                     | `pushState` (soft) or a document load (hard)           | The visible route moved                                 | For soft changes: that the router's internal state is ready (see drop window below)  |
-| Sort response + grid swap                                      | The sort's own `/youtubei/v1/browse` response rendered | The clicked sort was applied (see below)                | Nothing about navigation — sorts are not navigations                                 |
+| Signal | What it is | What it proves | What it does not prove |
+| --- | --- | --- | --- |
+| `domcontentloaded` | The HTML document is parsed | The document exists | That the SPA rendered or routed anything |
+| Navigation start (`yt-navigate-start` / `state-navigatestart`) | The router accepted a transition | A transition began | That it completed, or which route it lands on |
+| Navigation end (`yt-navigate-finish` / `state-navigateend`) | The router finished a transition | The transition ended on the URL recorded at firing time | That follow-up UI (grids, chips) has rendered, or that no further transition started |
+| URL change | `pushState` (soft) or a document load (hard) | The visible route moved | For soft changes: that the router's internal state is ready (see drop window below) |
+| Sort response + grid swap | The sort's own `/youtubei/v1/browse` response rendered | The clicked sort was applied (see below) | Nothing about navigation — sorts are not navigations |
 
 Hard navigation (full page load): the router fires navigation end once after
 the initial load; no start event precedes it. Soft (in-app) navigation: start,
@@ -28,12 +28,12 @@ all page state — listeners, flags, and data included.
 A click on an in-app anchor never performs a browser navigation. The router
 handles it in steps:
 
-| Step | What happens                                                                                               |
-| ---- | ---------------------------------------------------------------------------------------------------------- |
-| 1    | A document-level router listener captures the click and calls `preventDefault()` on the anchor             |
-| 2    | The navigation-start event fires, and page data is requested (`/youtubei/v1/browse` and related endpoints) |
-| 3    | The SPA re-renders the page and updates the URL via `pushState`                                            |
-| 4    | The navigation-end event fires                                                                             |
+| Step | What happens |
+| --- | --- |
+| 1 | A document-level router listener captures the click and calls `preventDefault()` on the anchor |
+| 2 | The navigation-start event fires, and page data is requested (`/youtubei/v1/browse` and related endpoints) |
+| 3 | The SPA re-renders the page and updates the URL via `pushState` |
+| 4 | The navigation-end event fires |
 
 DOM can render before the router's internal state is ready; clicks on in-app
 anchors during that window can be silently dropped between step 1 and step 2 —
@@ -45,10 +45,10 @@ to the same anchor.
 Mobile YouTube is a separate implementation with its own event names. The
 extension maps them in `src/entrypoints/play-all-button.content/youtube-hooks.ts`:
 
-| Scope   | Navigation start      | Navigation end       |
-| ------- | --------------------- | -------------------- |
-| Desktop | `yt-navigate-start`   | `yt-navigate-finish` |
-| Mobile  | `state-navigatestart` | `state-navigateend`  |
+| Scope | Navigation start | Navigation end |
+| --- | --- | --- |
+| Desktop | `yt-navigate-start` | `yt-navigate-finish` |
+| Mobile | `state-navigatestart` | `state-navigateend` |
 
 Mobile hard navigations to `www.youtube.com` redirect to `m.youtube.com` as a
 single committed document whose initial load fires the mobile navigation-end
@@ -80,24 +80,21 @@ parameters is unknown (it did not appear in every mobile run).
 ### Search results shapes
 
 The desktop results page renders in two shapes, and which one a response
-carries varies per request; one session flipped between them across reloads
-and searches (observed 2026-11-20).
+carries varies per request.
 
 | Shape | Video rows | Channel identity | Channel card |
-| ----- | ---------- | ---------------- | ------------ |
+| --- | --- | --- | --- |
 | Legacy | `ytd-video-renderer` | SPA anchors: `#channel-thumbnail` (avatar) and `#channel-info #channel-name` (name); clicking them is an SPA soft navigation | `ytd-channel-renderer` row, an SPA anchor too |
-| Lockup | `yt-lockup-view-model` rows whose main anchors carry `/watch?` URLs (ads render under `ytd-ad-slot-renderer`) | a plain anchor with the channel href (`/@handle` or `/channel/UC…`) inside each row's metadata; no `#channel-thumbnail`, `#channel-info`, or `ytd-channel-renderer` exists | not observed in a lockup response |
+| Lockup | `yt-lockup-view-model` rows whose main anchors carry `/watch?` URLs (ads render under `ytd-ad-slot-renderer`) | a plain anchor with the channel href (`/@handle` or `/channel/UC…`) inside each row's metadata; no `#channel-thumbnail`, `#channel-info`, or `ytd-channel-renderer` exists | none |
 
 The corresponding `/youtubei/v1/search` responses carry `lockupViewModel`
-entries instead of `videoRenderer` / `channelRenderer` (observed 37 lockups,
-0 legacy renderers in one failing run). Lockup anchors navigate by a full page
-load: the SPA router does not intercept their clicks, and trusted clicks on
-the avatar and name anchors replaced the document and fired no navigation
-events. A soft navigation to a channel is therefore impossible on a
-lockup-shaped results page. Hidden-only legacy elements have also been
-observed: a `#channel-info #channel-name` first match that never became
-visible (observed 2026-10-29). Whether mobile YouTube serves the lockup shape
-is unknown.
+entries instead of `videoRenderer` / `channelRenderer`. Lockup anchors
+navigate by a full page load: the SPA router does not intercept their
+clicks, and trusted clicks on the avatar and name anchors replaced the
+document and fired no navigation events. A soft navigation to a channel is
+therefore impossible on a lockup-shaped results page. A legacy channel
+element can also exist in the DOM without ever becoming visible: a
+`#channel-info #channel-name` first match that stays invisible.
 
 ## Sort changes are not navigations
 
@@ -105,13 +102,13 @@ Clicking a sort chip (Latest / Popular / Oldest) does not go through the SPA
 router. No navigation event fires and the URL keeps its current query. The
 page refreshes in place instead:
 
-| Step | What happens                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | The chip's `aria-selected` flips quickly (an already-selected chip can flip off and back on, on mobile)                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| 2    | The click issues exactly one `/youtubei/v1/browse` request from the page context (fetch) whose body carries the clicked chip's continuation token (the `chip-view-model` data's `tapCommand.innertubeCommand.continuationCommand.token`); the response carries a next-page continuation token. All three chips expose tokens, including the selected one; on mobile the data can attach after the chip renders. The request body is gzip-compressed when the client supports it, so a test observing the body must decode it before parsing |
-| 3    | Shortly after the click, before the response arrives, the grid can re-render the OLD sort's videos: the first video node is replaced by a new node with the SAME href                                                                                                                                                                                                                                                                                                                                                                       |
-| 4    | The browse response lands and the page re-renders with it: the video grid swaps to the new sort's videos by DOM replacement, and on desktop the chip bar is rebuilt in the same pass, detaching nodes anchored inside it — including extension UI                                                                                                                                                                                                                                                                                           |
-| 5    | Re-clicking the already-selected chip re-issues the browse request and still swaps the grid; it is not a no-op, and the replacement node can keep the same href                                                                                                                                                                                                                                                                                                                                                                             |
+| Step | What happens |
+| --- | --- |
+| 1 | The chip's `aria-selected` flips quickly (an already-selected chip can flip off and back on, on mobile) |
+| 2 | The click issues exactly one `/youtubei/v1/browse` request from the page context (fetch) whose body carries the clicked chip's continuation token (the `chip-view-model` data's `tapCommand.innertubeCommand.continuationCommand.token`); the response carries a next-page continuation token. All three chips expose tokens, including the selected one; on mobile the data can attach after the chip renders. The request body is gzip-compressed when the client supports it, so a test observing the body must decode it before parsing |
+| 3 | Shortly after the click, before the response arrives, the grid can re-render the OLD sort's videos: the first video node is replaced by a new node with the SAME href |
+| 4 | The browse response lands and the page re-renders with it: the video grid swaps to the new sort's videos by DOM replacement, and on desktop the chip bar is rebuilt in the same pass, detaching nodes anchored inside it — including extension UI |
+| 5 | Re-clicking the already-selected chip re-issues the browse request and still swaps the grid; it is not a no-op, and the replacement node can keep the same href |
 
 Because of step 3, "the first video node was replaced" alone does not prove
 the clicked sort was applied, and an unrelated browse response plus a
@@ -137,11 +134,11 @@ Channels that provide membership render the category sort differently, on
 desktop and mobile web alike: instead of the three sort chips, the chip bar
 holds a sort dropdown chip plus audience filter chips.
 
-| Element               | DOM                                                                                                                                                  | Behavior                                                                                                                 |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Sort dropdown chip    | `chip-bar-view-model button[role=combobox]` (desktop inside `ytd-browse[page-subtype='channels'] #primary`, mobile inside `ytm-browse .tab-content`) | Its label text (`.ytChipShapeText`) is the current sort; its own `aria-selected` stays `false` and carries no sort state |
-| Audience filter chips | `button[role=tab]` with `aria-selected`, observed as "Members only" and "Public"                                                                     | Audience filters for the grid; they flip `aria-selected` like sort buttons do but are not sort controls                  |
-| Sort options sheet    | Desktop: `button[role=menuitem]` items inside `ytd-popup-container`; mobile: the same items inside `bottom-sheet-container`                          | Canonical item order Latest, Popular, Oldest; each item's tap command carries a `continuationCommand.token` like a chip  |
+| Element | DOM | Behavior |
+| --- | --- | --- |
+| Sort dropdown chip | `chip-bar-view-model button[role=combobox]` (desktop inside `ytd-browse[page-subtype='channels'] #primary`, mobile inside `ytm-browse .tab-content`) | Its label text (`.ytChipShapeText`) is the current sort; its own `aria-selected` stays `false` and carries no sort state |
+| Audience filter chips | `button[role=tab]` with `aria-selected`, observed as "Members only" and "Public" | Audience filters for the grid; they flip `aria-selected` like sort buttons do but are not sort controls |
+| Sort options sheet | Desktop: `button[role=menuitem]` items inside `ytd-popup-container`; mobile: the same items inside `bottom-sheet-container` | Canonical item order Latest, Popular, Oldest; each item's tap command carries a `continuationCommand.token` like a chip |
 
 Selecting a sort from the sheet is not a navigation: no navigation event fires
 and the URL keeps its query (the mobile URL can gain a `#bottom-sheet` hash
