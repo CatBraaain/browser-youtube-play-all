@@ -736,8 +736,11 @@ export class PlayAllJourney {
 
   async showPanel(selected: boolean) {
     const target = selected ? this.selectedRow : this.panel;
-    await target.scrollIntoViewIfNeeded();
-    await expect(target).toBeInViewport();
+    const attemptTimeoutMs = 1_000;
+    await expect(async () => {
+      await target.scrollIntoViewIfNeeded({ timeout: attemptTimeoutMs });
+      await expect(target).toBeInViewport({ timeout: attemptTimeoutMs });
+    }).toPass({ timeout: 5_000 });
   }
 
   async defineCase(value: EvidenceCase) {
