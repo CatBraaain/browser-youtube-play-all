@@ -13,6 +13,7 @@ import {
   PLAYLIST_PREFIXES,
   publicPlaylistHref,
   PUBLIC_OLDEST_LIST_ID,
+  readChannelPageId,
   SEARCH_REDRAW_ATTEMPTS,
   YtChannelPage,
   YtSearchPage,
@@ -144,31 +145,16 @@ export class PlayAllJourney {
         if (attempt === OPEN_HOME_ATTEMPTS - 1 || !isVerifiedTargetLoss(error)) throw error;
       }
     }
+  }
+
+  async openDirectCategory(channel: string, category: CategoryKind) {
+    this.channel = channel;
+    await this.openCategory(category, "hard");
+  }
+
+  async resolveChannelId() {
     await expect
-      .poll(
-        async () => {
-          this.channelId = await this.page.evaluate(() => {
-            const canonical =
-              document.querySelector('link[rel="canonical"]')?.getAttribute("href") ?? "";
-            const canonicalId = new URL(canonical, location.href).pathname.match(
-              /^\/channel\/(UC[\w-]+)$/,
-            )?.[1];
-            const models = Array.from(document.querySelectorAll("ytd-browse,ytm-browse"))
-              .filter((element) => element.getBoundingClientRect().height > 0)
-              .map((element) => (element as any).data);
-            return (
-              canonicalId ??
-              models
-                .map((model) => model?.metadata?.channelMetadataRenderer?.externalId)
-                .find(Boolean) ??
-              (window as any).ytInitialData?.metadata?.channelMetadataRenderer?.externalId ??
-              ""
-            );
-          });
-          return this.channelId;
-        },
-        { timeout: 30_000 },
-      )
+      .poll(async () => (this.channelId = await readChannelPageId(this.page)), { timeout: 30_000 })
       .toMatch(/^UC[\w-]{22}$/);
   }
 
@@ -389,8 +375,8 @@ export class PlayAllJourney {
     expect(category).toBe(this.category);
     this.referenceCategoryUrl = this.page.url();
     this.referenceDocumentId = (await this.watcher.captureNavigationBaseline()).docId;
+    await this.resolveChannelId();
     const prefix = PLAYLIST_PREFIXES.members[category];
-    expect(this.channelId).toMatch(/^UC[\w-]{22}$/);
     this.referenceListId = prefix + this.channelId.slice(2);
     this.referenceRows =
       category === "Shorts"

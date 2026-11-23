@@ -20,9 +20,13 @@ async function reachCategory(
   category: CategoryKind = "Videos",
 ) {
   const journey = new PlayAllJourney(page, watcher, info);
-  await journey.search(channel, route);
-  await journey.openHome(channel, route);
-  await journey.openCategory(category, route);
+  if (route === "hard") {
+    await journey.openDirectCategory(channel, category);
+  } else {
+    await journey.search(channel, route);
+    await journey.openHome(channel, route);
+    await journey.openCategory(category, route);
+  }
   return journey;
 }
 

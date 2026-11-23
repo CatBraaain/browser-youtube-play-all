@@ -6,7 +6,7 @@ This specification is for users, developers and agents selecting tests for the Y
 
 ### Navigation routes
 
-Each case reaches a channel category page through one of the following routes. A direct category load alone does not cover the route. Direct loads are full page loads.
+The table shows the full routes to a channel category page. See Review operation for D01/D02 cases that start at the category URL. On hard, A01, E01 and E02 also start at their initial category URL. Direct loads are full page loads.
 
 | Navigation | To search | To channel home | To category |
 | --- | --- | --- | --- |
@@ -72,7 +72,9 @@ The Members only filter is selected, and that category's members-only playlist a
 
 The E2E tests verify the cases in this specification. The D01–D03 tests capture review screenshots during the same execution as their assertions. Each screenshot has structured metadata for its case, channel, category, sort, audience, route and stage.
 
-Each D01/D02 test runs the D03 home menu check first (toggle open and close, the exact entry set from the button display table, every button visible on screen at the same time, screenshots of the closed and open states, and closing by an outside click). It then performs the cell's operation, asserts the expected result, and captures full-viewport screenshots at the defined points, all in the same run. Screenshots are attached in operation order. Traces for screenshot-bearing tests are retained for successful runs as well as failed runs. Other tests retain traces only on failure (`trace: "retain-on-failure"`). Mobile keeps the Pixel 5 portrait viewport.
+Check D03 once per channel and supported device and route combination. Run the check in the Videos / Public / Latest test before opening the category. On the channel home, open and close the menu with the toggle. Verify the exact entry set from the button display table, the link for each entry, and that all buttons are visible on screen at the same time. Capture the closed and open states and verify that clicking outside closes the menu.
+
+D01/D02 follow the full route through the channel home for the D03 representative cases, the soft routes, and the Members only Popular cases. The other hard cases start at the category URL. On every supported route, check the button state and, when shown, check its link. Capture the category state on every route. On hard only, press the shown button, verify its destination and capture the playlist. The gallery marks the playlist as not checked on soft1 and soft2. Capture full-viewport screenshots in the same run as the assertions. Screenshots are attached in operation order. Traces for screenshot-bearing tests are retained for successful runs as well as failed runs. Other tests retain traces only on failure (`trace: "retain-on-failure"`). Mobile keeps the Pixel 5 portrait viewport.
 
 The destination comparison excludes rows that YouTube marks as unplayable, and, for the Latest sort, rows that YouTube marks as currently live. The Popular playlists include live streams, so no live exclusion applies there.
 

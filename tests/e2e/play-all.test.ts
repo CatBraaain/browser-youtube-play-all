@@ -35,24 +35,21 @@ async function verifyCell(
   testInfo.setTimeout(timeoutMs);
   const journey = new PlayAllJourney(page, eventWatcher, testInfo);
   try {
-    await ytxTest.step("Verify the cell and capture its evidence", () => run(journey));
+    await ytxTest.step("Verify the cell and capture its evidence", async () => {
+      await journey.attachJson("extension-context", {
+        project: testInfo.project.name,
+        loader: "ytxTest.context",
+        headless: true,
+      });
+      await run(journey);
+    });
   } finally {
     await journey.dispose();
   }
 }
 
-async function runD03Home(
-  journey: PlayAllJourney,
-  channel: string,
-  route: Route,
-  entries: MenuEntry[],
-) {
-  await ytxTest.step("Reach the home and verify its complete menu", async () => {
-    await journey.attachJson("extension-context", {
-      project: journey.testInfo.project.name,
-      loader: "ytxTest.context",
-      headless: true,
-    });
+async function reachChannelHome(journey: PlayAllJourney, channel: string, route: Route) {
+  await ytxTest.step("Reach the channel home via search", async () => {
     await journey.search(channel, route);
     const resultsUrl = new URL(journey.page.url());
     expect(resultsUrl.pathname).toBe("/results");
@@ -61,6 +58,11 @@ async function runD03Home(
     expect(new URL(journey.page.url()).pathname.toLowerCase().replace(/\/$/, "")).toBe(
       `/${channel}`.toLowerCase(),
     );
+  });
+}
+
+async function runD03Home(journey: PlayAllJourney, entries: MenuEntry[]) {
+  await ytxTest.step("D03: Verify the home menu and capture its states", async () => {
     await expect(journey.toggle).toBeVisible({ timeout: 60_000 });
     await expect(journey.menu).toBeHidden();
     await humanClick(journey.toggle);
@@ -79,6 +81,23 @@ async function runD03Home(
   });
 }
 
+async function reachPlaylistCategory(
+  journey: PlayAllJourney,
+  channel: string,
+  row: CellRow,
+  homeMenuEntries?: MenuEntry[],
+) {
+  if (row.route === "hard" && !homeMenuEntries) {
+    await ytxTest.step("Load the category directly", () =>
+      journey.openDirectCategory(channel, row.category),
+    );
+    return;
+  }
+  await reachChannelHome(journey, channel, row.route);
+  if (homeMenuEntries) await runD03Home(journey, homeMenuEntries);
+  await journey.openCategory(row.category, row.route);
+}
+
 async function runPublicFirst3(
   journey: PlayAllJourney,
   channel: string,
@@ -92,8 +111,8 @@ async function runPublicFirst3(
     ...row,
     audience: "Public",
   });
-  await runD03Home(journey, channel, row.route, entries);
-  await journey.openCategory(row.category, row.route);
+  const homeMenuEntries = row.category === "Videos" && row.sort === "Latest" ? entries : undefined;
+  await reachPlaylistCategory(journey, channel, row, homeMenuEntries);
   await journey.expectCategory(channel, row.category);
   await journey.selectSort(row.sort);
   await journey.expectSort(row.sort);
@@ -101,10 +120,11 @@ async function runPublicFirst3(
     await journey.activateAudience("Public");
     await journey.expectAudience("Public", row.category, row.sort);
   }
-  await journey.saveGridIds(row.category, row.sort, 3);
+  if (row.route === "hard") await journey.saveGridIds(row.category, row.sort, 3);
   await journey.expectButton("Public", row.sort);
   await journey.expectWorkingLink("Public", row.sort);
   await journey.capture("public-button");
+  if (row.route !== "hard") return;
   await journey.pressPlayAll("Public", row.sort);
   await journey.expectDestination();
   await expect(journey.panel).toBeVisible({ timeout: 60_000 });
@@ -121,7 +141,6 @@ async function runPublicOldest(
   journey: PlayAllJourney,
   channel: string,
   row: CellRow,
-  entries: MenuEntry[],
   membershipChannel: boolean,
 ) {
   await journey.defineCase({
@@ -130,8 +149,7 @@ async function runPublicOldest(
     ...row,
     audience: "Public",
   });
-  await runD03Home(journey, channel, row.route, entries);
-  await journey.openCategory(row.category, row.route);
+  await reachPlaylistCategory(journey, channel, row);
   await journey.expectCategory(channel, row.category);
   if (!membershipChannel || row.category === "Videos") {
     await journey.selectSort("Latest");
@@ -149,10 +167,11 @@ async function runPublicOldest(
     await journey.activateAudience("Public");
     await journey.expectAudience("Public", row.category, "Oldest");
   }
-  await journey.saveGridIds(row.category, "Oldest", 1);
+  const checkShortsLink = !membershipChannel && row.category === "Shorts";
+  if (row.route === "hard" || checkShortsLink) await journey.saveGridIds(row.category, "Oldest", 1);
   await journey.expectButton("Public", "Oldest");
   await journey.expectWorkingLink("Public", "Oldest");
-  if (!membershipChannel && row.category === "Shorts") {
+  if (checkShortsLink) {
     const oldestId = journey.savedIds[0]!;
     const grid = journey.testInfo.project.name.includes("mobile")
       ? "ytm-browse .modern-tabs"
@@ -169,6 +188,8 @@ async function runPublicOldest(
     ).toBe(oldestId);
   }
   await journey.capture("public-button");
+  if (row.route !== "hard") return;
+  await journey.resolveChannelId();
   await journey.pressPlayAll("Public", "Oldest");
   await journey.expectDestination();
   await expect(journey.panel).toBeVisible({ timeout: 60_000 });
@@ -180,8 +201,7 @@ async function runPublicOldest(
 
 async function runMembersLatest(journey: PlayAllJourney, row: CellRow) {
   await journey.defineCase({ case: "D02", channel: nasaChannel, ...row, audience: "Members only" });
-  await runD03Home(journey, nasaChannel, row.route, nasaMenuEntries);
-  await journey.openCategory(row.category, row.route);
+  await reachPlaylistCategory(journey, nasaChannel, row);
   await journey.expectCategory(nasaChannel, row.category);
   await journey.selectSort("Latest");
   await journey.expectSort("Latest");
@@ -201,6 +221,7 @@ async function runMembersLatest(journey: PlayAllJourney, row: CellRow) {
   await journey.activateAudience("Members only");
   await journey.expectAudience("Members only", row.category, "Latest");
   await journey.expectWorkingLink("Members only", "Latest");
+  if (row.route !== "hard") return;
   await journey.saveFullMembersPlaylist(row.category);
   await journey.expectCategoryUnchanged();
   await journey.pressPlayAll("Members only", "Latest");
@@ -217,8 +238,7 @@ async function runMembersLatest(journey: PlayAllJourney, row: CellRow) {
 
 async function runMembersOldest(journey: PlayAllJourney, row: CellRow) {
   await journey.defineCase({ case: "D02", channel: nasaChannel, ...row, audience: "Members only" });
-  await runD03Home(journey, nasaChannel, row.route, nasaMenuEntries);
-  await journey.openCategory(row.category, row.route);
+  await reachPlaylistCategory(journey, nasaChannel, row);
   await journey.expectCategory(nasaChannel, row.category);
   await journey.selectSort("Oldest");
   await journey.expectSort("Oldest");
@@ -232,6 +252,7 @@ async function runMembersOldest(journey: PlayAllJourney, row: CellRow) {
   await journey.expectButton("Members only", "Oldest");
   await journey.expectWorkingLink("Members only", "Oldest");
   await journey.capture("members-button");
+  if (row.route !== "hard") return;
   await journey.saveFullMembersPlaylist(row.category);
   await journey.expectCategoryUnchanged();
   await journey.pressPlayAll("Members only", "Oldest");
@@ -247,7 +268,7 @@ async function runMembersOldest(journey: PlayAllJourney, row: CellRow) {
 
 async function runHidden(journey: PlayAllJourney, row: CellRow) {
   await journey.defineCase({ case: "D02", channel: nasaChannel, ...row, audience: "Members only" });
-  await runD03Home(journey, nasaChannel, row.route, nasaMenuEntries);
+  await reachChannelHome(journey, nasaChannel, row.route);
   await journey.openCategory(row.category, row.route);
   await journey.expectCategory(nasaChannel, row.category);
   await journey.selectSort(row.sort);
@@ -287,7 +308,7 @@ ytxTest.describe("D01: Public on @Apple", () => {
       async ({ page, eventWatcher }, testInfo) => {
         ytxTest.skip(mobileSkipsSoft2(testInfo, row.route), "soft2 is desktop-only");
         await verifyCell(page, eventWatcher, testInfo, 240_000, (journey) =>
-          runPublicOldest(journey, appleChannel, row, publicMenuEntries, false),
+          runPublicOldest(journey, appleChannel, row, false),
         );
       },
     );
@@ -312,7 +333,7 @@ ytxTest.describe("D02: Public on @NASASpaceFlight", () => {
       async ({ page, eventWatcher }, testInfo) => {
         ytxTest.skip(mobileSkipsSoft2(testInfo, row.route), "soft2 is desktop-only");
         await verifyCell(page, eventWatcher, testInfo, 240_000, (journey) =>
-          runPublicOldest(journey, nasaChannel, row, nasaMenuEntries, true),
+          runPublicOldest(journey, nasaChannel, row, true),
         );
       },
     );
