@@ -139,6 +139,15 @@ export async function readFullShortsReferencePlaylist(
   return rows;
 }
 
+export async function readLastShortsReferenceRow(page: Page, listId: string) {
+  const index = await readPlaylistHeaderCount(page, listId);
+  if (!Number.isSafeInteger(index) || index < 1) {
+    throw new Error(`Shorts playlist ${listId} declares an invalid last index: ${index}`);
+  }
+  const { videoId } = await resolvePlaylistRowByIndex(page, listId, index);
+  return { videoId, index };
+}
+
 async function resolvePlaylistRowByIndex(
   page: Page,
   listId: string,

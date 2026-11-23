@@ -193,7 +193,7 @@ async function runPublicOldest(
   await journey.pressPlayAll("Public", "Oldest");
   await journey.expectDestination();
   await expect(journey.panel).toBeVisible({ timeout: 60_000 });
-  await journey.compareSelected(false);
+  await journey.compareSelected();
   await journey.verifyOldestSharedDestination();
   await journey.showPanel(true);
   await journey.capture("public-destination");
@@ -253,15 +253,13 @@ async function runMembersOldest(journey: PlayAllJourney, row: CellRow) {
   await journey.expectWorkingLink("Members only", "Oldest");
   await journey.capture("members-button");
   if (row.route !== "hard") return;
-  await journey.saveFullMembersPlaylist(row.category);
+  const lastRow = await journey.saveMembersOldestReference(row.category);
   await journey.expectCategoryUnchanged();
   await journey.pressPlayAll("Members only", "Oldest");
   await journey.expectDestination();
   await journey.expectMembersDestination(row.category);
   await expect(journey.panel).toBeVisible({ timeout: 60_000 });
-  await journey.compareSelected(true);
-  expect(journey.savedIds).toEqual(journey.referenceRows.map((r) => r.videoId));
-  expect(journey.savedIds.at(-1)).toMatch(/^[\w-]{11}$/);
+  await journey.compareSelected(lastRow);
   await journey.showPanel(true);
   await journey.capture("members-destination");
 }

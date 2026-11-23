@@ -25,6 +25,7 @@ import {
   readFullDestinationPanel,
   readFullReferencePlaylist,
   readFullShortsReferencePlaylist,
+  readLastShortsReferenceRow,
   readPlaylistHeaderCount,
   resolveSharedUploadsOldest,
   type PlaylistRow,
@@ -368,16 +369,17 @@ export class PlayAllJourney {
     return allIds.filter((id) => !excludedIds.has(id)).slice(0, count);
   }
 
-  // The members playlist reference for the full-panel comparison. Shorts
-  // playlists list no rows on their playlist pages (YT-SPEC.md), so their
-  // reference resolves every row by index instead.
-  async saveFullMembersPlaylist(category: CategoryKind) {
+  private async prepareMembersPlaylistReference(category: CategoryKind) {
     expect(category).toBe(this.category);
     this.referenceCategoryUrl = this.page.url();
     this.referenceDocumentId = (await this.watcher.captureNavigationBaseline()).docId;
     await this.resolveChannelId();
     const prefix = PLAYLIST_PREFIXES.members[category];
     this.referenceListId = prefix + this.channelId.slice(2);
+  }
+
+  async saveFullMembersPlaylist(category: CategoryKind) {
+    await this.prepareMembersPlaylistReference(category);
     this.referenceRows =
       category === "Shorts"
         ? await readFullShortsReferencePlaylist(this.page, this.referenceListId)
@@ -387,6 +389,22 @@ export class PlayAllJourney {
       listId: this.referenceListId,
       rows: this.referenceRows,
     });
+  }
+
+  async saveMembersOldestReference(category: CategoryKind) {
+    if (category === "Shorts") {
+      await this.prepareMembersPlaylistReference(category);
+      const reference = await readLastShortsReferenceRow(this.page, this.referenceListId);
+      await this.attachJson("members-oldest-playlist-reference", {
+        listId: this.referenceListId,
+        ...reference,
+      });
+      return reference;
+    }
+    await this.saveFullMembersPlaylist(category);
+    const videoId = this.savedIds.at(-1);
+    expect(videoId).toMatch(/^[\w-]{11}$/);
+    return { videoId: videoId!, index: this.savedIds.length };
   }
 
   async expectCategoryUnchanged() {
@@ -476,12 +494,12 @@ export class PlayAllJourney {
     }
   }
 
-  async compareSelected(last: boolean) {
-    expect(this.savedIds.length).toBeGreaterThan(0);
-    const expected = last ? this.savedIds.at(-1)! : this.savedIds[0]!;
+  async compareSelected(lastRow?: { videoId: string; index: number }) {
+    const expected = lastRow?.videoId ?? this.savedIds[0];
+    expect(expected).toMatch(/^[\w-]{11}$/);
     expect(new URL(this.destination.url()).searchParams.get("v")).toBe(expected);
-    if (last)
-      expect(this.destinationHref!.searchParams.get("index")).toBe(String(this.savedIds.length));
+    if (lastRow)
+      expect(this.destinationHref!.searchParams.get("index")).toBe(String(lastRow.index));
     await expect
       .poll(() => new YtVideoPage(this.destination).getPlaylistSelectedVideoId(), {
         timeout: 60_000,
@@ -489,7 +507,7 @@ export class PlayAllJourney {
       .toBe(expected);
     await this.attachJson("selected-playlist-comparison", {
       expected,
-      source: last ? "full-members-playlist-last-row" : "channel-grid-first-row",
+      source: lastRow ? "members-playlist-last-row" : "channel-grid-first-row",
     });
   }
 
