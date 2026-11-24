@@ -1,3 +1,27 @@
+## [0.5.1] - 2026-11-24
+
+### 🚀 Features
+
+- Add Play All for members-only Shorts with Latest and Oldest. Oldest starts at the oldest Short without reversing the playlist.
+
+### ⚡ Performance
+
+- Show public Latest and Popular links first in the Play All menu. Each Oldest or members-only link appears in its usual position as soon as it is ready, without waiting for other links.
+
+### 🐛 Bug Fixes
+
+- Place the Play All menu in the visible channel header after navigation.
+- Close the Play All menu when clicking outside it, including in the YouTube search box.
+
+### 🧪 Testing
+
+- Capture review screenshots in the same E2E run that verifies behavior.
+- Run E2E tests in three parallel CI jobs.
+
+### ⚙️ Miscellaneous Tasks
+
+- Add the published Firefox add-on ID and declare no required data collection in the Firefox manifest.
+
 ## [0.5.0] - 2026-10-18
 
 ### 🚀 Features
