@@ -1,6 +1,6 @@
 # テストケース
 
-YouTube Play All拡張の必要なテストを選ぶ利用者・開発者・agent向けの仕様。D01〜D03 は `tests/e2e/play-all.test.ts` の E2Eテストとして実装され、`tests/e2e/combinations.ts` の組合せ定義で駆動される。A01・E01・E02 は `tests/e2e/resolution.test.ts` で実行する。
+YouTube Play All拡張の必要なテストを選ぶ利用者・開発者・agent向けの仕様。D01〜D03 は `tests/e2e/play-all.test.ts` の E2Eテストとして実装され、`tests/e2e/combinations.ts` の組合せ定義で駆動される。A01・E01・E02 は `tests/e2e/resolution.test.ts` で実行する。A02 は `tests/e2e/menu-resolution.test.ts` で実行する。
 
 ## 適用範囲と凡例
 
@@ -25,6 +25,7 @@ YouTube Play All拡張の必要なテストを選ぶ利用者・開発者・agen
 | hard | 対象 | 対象 | 対象 |
 | soft1 | 対象 | 対象 | 対象 |
 | soft2 | 対象 | 対象外 | 対象 |
+| A02（hard） | 対象 | 対象外 | 対象外 |
 | その他のケース | 対象 | 対象 | 対象 |
 
 ### ボタン表示の組合せ
@@ -50,6 +51,7 @@ YouTube Play All拡張の必要なテストを選ぶ利用者・開発者・agen
 | D02 | 表示 / リンク先 | メンバーシップのあるチャンネル @NASASpaceFlight のカテゴリ | Videos / Shorts / Streams | Latest / Popular / Oldest | Public / Members only | hard / soft1 / soft2 |
 | D03 | 表示 | チャンネルhome（各経路でカテゴリの前に到達） | — | — | Public / Members only | hard / soft1 / soft2 |
 | A01 | 非同期 | チャンネルカテゴリ | Videos | Oldest → Latest → Popular | Public / Members only | hard / soft1 / soft2 |
+| A02 | 非同期 | メンバーシップのあるチャンネルの home | — | — | Public / Members only | hard |
 | E01 | エラー | チャンネルカテゴリ | Videos | Oldest → Popular | Public | hard / soft1 / soft2 |
 | E02 | エラー | チャンネルカテゴリ | Videos / Shorts / Streams | Latest / Oldest | Members only | hard / soft1 / soft2 |
 
@@ -58,6 +60,10 @@ YouTube Play All拡張の必要なテストを選ぶ利用者・開発者・agen
 公開の Videos / Oldest リンクの解決が遅延している間、Play All メニューには公開の Latest と Popular のリンクが通常どおりの順序で表示される。解決が完了すると、このリンクが公開の Videos / Popular リンクの直後に表示される。
 
 Videos / Oldest の解決が遅延している間に、視聴者が Oldest、次に Latest、次に Popular を選択する。Oldest の解決が完了する。ボタンは「Play All (Popular)」のままで、選択は Popular にとどまる。Members only でも同様に、選択は保持され、遅延した解決が完了しても上書きされない。
+
+### A02: 解決が遅延している間のリンク表示
+
+固定応答を使ってチャンネルhome を直接開き、公開の Videos / Oldest の解決だけを保留する。保留中も、解決済みの公開 Shorts / Oldest、Streams / Oldest とメンバー限定の各項目が、対応するプレイリストへの有効なリンクとして表示される。表示済みの項目は D03 の順序で並ぶ。Shorts / Oldest のリンクを開いた後、保留したままチャンネルのメニューを開き直す。保留を解除すると、公開 Videos / Oldest のリンクが D03 の順序に従って加わることを確認する。
 
 ### E01: Oldest解決の失敗
 

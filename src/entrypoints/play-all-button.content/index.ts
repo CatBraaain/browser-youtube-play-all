@@ -10,7 +10,7 @@ import {
 } from "./ui-scheduler";
 import { MEMBERS_KINDS, MEMBERS_SORTS, SYNC_SORTS } from "./youtube-api";
 import type { MembersSortKind } from "./youtube-api";
-import { YoutubeDOM, type SortKind } from "./youtube-dom";
+import { YoutubeDOM } from "./youtube-dom";
 import { emitPageEnter, registerHooks, YTX_EVENTS, ytxEventEmitter } from "./youtube-hooks";
 
 import "./play-all-button.css";
@@ -181,30 +181,41 @@ async function renderDropdown(channel: Channel, latestEpoch: number) {
   const menu = document.createElement("div");
   menu.className = "hidden";
 
-  const publicEntries = YoutubeDOM.categories.flatMap((category) =>
-    YoutubeDOM.sorts.map((sort) => ({ category, sort })),
-  );
-  const publicLinks: (HTMLAnchorElement | undefined)[] = [];
+  type EntryTiming = "immediate" | "network";
+  type MenuEntry = { label: string; path: Promise<string>; timing: EntryTiming };
+  const entries = [
+    ...YoutubeDOM.categories.flatMap((category) =>
+      YoutubeDOM.sorts.map<MenuEntry>((sort) => ({
+        label: `${category} (${sort})`,
+        path: channel.getPlaylistPath(category, sort),
+        timing: SYNC_SORTS.includes(sort) ? "immediate" : "network",
+      })),
+    ),
+    ...MEMBERS_KINDS.flatMap((category) =>
+      MEMBERS_SORTS.map<MenuEntry>((sort) => ({
+        label: `${category} (Members ${sort})`,
+        path: channel.getMembersPlaylistPath(category, sort),
+        timing: "network",
+      })),
+    ),
+  ];
+  const linksInMenuOrder: (HTMLAnchorElement | undefined)[] = [];
 
-  function insertMenuEntry(href: string, label: string, before: HTMLAnchorElement | null = null) {
-    const link = document.createElement("a");
-    link.href = href;
-    link.textContent = label;
-    menu.insertBefore(link, before);
-    return link;
-  }
+  async function insertResolvedEntries(timing: EntryTiming) {
+    await Promise.all(
+      entries.map(async (entry, index) => {
+        if (entry.timing !== timing) return;
+        const href = await entry.path;
+        if (!href || isPageStale(latestEpoch)) return;
 
-  async function insertPublicEntries(sorts: SortKind[]) {
-    for (const [index, { category, sort }] of publicEntries.entries()) {
-      if (!sorts.includes(sort)) continue;
-      const href = await channel.getPlaylistPath(category, sort);
-      if (isPageStale(latestEpoch)) return;
-      if (!href) continue;
-
-      // Insert before the next visible entry rather than waiting for missing links.
-      const nextLink = publicLinks.slice(index + 1).find((link) => link !== undefined);
-      publicLinks[index] = insertMenuEntry(href, `${category} (${sort})`, nextLink ?? null);
-    }
+        const link = document.createElement("a");
+        link.href = href;
+        link.textContent = entry.label;
+        const nextLink = linksInMenuOrder.slice(index + 1).find((link) => link !== undefined);
+        menu.insertBefore(link, nextLink ?? null);
+        linksInMenuOrder[index] = link;
+      }),
+    );
   }
 
   function isMountedForThisEpoch() {
@@ -213,7 +224,7 @@ async function renderDropdown(channel: Channel, latestEpoch: number) {
     return mounted?.dataset.ytxPageEpoch === String(latestEpoch);
   }
 
-  await insertPublicEntries(SYNC_SORTS);
+  await insertResolvedEntries("immediate");
 
   if (isPageStale(latestEpoch)) {
     return;
@@ -301,24 +312,5 @@ async function renderDropdown(channel: Channel, latestEpoch: number) {
     mountWatcher.observe(document, { childList: true, subtree: true });
   }
 
-  const networkSorts = YoutubeDOM.sorts.filter((sort) => !SYNC_SORTS.includes(sort));
-  await insertPublicEntries(networkSorts);
-  if (isPageStale(latestEpoch)) {
-    return;
-  }
-
-  // Members-only entries resolve last and are appended after the category
-  // links: they exist only on channels with membership perks, and a failed
-  // resolution (a channel without them) simply appends nothing.
-  for (const membersKind of MEMBERS_KINDS) {
-    for (const sortKind of MEMBERS_SORTS) {
-      const href = await channel.getMembersPlaylistPath(membersKind, sortKind);
-      if (isPageStale(latestEpoch)) {
-        return;
-      }
-      if (href) {
-        insertMenuEntry(href, `${membersKind} (Members ${sortKind})`);
-      }
-    }
-  }
+  await insertResolvedEntries("network");
 }

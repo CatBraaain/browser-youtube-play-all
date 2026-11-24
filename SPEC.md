@@ -1,6 +1,6 @@
 # Test Cases
 
-This specification is for users, developers and agents selecting tests for the YouTube Play All extension. The D01–D03 cases are implemented as E2E tests in `tests/e2e/play-all.test.ts`, driven by the combinations in `tests/e2e/combinations.ts`. A01, E01 and E02 run in `tests/e2e/resolution.test.ts`.
+This specification is for users, developers and agents selecting tests for the YouTube Play All extension. The D01–D03 cases are implemented as E2E tests in `tests/e2e/play-all.test.ts`, driven by the combinations in `tests/e2e/combinations.ts`. A01, E01 and E02 run in `tests/e2e/resolution.test.ts`. A02 runs in `tests/e2e/menu-resolution.test.ts`.
 
 ## Scope and notation
 
@@ -25,6 +25,7 @@ Check each case with the following combinations.
 | hard | Included | Included | Included |
 | soft1 | Included | Included | Included |
 | soft2 | Included | Excluded | Included |
+| A02 (hard) | Included | Excluded | Excluded |
 | Other cases | Included | Included | Included |
 
 ### Button display combinations
@@ -50,6 +51,7 @@ The D01–D03 rows below define the scope. The E2E tests implement the operation
 | D02 | Display / Destination | Category of the channel with membership perks @NASASpaceFlight | Videos / Shorts / Streams | Latest / Popular / Oldest | Public / Members only | hard / soft1 / soft2 |
 | D03 | Display | Channel home (reached on every route before the category) | — | — | Public / Members only | hard / soft1 / soft2 |
 | A01 | Async | Channel category | Videos | Oldest → Latest → Popular | Public / Members only | hard / soft1 / soft2 |
+| A02 | Async | Home of a channel with membership perks | — | — | Public / Members only | hard |
 | E01 | Error | Channel category | Videos | Oldest → Popular | Public | hard / soft1 / soft2 |
 | E02 | Error | Channel category | Videos / Shorts / Streams | Latest / Oldest | Members only | hard / soft1 / soft2 |
 
@@ -58,6 +60,10 @@ The D01–D03 rows below define the scope. The E2E tests implement the operation
 While the public Videos / Oldest link is delayed, the Play All menu shows the public Latest and Popular links in their usual order. When the link resolves, it appears immediately after the public Videos / Popular link.
 
 While resolving Videos / Oldest is delayed, the viewer selects Oldest, then Latest, then Popular; Oldest finishes resolving. The button remains "Play All (Popular)", and the selection stays on Popular. With Members only, the toggle also keeps the selection and the delayed resolution never overwrites it.
+
+### A02: links available during delayed resolution
+
+Open the channel home directly with fixed test responses. Hold only the public Videos / Oldest resolution. While it is held, the resolved public Shorts / Oldest, Streams / Oldest, and Members-only entries appear as working links to their playlists. The visible entries follow the D03 menu order. Follow the Shorts / Oldest link, then reopen the channel menu with the hold still in place. Release the hold and verify that the public Videos / Oldest link is added in its D03 position.
 
 ### E01: Oldest resolution failure
 
