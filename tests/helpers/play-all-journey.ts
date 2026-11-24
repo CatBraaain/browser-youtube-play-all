@@ -630,19 +630,11 @@ export class PlayAllJourney {
     entries: { audience: Audience; category: CategoryKind; sort: SortKind }[],
   ) {
     this.menuEntries = entries;
-    const expected = entries
-      .map(
-        (entry) =>
-          `${entry.category} (${entry.audience === "Members only" ? "Members " : ""}${entry.sort})`,
-      )
-      .sort();
-    await expect
-      .poll(
-        async () =>
-          (await this.menu.locator("a").allTextContents()).map((label) => label.trim()).sort(),
-        { timeout: 60_000 },
-      )
-      .toEqual(expected);
+    const expected = entries.map(
+      (entry) =>
+        `${entry.category} (${entry.audience === "Members only" ? "Members " : ""}${entry.sort})`,
+    );
+    await expect(this.menu.getByRole("link")).toHaveText(expected, { timeout: 60_000 });
     for (const entry of entries) {
       const name = `${entry.category} (${entry.audience === "Members only" ? "Members " : ""}${entry.sort})`;
       const link = this.menu.getByRole("link", { name, exact: true }).describe(name);

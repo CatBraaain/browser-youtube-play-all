@@ -6,7 +6,7 @@ import { ytxTest, type EventWatcher } from "../fixture";
 import { installFetchGate, releaseFetchGate } from "../helpers/fetch-gate";
 import { PlayAllJourney } from "../helpers/play-all-journey";
 import { PLAYLIST_PREFIXES, YtVideoPage } from "../utils";
-import { nasaChannel, type Route } from "./combinations";
+import { nasaChannel, publicMenuEntries, type Route } from "./combinations";
 
 const routes: Route[] = ["hard", "soft1", "soft2"];
 ytxTest.setTimeout(240_000);
@@ -80,8 +80,20 @@ for (const route of routes) {
           await journey.selectSort("Latest");
           await journey.selectSort("Popular");
           await journey.expectSort("Popular");
-          if (audience === "Public") await journey.expectButton("Public", "Popular");
-          else {
+          if (audience === "Public") {
+            await journey.expectButton("Public", "Popular");
+            await ytxTest.step(
+              "Open the menu while the public Videos Oldest link is delayed",
+              async () => {
+                await journey.toggle.click();
+                await expect(journey.menu.getByRole("link")).toContainText(
+                  publicMenuEntries
+                    .filter(({ sort }) => sort !== "Oldest")
+                    .map(({ category, sort }) => `${category} (${sort})`),
+                );
+              },
+            );
+          } else {
             await journey.expectAudience("Members only", "Videos", "Popular");
             await journey.channelPage.expectNoPlayAllButton();
           }
@@ -90,6 +102,19 @@ for (const route of routes) {
           await expect(
             page.locator(".play-all-btns:visible").getByText(gatedEntryText, { exact: true }),
           ).toHaveCount(1);
+          if (audience === "Public") {
+            await ytxTest.step(
+              "Check that Videos Oldest appears after Videos Popular in the open menu",
+              async () => {
+                await expect(journey.menu).toBeVisible();
+                const videosPopularPrefix = PLAYLIST_PREFIXES.public.Videos.Popular;
+                await expect(
+                  journey.menu.locator(`a[href*="list=${videosPopularPrefix}"] + a`),
+                ).toHaveText(gatedEntryText);
+                await journey.toggle.click();
+              },
+            );
+          }
           await journey.expectSort("Popular");
           if (audience === "Members only") {
             await journey.expectAudience("Members only", "Videos", "Popular");
