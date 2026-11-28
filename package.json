@@ -28,12 +28,12 @@
     "eventemitter3": "^5.0.4"
   },
   "devDependencies": {
-    "@playwright/test": "^1.61.0",
-    "@types/chrome": "^0.2.0",
-    "@types/node": "^24",
+    "@playwright/test": "^1.65.1",
+    "@types/chrome": "^0.3.9",
+    "@types/node": "^26.6.11",
     "playwright-webextext": "^0.0.5",
-    "typescript": "^6.0.3",
-    "vite-plus": "^0.2.1",
-    "wxt": "0.21.4"
+    "typescript": "^7.0.2",
+    "vite-plus": "^1.8.0",
+    "wxt": "0.21.5"
   }
 }
